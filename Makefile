@@ -1,0 +1,88 @@
+#CXX=clang++
+CXX=g++
+EXE=de_webrtc
+BIN=bin
+BUILD = build
+SRC = src
+OBJS = $(BUILD)/main.o \
+       $(BUILD)/configFile.o \
+       $(BUILD)/udpClient.o \
+       $(BUILD)/webrtc_fakeAudioCaptureModule.o \
+       $(BUILD)/webrtc_source.o \
+	   $(BUILD)/webrtc_videoSink.o \
+	   $(BUILD)/webrtc_videoDevCapturer.o \
+	   $(BUILD)/webrtc_capturerTrackSource.o \
+	   $(BUILD)/webrtc_peerConnectionManager.o \
+	   $(BUILD)/webrtc_userMedia.o \
+	   $(BUILD)/webrtc_SetSessionDescriptionObserver.o \
+	   $(BUILD)/webrtc_VideoEncoderFactory.o \
+	   $(BUILD)/webrtc_plugin.o \
+	   $(BUILD)/video_media_recorder.o \
+	   $(BUILD)/getopt_cpp.o
+	   
+	   #$(BUILD)/webrtc_PeerConnectionObserver.o \
+
+SRCS = ../$(SRC)/main.cpp \
+	   ../$(SRC)/media_recorder/video_media_recorder.cpp \
+       ../$(SRC)/configFile.cpp \
+	   ../$(SRC)/udpClient.cpp \
+	   ../$(SRC)/webrtc/webrtc_fakeAudioCaptureModule.cpp \
+	   ../$(SRC)/webrtc/webrtc_source.cpp \
+	   ../$(SRC)/webrtc/webrtc_videoSink.cpp \
+	   ../$(SRC)/webrtc/webrtc_userMedia.cpp \
+	   ../$(SRC)/webrtc/webrtc_videoDevCapturer.cpp \
+	   ../$(SRC)/webrtc/webrtc_capturerTrackSource.cpp \
+	   ../$(SRC)/webrtc/webrtc_peerConnectionManager.cpp \
+	   ../$(SRC)/webrtc/webrtc_SetSessionDescriptionObserver.cpp \
+	   ../$(SRC)/webrtc/webrtc_VideoEncoderFactory.cpp \
+	   ../$(SRC)/webrtc_plugin.cpp \
+	   ../$(SRC)/getopt_cpp.cpp \
+	   #../$(SRC)/webrtc_PeerConnectionObserver.cpp \
+	   
+
+INCLUDE= -I ../src/ -I ../lib/webrtc-local/third_party/ -I ../lib/webrtc94-local/third_party/abseil-cpp -I ../lib/webrtc94-local/include 
+LIBS = -lpthread    -fexceptions    -ljsoncpp    -lwebrtc -ldl -lX11 -lexpat
+LIBS_RELEASE = $(LIBS) -L ./lib/webrtc94-local/lib/x64/Release/
+LIBS_DEBUG = $(LIBS)  -L ./lib/webrtc94-local/lib/x64/Debug/
+#LIBS = -lpthread  -lstdc++   -fexceptions    -ljsoncpp
+#CXXFLAGS=-pthread -fPIC -Wall -Wno-address-of-packed-member -stdlib=libc++ 
+CXXFLAGS =
+CXXFLAGS_RELEASE= $(CXXFLAGS) -DRELEASE -s   -Werror=unused-variable -Werror=unused-result
+CXXFLAGS_DEBUG= $(CXXFLAGS)  -DDEBUG -g
+#CXXFLAGS= 
+#CXXFLAGS=-std=c++17
+
+
+release: webrtc.so.release
+	$(CXX)  -o $(BIN)/$(EXE).so  $(CXXFLAGS_RELEASE)     $(OBJS)  $(LIBS_RELEASE)  ; 
+	@echo "building finished ..."; 
+	@echo "DONE."
+
+debug: webrtc.so.debug 
+	$(CXX)  -o $(BIN)/$(EXE).so  $(CXXFLAGS_DEBUG)     $(OBJS)  $(LIBS_DEBUG)  ; 
+	@echo "building finished ..."; 
+	@echo "DONE."
+
+webrtc.so.release: copy
+	mkdir -p $(BUILD); \
+	cd $(BUILD); \
+	$(CXX)   -DWEBRTC_POSIX $(CXXFLAGS_RELEASE)  -c   $(SRCS)  $(INCLUDE)  ; \
+	cd .. ; 
+	@echo "compliling finished ..."
+
+webrtc.so.debug: copy
+	mkdir -p $(BUILD); \
+	cd $(BUILD); \
+	$(CXX)   -DWEBRTC_POSIX $(CXXFLAGS_DEBUG)  -c   $(SRCS)  $(INCLUDE)  ; \
+	cd .. ; 
+	@echo "compiling finished ..."
+
+copy: clean
+	mkdir -p $(BIN); \
+	cp config.*.json $(BIN);
+	cp ./src/media_recorder/scripts/script*.sh $(BIN);  
+	@echo "copying finished ..."
+	
+
+clean:
+	rm -rf $(BIN) $(BUILD) 

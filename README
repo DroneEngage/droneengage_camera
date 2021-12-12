@@ -1,0 +1,28 @@
+### UAVOS Camera Module
+
+If you want to use a webcam by UAVOS and another app, that may not be possible directly unless you use **v4l2loopback**.
+
+you need to create a virtual video device and forward the webcam data to it, then you can make multiple connection to that virtual video drive.
+
+1. create devices:
+> sudo modprobe v4l2loopback devices=3
+
+2. stream video from webcam to virtual video
+> gst-launch-1.0 v4l2src device=/dev/video0 ! tee name=t ! queue ! v4l2sink device=/dev/video1 t. ! queue ! v4l2sink device=/dev/video2gst-launch-1.0 v4l2src device=/dev/video0 ! tee name=t ! queue ! v4l2sink device=/dev/video1 t. ! queue ! v4l2sink device=/dev/video2
+
+3. above example streams dame video to two virtual video derivers. however one is enough to read from it from multiple apps.
+
+you can also use ffmpeg to change video format while streaming the data 
+> ffmpeg  -re -i **/dev/video1** -filter_complex "nullsrc=size=640x480 [base]; \
+[0:v] format=pix_fmts=**rgb24**, setpts=PTS-STARTPTS, scale=640x480 [left]; \
+[base][left] overlay=shortest=1,format=**yuv420p**"  -f v4l2 /dev/video2[base][left] overlay=shortest=1,format=yuv420p"  -f v4l2** /dev/video2**
+
+
+
+
+### To Compile
+
+sudo apt-get install libjsoncpp-dev
+
+sudo apt install libexpat-dev 
+

@@ -1,0 +1,8 @@
+bin/
+build/
+lib/
+*.gz
+webrtc_examples
+lib/
+*.ignore
+*.mp4
