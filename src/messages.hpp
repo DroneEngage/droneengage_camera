@@ -3,6 +3,18 @@
 // InterModules command
 #define CMD_TYPE_INTERMODULE "uv"
 
+// JSON InterModule Fields
+#define JSON_INTERMODULE_MODULE_ID              "a"
+#define JSON_INTERMODULE_MODULE_CLASS           "b"
+#define JSON_INTERMODULE_MODULE_MESSAGES_LIST   "c"
+#define JSON_INTERMODULE_MODULE_FEATURES        "d"
+#define JSON_INTERMODULE_MODULE_KEY             "e"
+#define JSON_INTERMODULE_HARDWARE_ID            "s"
+#define JSON_INTERMODULE_HARDWARE_TYPE          "t"
+#define JSON_INTERMODULE_TIMESTAMP_INSTANCE     "u"
+#define JSON_INTERMODULE_RESEND                 "z"
+
+
 
 
 #define TYPE_AndruavMessage_RemoteExecute   1005

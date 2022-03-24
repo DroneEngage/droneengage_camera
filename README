@@ -20,9 +20,27 @@ you can also use ffmpeg to change video format while streaming the data
 
 
 
-### To Compile
+## To Compile
 
 sudo apt-get install libjsoncpp-dev
 
 sudo apt install libexpat-dev 
 
+#### TO Install Scripts for camera
+
+sudo apt install -y  v4l2loopback-dkms
+
+sudo apt-get install -y v4l2loopback-utils
+
+sudo apt install -y ffmpeg 
+
+
+
+### Run the driver 
+sudo modprobe v4l2loopback
+
+sudo  modprobe v4l2loopback video_nr=9 card_label="mirrored cam"
+
+
+### Remove Driver: 
+sudo modprobe --remove v4l2loopback

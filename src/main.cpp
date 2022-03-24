@@ -13,6 +13,9 @@
 
 using namespace uavos;
 
+
+std::time_t time_stamp;
+
 // UAVOS Current PartyID read from communicator
 std::string  PartyID;
 // UAVOS Current GroupID read from communicator
@@ -145,10 +148,14 @@ void initArguments (int argc, char *argv[])
  **/
 void init (int argc, char *argv[]) 
 {
+        time_stamp = std::time(nullptr);
+        
         initArguments (argc, argv);
 
         // Reading Configuration
         std::cout << std::endl << "=================== " << "STARTING PLUGIN ===================" << std::endl;
+        _version();
+
 
         cConfigFile = &CConfigFile::getInstance();
         cConfigFile->InitConfigFile (configName.c_str());
@@ -157,7 +164,9 @@ void init (int argc, char *argv[])
         ModuleID = jsonConfig["module_id"].asString();
         //https://stackoverflow.com/questions/2616906/how-do-i-output-coloured-text-to-a-linux-terminal
         std::cout << "UAVOS Plugin Module: " << _TEXT_BOLD_HIGHTLITED_ <<  ModuleID << _NORMAL_CONSOLE_TEXT_ << std::endl;
-        std::cout << "Class Type: " << _BOLD_CONSOLE_TEXT_<<  jsonConfig["module_class"] << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        std::cout << "Class Type: " << _BOLD_CONSOLE_TEXT_<< "camera" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+
+        std::cout << std::asctime(std::localtime(&time_stamp)) << time_stamp << " seconds since the Epoch" << std::endl;
         
         // INIT WEBRTC
         cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
@@ -223,6 +232,14 @@ void uninit ()
  **/
 const Json::Value createJSONID (bool reSend)
 {
+        Json::Reader reader;
+        Json::Value MESSAGE_FILTER;
+        
+        
+        MESSAGE_FILTER.append(TYPE_AndruavMessage_RemoteExecute);
+        MESSAGE_FILTER.append(TYPE_AndruavMessage_Signaling);
+        MESSAGE_FILTER.append(TYPE_AndruavResala_Ctrl_Camera);
+
         const Json::Value& jsonConfig = cConfigFile->GetConfigJSON();
         
         Json::Value jsonID;
@@ -230,13 +247,18 @@ const Json::Value createJSONID (bool reSend)
         jsonID[ANDRUAV_PROTOCOL_MESSAGE_TYPE] =  TYPE_AndruavModule_ID;
         Json::Value ms;
         const Json::Value cameraList = cWEBRTC_Plugin->getDeviceListAsJSON();
-        ms["a"] = jsonConfig["module_id"];
-        ms["b"] = jsonConfig["module_class"];
-        ms["c"] = jsonConfig["module_messages"];
-        ms["d"] = jsonConfig["module_features"];
-        ms["e"] = jsonConfig["module_key"];
+        ms[JSON_INTERMODULE_MODULE_ID] = jsonConfig["module_id"];
+        ms[JSON_INTERMODULE_MODULE_CLASS] = "camera";
+        ms[JSON_INTERMODULE_MODULE_MESSAGES_LIST]   = MESSAGE_FILTER; //Json::Value(["C","V"]); //Json::value::array(MESSAGE_FILTER);
+        Json::Value list;
+        list.append("C");
+        list.append("V");
+        ms[JSON_INTERMODULE_MODULE_FEATURES] = list; //jsonConfig["module_features"];
+        ms[JSON_INTERMODULE_MODULE_KEY] = jsonConfig["module_key"];
         ms["m"] = cameraList;
-        ms["z"] = reSend;
+        ms[JSON_INTERMODULE_RESEND] = reSend;
+        ms[JSON_INTERMODULE_TIMESTAMP_INSTANCE]     = Json::Int64(time_stamp);
+
         jsonID[ANDRUAV_PROTOCOL_MESSAGE_CMD] = ms;
                         
         return jsonID;

@@ -1,8 +1,5 @@
 {
     "module_id"                 : "HorusEye2",
-    "module_class"              : "camera",
-    "module_features"           : ["C","V"],
-    "module_messages"           : ["1005","1041","1021"],
     "module_key"                :   "E289FEE7-FDAD-44EF-A257-C9A36DDD6BE7", 
     /* UAVOS Communication Server */
     "s2s_udp_target_ip"           : "127.0.0.1",
