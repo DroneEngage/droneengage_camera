@@ -635,7 +635,7 @@ Json::Value uavos::CWEBRTC_Plugin::getDeviceListAsJSON ()
 
         Json::Value jsonVideoSource;
 
-        jsonVideoSource["v"]        = true;
+        jsonVideoSource["v"]        = (bool) true;
         jsonVideoSource["ln"]       = deviceInfo.local_name;
         jsonVideoSource["id"]       = deviceInfo.unique_name;
         jsonVideoSource["active"]   = deviceInfo.active;
