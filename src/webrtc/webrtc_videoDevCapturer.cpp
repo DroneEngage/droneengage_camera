@@ -151,15 +151,24 @@ void uavos::stream_webrtc::VideoDevCapturerComposite::OnFrame(const webrtc::Vide
             .set_rotation(webrtc::kVideoRotation_0)
             .set_timestamp_us(frame.timestamp_us())
             .set_id(frame.id());
+    
+    webrtc::VideoFrame adapted_frame = new_frame_builder.build();
 
     if (frame.has_update_rect()) {
       webrtc::VideoFrame::UpdateRect new_rect = frame.update_rect().ScaleWithFrame(
           frame.width(), frame.height(), 0, 0, frame.width(), frame.height(),
           out_width, out_height);
-      new_frame_builder.set_update_rect(new_rect);
-    }
+      adapted_frame.set_update_rect(new_rect);
+      // adapted_frame.set_update_rect(
+      //         frame.update_rect().ScaleWithFrame(
+      //             frame.width(), frame.height(), 0, 0,
+      //             frame.width(), frame.height(), out_width,
+      //             out_height));
 
-    m_broadCaster.OnFrame(new_frame_builder.build());
+      
+    }
+    
+    m_broadCaster.OnFrame(adapted_frame);
     #ifdef DEBUG
     std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: Video adapter has requested a down-scale. Allocate a new buffer and return scaled version." << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
@@ -179,6 +188,7 @@ void uavos::stream_webrtc::VideoDevCapturerComposite::OnFrame(const webrtc::Vide
 
     m_broadCaster.OnFrame(frame);
   }
+  
 }
 
 
