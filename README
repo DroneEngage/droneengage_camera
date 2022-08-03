@@ -23,7 +23,7 @@ you can also use ffmpeg to change video format while streaming the data
 ## To Compile
 
 sudo apt-get install libjsoncpp-dev
-
+sudo apt install libx11-dev
 sudo apt install libexpat-dev 
 
 #### TO Install Scripts for camera

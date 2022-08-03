@@ -17,12 +17,10 @@ struct device_info {
     std::string product_id;
     std::string unique_name;
     std::shared_ptr<uavos::stream_webrtc::VideoDevCapturerComposite> capturer;
-    //rtc::scoped_refptr<uavos::VideoDevCapturerComposite> composite_capturer;
-    bool selected;  // some can be skipped and not listed as available cam.
-    int active; // already streaming
+    bool selected;          // some can be skipped and not listed as available cam.
+    int active;             // already streaming
     bool recording;
     std::string recordFileTimeStamp;
-    //WebRTC::VideoSinkNative * videoSinkNative;
 } ; 
 
 typedef struct device_info STRUCT_DEVICE_INFO;

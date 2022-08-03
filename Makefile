@@ -9,17 +9,16 @@ OBJS = $(BUILD)/main.o \
        $(BUILD)/udpClient.o \
        $(BUILD)/webrtc_fakeAudioCaptureModule.o \
        $(BUILD)/webrtc_source.o \
-	   $(BUILD)/webrtc_videoSink.o \
-	   $(BUILD)/webrtc_videoDevCapturer.o \
+	   $(BUILD)/webrtc_video_recorder.o \
+	   $(BUILD)/webrtc_video_dev_capturer.o \
 	   $(BUILD)/webrtc_capturerTrackSource.o \
 	   $(BUILD)/webrtc_peerConnectionManager.o \
 	   $(BUILD)/webrtc_userMedia.o \
 	   $(BUILD)/webrtc_SetSessionDescriptionObserver.o \
-	   $(BUILD)/webrtc_VideoEncoderFactory.o \
+	   $(BUILD)/webrtc_video_encoder_factory.o \
 	   $(BUILD)/webrtc_plugin.o \
 	   $(BUILD)/video_media_recorder.o \
-	   $(BUILD)/getopt_cpp.o
-	   
+	   $(BUILD)/getopt_cpp.o \
 	   #$(BUILD)/webrtc_PeerConnectionObserver.o \
 
 SRCS = ../$(SRC)/main.cpp \
@@ -28,13 +27,13 @@ SRCS = ../$(SRC)/main.cpp \
 	   ../$(SRC)/udpClient.cpp \
 	   ../$(SRC)/webrtc/webrtc_fakeAudioCaptureModule.cpp \
 	   ../$(SRC)/webrtc/webrtc_source.cpp \
-	   ../$(SRC)/webrtc/webrtc_videoSink.cpp \
 	   ../$(SRC)/webrtc/webrtc_userMedia.cpp \
-	   ../$(SRC)/webrtc/webrtc_videoDevCapturer.cpp \
+	   ../$(SRC)/webrtc/webrtc_video_recorder.cpp \
+	   ../$(SRC)/webrtc/webrtc_video_dev_capturer.cpp \
 	   ../$(SRC)/webrtc/webrtc_capturerTrackSource.cpp \
 	   ../$(SRC)/webrtc/webrtc_peerConnectionManager.cpp \
 	   ../$(SRC)/webrtc/webrtc_SetSessionDescriptionObserver.cpp \
-	   ../$(SRC)/webrtc/webrtc_VideoEncoderFactory.cpp \
+	   ../$(SRC)/webrtc/webrtc_video_encoder_factory.cpp \
 	   ../$(SRC)/webrtc_plugin.cpp \
 	   ../$(SRC)/getopt_cpp.cpp \
 	   #../$(SRC)/webrtc_PeerConnectionObserver.cpp \

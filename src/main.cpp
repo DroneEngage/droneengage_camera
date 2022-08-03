@@ -163,8 +163,8 @@ void init (int argc, char *argv[])
     
         ModuleID = jsonConfig["module_id"].asString();
         //https://stackoverflow.com/questions/2616906/how-do-i-output-coloured-text-to-a-linux-terminal
-        std::cout << "UAVOS Plugin Module: " << _TEXT_BOLD_HIGHTLITED_ <<  ModuleID << _NORMAL_CONSOLE_TEXT_ << std::endl;
-        std::cout << "Class Type: " << _BOLD_CONSOLE_TEXT_<< "camera" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "UAVOS Plugin Module: " << _SUCCESS_CONSOLE_BOLD_TEXT_ <<  ModuleID << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "Class Type: " << _SUCCESS_CONSOLE_BOLD_TEXT_<< "camera" << _NORMAL_CONSOLE_TEXT_ << std::endl;
 
         std::cout << std::asctime(std::localtime(&time_stamp)) << time_stamp << " seconds since the Epoch" << std::endl;
         

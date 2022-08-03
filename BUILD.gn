@@ -816,7 +816,7 @@ if (is_linux || is_win) {
            "uavos/webrtc_source.cpp",
            "uavos/webrtc_videoSink.cpp",
            "uavos/webrtc_userMedia.cpp",
-           "uavos/webrtc_videoDevCapturer.cpp",
+           "uavos/webrtc_video_dev_capturer.cpp",
            "uavos/webrtc_capturerTrackSource.cpp",
            "uavos/webrtc_peerConnectionManager.cpp",
            "uavos/webrtc_SetSessionDescriptionObserver.cpp",

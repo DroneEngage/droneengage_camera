@@ -8,7 +8,7 @@
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 
 
-#include "webrtc_VideoEncoderFactory.hpp"
+#include "webrtc_video_encoder_factory.hpp"
 
 
 std::vector<webrtc::SdpVideoFormat> uavos::stream_webrtc::CBuiltinVideoEncoderFactory::SupportedFormats() {

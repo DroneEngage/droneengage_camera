@@ -1,6 +1,7 @@
 
 #ifndef VIDEOCAPTURER_H
 #define VIDEOCAPTURER_H
+#include "webrtc_video_recorder.hpp"
 
 
 namespace uavos
@@ -13,7 +14,7 @@ namespace stream_webrtc
 // is used to borad cast frame data using rtc::VideoBroadcaster.
 class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::VideoFrame> 
                                 , public rtc::VideoSinkInterface  <webrtc::VideoFrame>
-
+                                , public uavos::stream_webrtc::CVideoRecording
 {
     public:
         // Class used to process video frame.
@@ -54,8 +55,7 @@ class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::Video
             m_preprocessor = std::move(preprocessor);
         }
         
-
-
+    
     protected:
         rtc::VideoSinkWants GetSinkWants();
 
@@ -89,9 +89,12 @@ class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::Video
         void Destroy();
 
         bool m_once = false;
-}; // namespace uavos
 
-}
-}
+        int8_t counter = 0;
+        FILE* m_output_file;
+}; 
+
+};
+}; // namespace uavos
 
 #endif

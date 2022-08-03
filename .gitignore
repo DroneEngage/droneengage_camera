@@ -6,3 +6,4 @@ webrtc_examples
 lib/
 *.ignore
 *.mp4
+*.bmp

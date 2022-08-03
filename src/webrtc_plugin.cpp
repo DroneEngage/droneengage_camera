@@ -5,8 +5,6 @@
 
 extern std::string PartyID;
 
-//std::shared_ptr<uavos::VideoDevCapturerComposite> v;
-
 uavos::CWEBRTC_Plugin::~CWEBRTC_Plugin ()
 {
     m_videoDeviceInfoList.clear();
@@ -41,7 +39,7 @@ void uavos::CWEBRTC_Plugin::initCameras(const bool singleCameraMode)
     // get all devices available.
     uavos::stream_webrtc::CSource::GetDevices(m_videoDeviceInfoList,m_actualVideoSourcesCount);
 
-    for (int i=0; i<m_actualVideoSourcesCount; ++i)
+    for (uint i=0; i<m_actualVideoSourcesCount; ++i)
     {
         m_videoDeviceInfoList[i].selected = false;
         m_videoDeviceInfoList[i].active = 0;
@@ -334,7 +332,6 @@ void uavos::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const s
         ///m_connection->AddVideoTrack(videoTrackInterface.get());
         ///sessionInfoNew.peerConnectionManager->AddStream(stream);
         
-        ///////capturerTrackSource.get()->AddOrUpdateSink(new CVideoSink(),rtc::VideoSinkWants());
         //capturerTrackSource.get()->Start();
         
         // IMPORTANT

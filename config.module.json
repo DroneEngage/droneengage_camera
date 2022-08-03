@@ -13,9 +13,10 @@
     //"camera_end_index"          :10, 
     "one_session_per_camera"    : true,
       "camera_list": [
-        {"name": "AI", "device_num": 2}
-        //,
-        //{"name": "WCAM", "device_num": 20}
+        {"name": "AI1", "device_num": 0}
+        //,{"name": "AI2", "device_num": 3}
+        //
+        //,{"name": "WCAM", "device_num": 20}
       ],
     
     //"codecs": ["VP8", "VP9", "H264"],
