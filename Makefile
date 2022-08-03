@@ -17,12 +17,10 @@ OBJS = $(BUILD)/main.o \
 	   $(BUILD)/webrtc_SetSessionDescriptionObserver.o \
 	   $(BUILD)/webrtc_video_encoder_factory.o \
 	   $(BUILD)/webrtc_plugin.o \
-	   $(BUILD)/video_media_recorder.o \
 	   $(BUILD)/getopt_cpp.o \
 	   #$(BUILD)/webrtc_PeerConnectionObserver.o \
 
 SRCS = ../$(SRC)/main.cpp \
-	   ../$(SRC)/media_recorder/video_media_recorder.cpp \
        ../$(SRC)/configFile.cpp \
 	   ../$(SRC)/udpClient.cpp \
 	   ../$(SRC)/webrtc/webrtc_fakeAudioCaptureModule.cpp \

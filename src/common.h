@@ -61,7 +61,6 @@
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_tools/video_file_writer.h"
 #include "global.h"
-#include "media_recorder/video_media_recorder.hpp"
 
 typedef void (*SENDJMSG_CALLBACK)(const char * senderPartyID, const Json::Value&);
 

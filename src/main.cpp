@@ -25,7 +25,6 @@ std::string  ModuleID;
 CConfigFile *cConfigFile;
 CUDPClient * cUDPClient;       
 CWEBRTC_Plugin * cWEBRTC_Plugin;
-media_recorder::video::CVideoRecorder * cVideoRecorder;
 
 const Json::Value createJSONID (bool reSend);
 void onReceive (const char * jsonMessage, int len);
@@ -198,10 +197,6 @@ void init (int argc, char *argv[])
         cWEBRTC_Plugin->InitializePeerConnection();
         
         
-        // Video Recorder
-        cVideoRecorder = &media_recorder::video::CVideoRecorder::getInstance();
-        cVideoRecorder->init();
-
         // UDP Server
         cUDPClient = new CUDPClient (jsonConfig["s2s_udp_target_ip"].asCString(),
                         std::stoi(jsonConfig["s2s_udp_target_port"].asCString()),
