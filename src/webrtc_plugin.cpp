@@ -607,7 +607,154 @@ void uavos::CWEBRTC_Plugin::updateDeviceInfoByLocalName (const char* localName, 
 
 }
 
+void uavos::CWEBRTC_Plugin::processVideoRecording (const Json::Value &jMsg)
+{
+    // extract command
+    
+    const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
+    const int subCommand = cmd["C"].asInt();
+    
+    // double check cmd.
+    if (subCommand != RemoteCommand_RECORDVIDEO) return ;
+    
+    bool startIfTrue = cmd["Act"].asBool();
+    std::string channelName = cmd["T"].asString();
+    
+    if (startIfTrue == true)
+    {
+        startVideoRecording (jMsg);
+    }
+    else
+    {
+        stopVideoRecording (jMsg);
+    }
+    
+}
 
+void uavos::CWEBRTC_Plugin::stopVideoRecording (const Json::Value &jMsg)
+{
+    // extract command
+    CWEBRTC_Plugin * cWEBRTC_Plugin;
+    cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
+
+    const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
+    
+    std::string channelName = cmd["T"].asString();
+    
+    uavos::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
+    if (device_info.device_num == -1)
+    {
+        
+        std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera " << channelName.c_str() << " Not Found" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  
+        return;
+    }
+
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera Found " << channelName.c_str() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+
+
+    #ifdef DEBUG
+    std::cout << __FULL_DEBUG__  << _SUCCESS_CONSOLE_BOLD_TEXT_ << "startVideoRecording" << channelName.c_str() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+    
+    const bool res = device_info.capturer.get()->stopRecording();  
+
+    device_info.recording = !res;
+    updateDeviceInfoByLocalName(channelName.c_str(), device_info);
+    
+}
+
+
+/**
+ *  Start video recording.
+ *  The logic behind video reecording is callig bash script to record video using whatever tool such as 
+ *  ffmpeg or gst-launch.
+ *  the script should be able to stop itself if it was running.
+ * 
+ **/
+void uavos::CWEBRTC_Plugin::startVideoRecording (const Json::Value &jMsg)
+{
+    // extract command
+    CWEBRTC_Plugin * cWEBRTC_Plugin;
+    cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
+
+    const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
+    
+    const std::string channelName = cmd["T"].asString();
+    
+
+    uavos::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
+    if (device_info.device_num == -1)
+    {
+        
+        std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera " << channelName.c_str() << " Not Found" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  
+        return;
+    }
+    
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera Found " << channelName.c_str() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    const bool res = device_info.capturer.get()->startRecording();
+    device_info.recordFileTimeStamp = uavos::util::CHelper::getFileTimeStamp();
+    device_info.recording = res;
+    updateDeviceInfoByLocalName(channelName.c_str(), device_info);
+    
+    
+    #ifdef DEBUG
+    //std::cout << __FULL_DEBUG__  << _SUCCESS_CONSOLE_BOLD_TEXT_ << "RecordCMD:"  << recCommand.str() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+    
+    
+    
+    
+    return;
+    
+}
+
+
+void uavos::CWEBRTC_Plugin::startImageCapturing (const Json::Value &jMsg)
+{
+    // extract command
+    CWEBRTC_Plugin * cWEBRTC_Plugin;
+    cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
+
+    const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
+    const std::string channelName = cmd["a"].asString();
+    const int numberOfImages = cmd["b"].asInt();
+    const int timeBetweenShots = cmd["c"].asInt();
+    //const int distanceBetweenShots = cmd["d"].asInt();  // NOT SUPPORTED
+    std::cout << __FULL_DEBUG__  << "CHannel:" << channelName << std::endl;
+    
+    uavos::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
+    if (device_info.device_num == -1)
+    {
+        
+        #ifdef DEBUG
+            std::cout << __FULL_DEBUG__  <<  _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera " << channelName.c_str() << " Not Found" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        #endif
+
+        return;
+    }
+
+    #ifdef DEBUG
+            std::cout << __FULL_DEBUG__  << std::to_string(numberOfImages)  << ":" << std::to_string(timeBetweenShots) << std::endl;
+            std::cout << __FULL_DEBUG__  << _SUCCESS_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera Found " << channelName.c_str() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+    device_info.capturer.get()->screenShot(numberOfImages,timeBetweenShots);
+    device_info.recordFileTimeStamp = uavos::util::CHelper::getFileTimeStamp();
+    updateDeviceInfoByLocalName(channelName.c_str(), device_info);
+    
+    
+    #ifdef DEBUG
+    //std::cout << __FULL_DEBUG__  << _SUCCESS_CONSOLE_BOLD_TEXT_ << "RecordCMD:"  << recCommand.str() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+    
+    cWEBRTC_Plugin->updateDeviceInfoByLocalName(channelName.c_str(), device_info);
+    
+    return;
+}
 
 /**
  * Generates JSON object array of available devices

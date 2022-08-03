@@ -14,7 +14,7 @@
     "one_session_per_camera"    : true,
       "camera_list": [
         {"name": "AI1", "device_num": 0}
-        //,{"name": "AI2", "device_num": 3}
+        ,{"name": "AI2", "device_num": 1}
         //
         //,{"name": "WCAM", "device_num": 20}
       ],

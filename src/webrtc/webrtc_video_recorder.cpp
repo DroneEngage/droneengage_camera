@@ -12,14 +12,15 @@ const int BYTES_PER_PIXEL = 3; /// red, green, & blue
 const int FILE_HEADER_SIZE = 14;
 const int INFO_HEADER_SIZE = 40;
 
-bool uavos::stream_webrtc::CVideoRecording::startRecording(const std::string& file_name)
+bool uavos::stream_webrtc::CVideoRecording::startRecording()
 {
+    m_timer_video.reset();
     stopRecording();
     
     webrtc::MutexLock lock(&lock_);
     std::time_t time_stamp;
     time_stamp = std::time(nullptr);
-    m_video_file_name = m_image_file_name + std::string(std::asctime(std::localtime(&time_stamp))) + ".yuv";
+    m_video_file_name = "v_" + uavos::util::CHelper::getFileTimeStamp() + ".yuv";
     m_video_handler = fopen(m_video_file_name.c_str(), "wb");
     
     m_is_video_recording = true;
@@ -43,9 +44,8 @@ bool uavos::stream_webrtc::CVideoRecording::stopRecording()
 
 
 
-bool uavos::stream_webrtc::CVideoRecording::screenShot(const std::string file_name, const uint &image_count, const uint &image_duration)
+bool uavos::stream_webrtc::CVideoRecording::screenShot(const uint &image_count, const uint &image_duration)
 {
-    m_image_file_name = file_name;
     m_image_count     = image_count;
     m_image_duration  = image_duration;
     return true;
@@ -66,6 +66,11 @@ int uavos::stream_webrtc::CVideoRecording::printPlane(const uint8_t* buf,
 
 int uavos::stream_webrtc::CVideoRecording::printVideoFrame(const webrtc::VideoFrame& frame) 
 {
+    
+    if (m_timer_video.elapsed() < 100) return 0;
+
+    m_timer_video.reset();
+    
     webrtc::MutexLock lock(&lock_);
     if (!m_is_video_recording) return 0;
 
@@ -86,12 +91,13 @@ int uavos::stream_webrtc::CVideoRecording::printVideoFrame(const webrtc::VideoFr
     if (printPlane(frame_I420.DataV(), chroma_width, chroma_height, frame_I420.StrideV()) < 0) {
         return -1;
     }
+
     return 0;
 }
 
 
 
-unsigned char* uavos::stream_webrtc::CVideoRecording::createBitmapFileHeader (int height, int stride)
+unsigned char* uavos::stream_webrtc::CVideoRecording::createBitmapFileHeader (const uint& height, const uint& stride)
 {
     int fileSize = FILE_HEADER_SIZE + INFO_HEADER_SIZE + (stride * height);
 
@@ -113,7 +119,7 @@ unsigned char* uavos::stream_webrtc::CVideoRecording::createBitmapFileHeader (in
     return fileHeader;
 }
 
-unsigned char* uavos::stream_webrtc::CVideoRecording::createBitmapInfoHeader (int height, int width)
+unsigned char* uavos::stream_webrtc::CVideoRecording::createBitmapInfoHeader (const uint&  height, const uint&  width)
 {
     static unsigned char infoHeader[] = {
         0,0,0,0, /// header size
@@ -128,16 +134,18 @@ unsigned char* uavos::stream_webrtc::CVideoRecording::createBitmapInfoHeader (in
         0,0,0,0, /// colors in color table
         0,0,0,0, /// important color count
     };
-
+    //https://stackoverflow.com/questions/26144955/after-writing-bmp-file-image-is-flipped-upside-down
+    // inverse height as data for somereason is comming reversed.
+    int h = -1 * height;
     infoHeader[ 0] = (unsigned char)(INFO_HEADER_SIZE);
     infoHeader[ 4] = (unsigned char)(width      );
     infoHeader[ 5] = (unsigned char)(width >>  8);
     infoHeader[ 6] = (unsigned char)(width >> 16);
     infoHeader[ 7] = (unsigned char)(width >> 24);
-    infoHeader[ 8] = (unsigned char)(height      );
-    infoHeader[ 9] = (unsigned char)(height >>  8);
-    infoHeader[10] = (unsigned char)(height >> 16);
-    infoHeader[11] = (unsigned char)(height >> 24);
+    infoHeader[ 8] = (unsigned char)(h);
+    infoHeader[ 9] = (unsigned char)(h >>  8);
+    infoHeader[10] = (unsigned char)(h >> 16);
+    infoHeader[11] = (unsigned char)(h >> 24);
     infoHeader[12] = (unsigned char)(1);
     infoHeader[14] = (unsigned char)(BYTES_PER_PIXEL*8);
 
@@ -148,34 +156,36 @@ unsigned char* uavos::stream_webrtc::CVideoRecording::createBitmapInfoHeader (in
 int  uavos::stream_webrtc::CVideoRecording::saveFrameAsRGB( webrtc::VideoFrame& frame)
 {
     
+    m_image_count--;
 
     // Check https://rawpixels.net/
-    size_t file_size = frame.width() * frame.height() * 3;
-    std::unique_ptr<uint8_t[]> res_rgb_buffer2(new uint8_t[file_size]);
+    size_t file_size = frame.width() * frame.height() * BYTES_PER_PIXEL;
+    std::unique_ptr<uint8_t[]> res_rgb_buffer(new uint8_t[file_size]);
     
+    // convert to RGB
     webrtc::ConvertFromI420(frame, webrtc::VideoType::kRGB24, 0,
-                                    res_rgb_buffer2.get());
+                                    res_rgb_buffer.get());
 
-    std::string output_file_name = m_image_file_name + std::to_string(frame.timestamp_us()) + ".bmp";
+    // choose file name
+    std::string output_file_name = "img_" + uavos::util::CHelper::getFileTimeStamp() + ".bmp";
     
+    // open file
     FILE* image_handler = fopen(output_file_name.c_str(), "wb");
 
+    // create BMP Header
     int widthInBytes = frame.width() * BYTES_PER_PIXEL;
-
     unsigned char padding[3] = {0, 0, 0};
     int paddingSize = (4 - (widthInBytes) % 4) % 4;
-
     int stride = (widthInBytes) + paddingSize;
-
-    
     unsigned char* fileHeader = createBitmapFileHeader(frame.height(), stride);
-    fwrite(fileHeader, 1, FILE_HEADER_SIZE, image_handler);
     unsigned char* infoHeader = createBitmapInfoHeader(frame.height(), frame.width());
+    
+    // write file header
+    fwrite(fileHeader, 1, FILE_HEADER_SIZE, image_handler);
     fwrite(infoHeader, 1, INFO_HEADER_SIZE, image_handler);
-
-    
-    
-    fwrite(res_rgb_buffer2.get(), 1, file_size, image_handler);
+  
+    // write image data
+    fwrite(res_rgb_buffer.get(), 1, file_size, image_handler);
 
     fclose(image_handler);
     return 0;

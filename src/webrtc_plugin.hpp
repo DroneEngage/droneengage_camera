@@ -50,10 +50,7 @@ class CWEBRTC_Plugin : public CCallbacks
     private:
         CWEBRTC_Plugin() {}                    // Constructor? (the {} brackets) are needed here.
 
-        // C++ 11
-        // =======
-        // We can use the better technique of deleting the methods
-        // we don't want.
+
     public:
         ~CWEBRTC_Plugin ();
         void initCameras(const bool singleCameraMode);
@@ -77,6 +74,14 @@ class CWEBRTC_Plugin : public CCallbacks
         void updateDeviceInfoByLocalName (const char* localName, const uavos::stream_webrtc::STRUCT_DEVICE_INFO &deviceInfo);
         void cleaning ();
 
+    public:
+        void processVideoRecording (const Json::Value &jMsg);
+        void startImageCapturing (const Json::Value &jMsg);
+            
+    protected:
+        void startVideoRecording (const Json::Value &jMsg);
+        void stopVideoRecording (const Json::Value &jMsg);
+            
     protected:
         void SendOffer (const std::string& senderPartyID, const std::string& sessionID, const std::string& channelNumber, const std::string& channelName);
         void ProcessAnswer (const std::string& senderPartyID, const std::string& sessionID, const std::string& channelNumber, const std::string& channelName, const Json::Value& packet);

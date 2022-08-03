@@ -1,5 +1,3 @@
-
-
 #ifndef VIDEORECORDER_H
 #define VIDEORECORDER_H
 
@@ -15,10 +13,10 @@ class  CVideoRecording
         
     public:
 
-        bool startRecording(const std::string& file_name);
+        bool startRecording();
         bool isRecording();
         bool stopRecording();
-        bool screenShot(const std::string file_name, const uint &image_cound, const uint &image_duration);
+        bool screenShot(const uint &image_count, const uint &image_duration);
     
     protected:
         int printPlane(const uint8_t* buf,
@@ -31,20 +29,20 @@ class  CVideoRecording
 
     protected:
         bool m_is_video_recording = false;
-        uint m_image_count = 2;
+        uint m_image_count = 0;
         uint m_image_duration;
-        std::string m_image_file_name;
         std::string m_video_file_name;
         FILE *m_video_handler = nullptr;
 
     private:
-        unsigned char* createBitmapFileHeader (int height, int stride);
-        unsigned char* createBitmapInfoHeader (int height, int width);
+        unsigned char* createBitmapFileHeader (const uint& height, const uint& stride);
+        unsigned char* createBitmapInfoHeader (const uint&  height, const uint&  width);
 
 
     private:
         webrtc::Mutex lock_;
-        
+        uavos::util::CTimer m_timer_video;
+        uavos::util::CTimer m_timer_image;
 };
 
 

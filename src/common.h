@@ -66,6 +66,7 @@
 typedef void (*SENDJMSG_CALLBACK)(const char * senderPartyID, const Json::Value&);
 
 #include "util/helper.hpp"
+#include "util/timer.hpp"
 #include "messages.hpp"
 #include "configFile.hpp"
 #include "webrtc_callback.hpp"

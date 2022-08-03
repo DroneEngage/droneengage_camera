@@ -302,7 +302,7 @@ void onReceive (const char * jsonMessage, int len)
                 case TYPE_AndruavResala_Ctrl_Camera:
                 {
                         const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-                        cVideoRecorder->startImageCapturing(jMsg);
+                        cWEBRTC_Plugin->startImageCapturing(jMsg);
                         
                 }
                 break;
@@ -322,7 +322,7 @@ void onReceive (const char * jsonMessage, int len)
                                                 // cannot send this command as broadcast.
                                                 return ;                                        
                                         }
-                                        cVideoRecorder->processVideoRecording(jMsg);   
+                                        cWEBRTC_Plugin->processVideoRecording(jMsg);   
                                         ((CUDPClient *)cUDPClient)->SetJSONID (createJSONID(false));
                                 break;
                                 
