@@ -40,7 +40,8 @@ class  CVideoRecording
 
 
     private:
-        webrtc::Mutex lock_;
+        webrtc::Mutex m_lock_video;
+        webrtc::Mutex m_lock_image;
         uavos::util::CTimer m_timer_video;
         uavos::util::CTimer m_timer_image;
 };

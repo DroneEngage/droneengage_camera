@@ -14,9 +14,11 @@ class CTimer
     public:
         CTimer() : m_begin(m_clock::now()) {}
         inline void reset() { m_begin = m_clock::now(); }
-        inline  double elapsed() const { 
+        inline  double elapsed_milli() const { 
             return std::chrono::duration_cast<m_milli_second>
                 (m_clock::now() - m_begin).count(); }
+
+        
 
     private:
         typedef std::chrono::high_resolution_clock m_clock;

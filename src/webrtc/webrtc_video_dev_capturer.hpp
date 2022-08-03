@@ -41,7 +41,7 @@ class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::Video
     public:
         bool StartCapture();
         bool StopCapture();
-           
+        bool isCapturing() { return m_Capturer->CaptureStarted();}    
     
     public:
         // rtc::VideoSourceInterface

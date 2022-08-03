@@ -17,7 +17,7 @@ bool uavos::stream_webrtc::CVideoRecording::startRecording()
     m_timer_video.reset();
     stopRecording();
     
-    webrtc::MutexLock lock(&lock_);
+    webrtc::MutexLock lock(&m_lock_video);
     std::time_t time_stamp;
     time_stamp = std::time(nullptr);
     m_video_file_name = "v_" + uavos::util::CHelper::getFileTimeStamp() + ".yuv";
@@ -31,7 +31,7 @@ bool uavos::stream_webrtc::CVideoRecording::startRecording()
 
 bool uavos::stream_webrtc::CVideoRecording::stopRecording()
 {
-    webrtc::MutexLock lock(&lock_);
+    webrtc::MutexLock lock(&m_lock_video);
     m_is_video_recording = false;
     if (m_video_handler != nullptr)
     {
@@ -46,8 +46,10 @@ bool uavos::stream_webrtc::CVideoRecording::stopRecording()
 
 bool uavos::stream_webrtc::CVideoRecording::screenShot(const uint &image_count, const uint &image_duration)
 {
+    webrtc::MutexLock lock(&m_lock_image);
     m_image_count     = image_count;
-    m_image_duration  = image_duration;
+    m_image_duration  = image_duration * 1000; // convert to ms
+    m_timer_image.reset();
     return true;
 }
 
@@ -67,11 +69,11 @@ int uavos::stream_webrtc::CVideoRecording::printPlane(const uint8_t* buf,
 int uavos::stream_webrtc::CVideoRecording::printVideoFrame(const webrtc::VideoFrame& frame) 
 {
     
-    if (m_timer_video.elapsed() < 100) return 0;
+    if (m_timer_video.elapsed_milli() < 100) return 0;
 
     m_timer_video.reset();
     
-    webrtc::MutexLock lock(&lock_);
+    webrtc::MutexLock lock(&m_lock_video);
     if (!m_is_video_recording) return 0;
 
     if (m_video_handler == nullptr) return -1;
@@ -156,6 +158,27 @@ unsigned char* uavos::stream_webrtc::CVideoRecording::createBitmapInfoHeader (co
 int  uavos::stream_webrtc::CVideoRecording::saveFrameAsRGB( webrtc::VideoFrame& frame)
 {
     
+    webrtc::MutexLock lock(&m_lock_image);
+
+    if (m_image_count<=0)
+    {
+        return 0;
+    }
+  
+    #ifdef DEBUG
+    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: m_image_count: " << std::to_string(m_image_count) << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif  
+        
+    if ((m_image_duration!=0) && (m_timer_image.elapsed_milli() < m_image_duration))
+    {
+        // too soon. wait more time.
+        return 0;
+    }
+    m_timer_image.reset();
+    #ifdef DEBUG
+    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: m_image_duration: " << std::to_string(m_image_duration) <<  _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif  
+    
     m_image_count--;
 
     // Check https://rawpixels.net/
@@ -167,7 +190,7 @@ int  uavos::stream_webrtc::CVideoRecording::saveFrameAsRGB( webrtc::VideoFrame& 
                                     res_rgb_buffer.get());
 
     // choose file name
-    std::string output_file_name = "img_" + uavos::util::CHelper::getFileTimeStamp() + ".bmp";
+    std::string output_file_name = "img_" + uavos::util::CHelper::getFileTimeStamp() + "_" + std::to_string(m_image_count) + ".bmp";
     
     // open file
     FILE* image_handler = fopen(output_file_name.c_str(), "wb");

@@ -692,6 +692,10 @@ void uavos::CWEBRTC_Plugin::startVideoRecording (const Json::Value &jMsg)
         return;
     }
     
+    if (!device_info.capturer->isCapturing())
+    {
+        device_info.capturer->StartCapture();
+    }
     std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera Found " << channelName.c_str() << _NORMAL_CONSOLE_TEXT_ << std::endl;
     const bool res = device_info.capturer.get()->startRecording();
     device_info.recordFileTimeStamp = uavos::util::CHelper::getFileTimeStamp();
@@ -740,7 +744,10 @@ void uavos::CWEBRTC_Plugin::startImageCapturing (const Json::Value &jMsg)
             std::cout << __FULL_DEBUG__  << std::to_string(numberOfImages)  << ":" << std::to_string(timeBetweenShots) << std::endl;
             std::cout << __FULL_DEBUG__  << _SUCCESS_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera Found " << channelName.c_str() << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
-
+    if (!device_info.capturer->isCapturing())
+    {
+        device_info.capturer->StartCapture();
+    }
     device_info.capturer.get()->screenShot(numberOfImages,timeBetweenShots);
     device_info.recordFileTimeStamp = uavos::util::CHelper::getFileTimeStamp();
     updateDeviceInfoByLocalName(channelName.c_str(), device_info);

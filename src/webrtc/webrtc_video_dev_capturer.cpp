@@ -154,13 +154,10 @@ void uavos::stream_webrtc::VideoDevCapturerComposite::OnFrame(const webrtc::Vide
     printVideoFrame (frame);
   }
 
-  if (m_image_count>0)
-  {
     // save image if needed
-    saveFrameAsRGB(frame);
+  saveFrameAsRGB(frame);
     
-  }
-
+  
   if (!m_once)
   {
     std::cout <<"VideoDevCapturerComposite::onFrame" << std::endl;
