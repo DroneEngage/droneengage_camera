@@ -20,9 +20,9 @@ class  CVideoRecording
     
     protected:
         int printPlane(const uint8_t* buf,
-               int width,
-               int height,
-               int stride);
+               const int& width,
+               const int& height,
+               const int& stride);
         int printVideoFrame(const webrtc::VideoFrame& frame);
         int saveFrameAsRGB(webrtc::VideoFrame& frame);
 
@@ -40,6 +40,9 @@ class  CVideoRecording
 
 
     private:
+        uint m_frame_duration = 100;
+        const uint m_fps = 10; 
+        bool m_video_file_header_written = false;
         webrtc::Mutex m_lock_video;
         webrtc::Mutex m_lock_image;
         uavos::util::CTimer m_timer_video;

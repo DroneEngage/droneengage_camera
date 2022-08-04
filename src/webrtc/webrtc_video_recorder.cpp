@@ -17,12 +17,15 @@ bool uavos::stream_webrtc::CVideoRecording::startRecording()
     m_timer_video.reset();
     stopRecording();
     
-    webrtc::MutexLock lock(&m_lock_video);
+
+    webrtc::MutexLock lock(&m_lock_video); // should be after stop recording as stoprecording uses same lock.
+
     std::time_t time_stamp;
     time_stamp = std::time(nullptr);
-    m_video_file_name = "v_" + uavos::util::CHelper::getFileTimeStamp() + ".yuv";
+    m_video_file_name = "v_" + uavos::util::CHelper::getFileTimeStamp() + ".y4m";
     m_video_handler = fopen(m_video_file_name.c_str(), "wb");
     
+    m_video_file_header_written = false;
     m_is_video_recording = true;
 
     return true;
@@ -32,12 +35,15 @@ bool uavos::stream_webrtc::CVideoRecording::startRecording()
 bool uavos::stream_webrtc::CVideoRecording::stopRecording()
 {
     webrtc::MutexLock lock(&m_lock_video);
-    m_is_video_recording = false;
+
     if (m_video_handler != nullptr)
     {
         fclose(m_video_handler);
         m_video_handler= nullptr;
     }
+
+    m_is_video_recording = false;
+    m_video_file_header_written = false;
     
     return true;
 }
@@ -55,9 +61,9 @@ bool uavos::stream_webrtc::CVideoRecording::screenShot(const uint &image_count, 
 
 
 int uavos::stream_webrtc::CVideoRecording::printPlane(const uint8_t* buf,
-               int width,
-               int height,
-               int stride) {
+               const int& width,
+               const int& height,
+               const int& stride) {
     for (int i = 0; i < height; i++, buf += stride) {
         if (fwrite(buf, 1, width, m_video_handler) != static_cast<unsigned int>(width))
         return -1;
@@ -69,7 +75,7 @@ int uavos::stream_webrtc::CVideoRecording::printPlane(const uint8_t* buf,
 int uavos::stream_webrtc::CVideoRecording::printVideoFrame(const webrtc::VideoFrame& frame) 
 {
     
-    if (m_timer_video.elapsed_milli() < 100) return 0;
+    if (m_timer_video.elapsed_milli() < m_frame_duration) return 0;
 
     m_timer_video.reset();
     
@@ -79,11 +85,27 @@ int uavos::stream_webrtc::CVideoRecording::printVideoFrame(const webrtc::VideoFr
     if (m_video_handler == nullptr) return -1;
     
     webrtc::I420BufferInterface &frame_I420 = *frame.video_frame_buffer()->ToI420();
-    int width = frame_I420.width();
-    int height = frame_I420.height();
-    int chroma_width = frame_I420.ChromaWidth();
-    int chroma_height = frame_I420.ChromaHeight();
+    const int width = frame_I420.width();
+    const int height = frame_I420.height();
+    const int chroma_width = frame_I420.ChromaWidth();
+    const int chroma_height = frame_I420.ChromaHeight();
 
+    if (!m_video_file_header_written)
+    {   
+        
+        std::string helper_file = m_video_file_name + ".hlp";
+        FILE *fp = fopen(helper_file.c_str(), "wb");
+        fprintf(fp,"vlc --demux rawvideo --rawvid-fps %d  --rawvid-width %d --rawvid-height %d --rawvid-chroma  I420 %s \n",m_fps, width, height, m_video_file_name.c_str());
+        fclose(fp);
+
+        fprintf(m_video_handler, "YUV4MPEG2 W%d H%d F%d:1 C420\n", width, height,
+          m_fps);
+        
+
+        m_video_file_header_written = true;
+    }
+
+    fprintf(m_video_handler, "FRAME\n");
     if (printPlane(frame_I420.DataY(), width, height, frame_I420.StrideY()) < 0) {
         return -1;
     }
@@ -93,7 +115,7 @@ int uavos::stream_webrtc::CVideoRecording::printVideoFrame(const webrtc::VideoFr
     if (printPlane(frame_I420.DataV(), chroma_width, chroma_height, frame_I420.StrideV()) < 0) {
         return -1;
     }
-
+    fflush(m_video_handler);
     return 0;
 }
 
