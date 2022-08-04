@@ -748,7 +748,7 @@ void uavos::CWEBRTC_Plugin::startImageCapturing (const Json::Value &jMsg)
     {
         device_info.capturer->StartCapture();
     }
-    device_info.capturer.get()->screenShot(numberOfImages,timeBetweenShots);
+    device_info.capturer.get()->takeImage(numberOfImages,timeBetweenShots);
     device_info.recordFileTimeStamp = uavos::util::CHelper::getFileTimeStamp();
     updateDeviceInfoByLocalName(channelName.c_str(), device_info);
     

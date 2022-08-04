@@ -50,7 +50,7 @@ bool uavos::stream_webrtc::CVideoRecording::stopRecording()
 
 
 
-bool uavos::stream_webrtc::CVideoRecording::screenShot(const uint &image_count, const uint &image_duration)
+bool uavos::stream_webrtc::CVideoRecording::takeImage(const uint &image_count, const uint &image_duration)
 {
     webrtc::MutexLock lock(&m_lock_image);
     m_image_count     = image_count;

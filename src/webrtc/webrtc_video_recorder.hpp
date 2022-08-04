@@ -16,7 +16,7 @@ class  CVideoRecording
         bool startRecording();
         bool isRecording();
         bool stopRecording();
-        bool screenShot(const uint &image_count, const uint &image_duration);
+        bool takeImage(const uint &image_count, const uint &image_duration);
     
     protected:
         int printPlane(const uint8_t* buf,
@@ -41,7 +41,7 @@ class  CVideoRecording
 
     private:
         uint m_frame_duration = 100;
-        const uint m_fps = 10; 
+        uint m_fps = 10; 
         bool m_video_file_header_written = false;
         webrtc::Mutex m_lock_video;
         webrtc::Mutex m_lock_image;
