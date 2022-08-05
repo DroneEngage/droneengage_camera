@@ -14,7 +14,7 @@
 using namespace uavos;
 
 
-std::time_t time_stamp;
+std::time_t instance_time_stamp;
 
 // UAVOS Current PartyID read from communicator
 std::string  PartyID;
@@ -147,7 +147,7 @@ void initArguments (int argc, char *argv[])
  **/
 void init (int argc, char *argv[]) 
 {
-        time_stamp = std::time(nullptr);
+        instance_time_stamp = std::time(nullptr);
         
         initArguments (argc, argv);
 
@@ -165,7 +165,7 @@ void init (int argc, char *argv[])
         std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "UAVOS Plugin Module: " << _SUCCESS_CONSOLE_BOLD_TEXT_ <<  ModuleID << _NORMAL_CONSOLE_TEXT_ << std::endl;
         std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "Class Type: " << _SUCCESS_CONSOLE_BOLD_TEXT_<< "camera" << _NORMAL_CONSOLE_TEXT_ << std::endl;
 
-        std::cout << std::asctime(std::localtime(&time_stamp)) << time_stamp << " seconds since the Epoch" << std::endl;
+        std::cout << std::asctime(std::localtime(&instance_time_stamp)) << instance_time_stamp << " seconds since the Epoch" << std::endl;
         
         // INIT WEBRTC
         cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
@@ -233,7 +233,7 @@ const Json::Value createJSONID (bool reSend)
         
         MESSAGE_FILTER.append(TYPE_AndruavMessage_RemoteExecute);
         MESSAGE_FILTER.append(TYPE_AndruavMessage_Signaling);
-        MESSAGE_FILTER.append(TYPE_AndruavResala_Ctrl_Camera);
+        MESSAGE_FILTER.append(TYPE_AndruavMessage_Ctrl_Cameras);
 
         const Json::Value& jsonConfig = cConfigFile->GetConfigJSON();
         
@@ -252,7 +252,7 @@ const Json::Value createJSONID (bool reSend)
         ms[JSON_INTERMODULE_MODULE_KEY] = jsonConfig["module_key"];
         ms["m"] = cameraList;
         ms[JSON_INTERMODULE_RESEND] = reSend;
-        ms[JSON_INTERMODULE_TIMESTAMP_INSTANCE]     = Json::Int64(time_stamp);
+        ms[JSON_INTERMODULE_TIMESTAMP_INSTANCE]     = Json::Int64(instance_time_stamp);
 
         jsonID[ANDRUAV_PROTOCOL_MESSAGE_CMD] = ms;
                         
@@ -273,32 +273,36 @@ void onReceive (const char * jsonMessage, int len)
         
         reader.parse(jsonMessage, jMsg);
 
+        int messageType = jMsg[ANDRUAV_PROTOCOL_MESSAGE_TYPE].asInt();
+                
         if (std::strcmp(jMsg[INTERMODULE_COMMAND_TYPE].asCString(),CMD_TYPE_INTERMODULE)==0)
         {
-                const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-                const Json::Value moduleID = cmd ["f"]; // ex: "f":{"gr":"1","sd":"pad_uavos_os"}
-                PartyID = std::string(moduleID[ANDRUAV_PROTOCOL_SENDER].asCString());
-                GroupID = std::string(moduleID[ANDRUAV_PROTOCOL_GROUP_ID].asCString());
+                if (messageType == TYPE_AndruavModule_ID)
+                {
+                        const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
+                        const Json::Value moduleID = cmd ["f"]; // ex: "f":{"gr":"1","sd":"pad_uavos_os"}
+                        PartyID = std::string(moduleID[ANDRUAV_PROTOCOL_SENDER].asCString());
+                        GroupID = std::string(moduleID[ANDRUAV_PROTOCOL_GROUP_ID].asCString());
 
-                if (!bFirstReceived)
-                { 
-                        // tell server you dont need to send ID again (z=false).
-                        std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << "Communicator Server Found " <<  _NORMAL_CONSOLE_TEXT_ << std::endl;
-                        cUDPClient->SetJSONID (createJSONID(false));
-                        bFirstReceived = true;
+                        if (!bFirstReceived)
+                        { 
+                                // tell server you dont need to send ID again (z=false).
+                                std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << "Communicator Server Found " <<  _NORMAL_CONSOLE_TEXT_ << std::endl;
+                                cUDPClient->SetJSONID (createJSONID(false));
+                                bFirstReceived = true;
+                        }
+                        return ;
                 }
-                return ;
         }
 
-        int messageType = jMsg[ANDRUAV_PROTOCOL_MESSAGE_TYPE].asInt();
         std::cout << "messageType: " << messageType << std::endl;
         switch (messageType)
         {
-                case TYPE_AndruavResala_Ctrl_Camera:
+                case TYPE_AndruavMessage_Ctrl_Cameras:
                 {
                         const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
                         cWEBRTC_Plugin->startImageCapturing(jMsg);
-                        
+                        std::cout << "startImageCapturing" << std::endl;
                 }
                 break;
 
