@@ -39,6 +39,7 @@ void uavos::CWEBRTC_Plugin::initCameras(const bool singleCameraMode)
     // get all devices available.
     uavos::stream_webrtc::CSource::GetDevices(m_videoDeviceInfoList,m_actualVideoSourcesCount);
 
+    // Write Available Camera(s) in Console.
     for (uint i=0; i<m_actualVideoSourcesCount; ++i)
     {
         m_videoDeviceInfoList[i].selected = false;
@@ -560,14 +561,17 @@ bool uavos::CWEBRTC_Plugin::eraseSessionInfoBySessionID (const char* sessionID)
 }
 
 
-uavos::stream_webrtc::STRUCT_DEVICE_INFO uavos::CWEBRTC_Plugin::findDeviceInfoByLocalName (const char* localName)
+uavos::stream_webrtc::STRUCT_DEVICE_INFO uavos::CWEBRTC_Plugin::findDeviceInfoByLocalName (const std::string& localName)
 {
     
     for(std::vector<uavos::stream_webrtc::STRUCT_DEVICE_INFO>::iterator it = m_videoDeviceInfoList.begin(); it != m_videoDeviceInfoList.end(); ++it) 
     {
-        
         uavos::stream_webrtc::STRUCT_DEVICE_INFO deviceInfo = *it;
-        if (deviceInfo.unique_name.compare(localName) == 0 )
+        if (localName.empty())
+        {   // return first available camera if no camera is specified.
+            return deviceInfo;
+        }
+        if (deviceInfo.unique_name.compare(localName.c_str()) == 0 )
         {
             std::cout << __FULL_DEBUG__ << deviceInfo.unique_name << std::endl;
             return deviceInfo;
@@ -723,11 +727,11 @@ void uavos::CWEBRTC_Plugin::startImageCapturing (const Json::Value &jMsg)
     cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
 
     const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-    const std::string channelName = cmd["a"].asString();
+    std::string channelName = cmd["a"].asString(); // empty ""  means first available camera 
     const int numberOfImages = cmd["b"].asInt();
     const int timeBetweenShots = cmd["c"].asInt();
     //const int distanceBetweenShots = cmd["d"].asInt();  // NOT SUPPORTED
-    std::cout << __FULL_DEBUG__  << "CHannel:" << channelName << std::endl;
+    std::cout << __FULL_DEBUG__  << "Channel:" << channelName << std::endl;
     
     uavos::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
     if (device_info.device_num == -1)
@@ -757,9 +761,6 @@ void uavos::CWEBRTC_Plugin::startImageCapturing (const Json::Value &jMsg)
     //std::cout << __FULL_DEBUG__  << _SUCCESS_CONSOLE_BOLD_TEXT_ << "RecordCMD:"  << recCommand.str() << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 
-    
-    cWEBRTC_Plugin->updateDeviceInfoByLocalName(channelName.c_str(), device_info);
-    
     return;
 }
 

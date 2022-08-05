@@ -70,7 +70,7 @@ class CWEBRTC_Plugin : public CCallbacks
 
 
     public:
-        uavos::stream_webrtc::STRUCT_DEVICE_INFO findDeviceInfoByLocalName (const char * localName);
+        uavos::stream_webrtc::STRUCT_DEVICE_INFO findDeviceInfoByLocalName (const std::string& localName);
         void updateDeviceInfoByLocalName (const char* localName, const uavos::stream_webrtc::STRUCT_DEVICE_INFO &deviceInfo);
         void cleaning ();
 

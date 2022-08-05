@@ -111,8 +111,8 @@ int uavos::stream_webrtc::CSource::GetDevices (std::vector<STRUCT_DEVICE_INFO> &
         if (video_info->GetDeviceName(i, name, kSize, id, kSize, pid, kSize) != -1) 
         {
             deviceInfo.device_num   = i; 
-            deviceInfo.device_name  = std::string( name );
-            deviceInfo.device_id    = std::string( id );
+            deviceInfo.device_name  = std::string( name ); //e.g. "Dummy video device (0x0000)"
+            deviceInfo.device_id    = std::string( id );   //e.g  "platform:v4l2loopback-000"
             deviceInfo.product_id   = std::string( pid );
             deviceInfo.local_name   = std::string( name ) + "#" + std::to_string(i); // id is added as similar cameras have similar names.
             deviceInfo.unique_name  = uavos::util::CHelper::getShortSemiGUID();
