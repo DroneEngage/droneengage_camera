@@ -17,9 +17,9 @@
 
 
 
-#define TYPE_AndruavMessage_RemoteExecute   1005
-#define TYPE_AndruavMessage_Signaling       1021
-#define TYPE_AndruavResala_Ctrl_Camera      1041    
+#define TYPE_AndruavMessage_RemoteExecute       1005
+#define TYPE_AndruavMessage_Signaling           1021
+#define TYPE_AndruavMessage_Ctrl_Cameras        1041    
 
 
 #define TYPE_AndruavModule_ID   9100
