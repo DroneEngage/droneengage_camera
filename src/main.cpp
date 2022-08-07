@@ -302,6 +302,7 @@ void onReceive (const char * jsonMessage, int len)
                 {
                         const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
                         cWEBRTC_Plugin->startImageCapturing(jMsg);
+                        cUDPClient->SetJSONID (createJSONID(false));
                 }
                 break;
 
