@@ -12,6 +12,19 @@ const int BYTES_PER_PIXEL = 3; /// red, green, & blue
 const int FILE_HEADER_SIZE = 14;
 const int INFO_HEADER_SIZE = 40;
 
+const std::string uavos::stream_webrtc::CVideoRecording::getMediaFolderPath() const
+{
+    Json::Value& jsonConfig = CConfigFile::getInstance().GetConfigJSON();
+    if (jsonConfig.isMember("media_folder") == false) 
+    {
+        return std::string();
+    }
+    
+    const std::string file_path = jsonConfig["media_folder"].asString() + "/";
+   
+    return file_path;
+}
+
 bool uavos::stream_webrtc::CVideoRecording::startRecording()
 {
     m_timer_video.reset();
@@ -22,7 +35,7 @@ bool uavos::stream_webrtc::CVideoRecording::startRecording()
 
     std::time_t time_stamp;
     time_stamp = std::time(nullptr);
-    m_video_file_name = "v_" + uavos::util::CHelper::getFileTimeStamp() + ".y4m";
+    m_video_file_name = getMediaFolderPath() + "v_" + uavos::util::CHelper::getFileTimeStamp() + ".y4m";
     m_video_handler = fopen(m_video_file_name.c_str(), "wb");
     
     m_video_file_header_written = false;
@@ -212,7 +225,7 @@ int  uavos::stream_webrtc::CVideoRecording::saveFrameAsRGB( webrtc::VideoFrame& 
                                     res_rgb_buffer.get());
 
     // choose file name
-    std::string output_file_name = "img_" + uavos::util::CHelper::getFileTimeStamp() + "_" + std::to_string(m_image_count) + ".bmp";
+    std::string output_file_name =  getMediaFolderPath() + "img_" + uavos::util::CHelper::getFileTimeStamp() + "_" + std::to_string(m_image_count) + ".bmp";
     
     // open file
     FILE* image_handler = fopen(output_file_name.c_str(), "wb");

@@ -13,61 +13,22 @@
     //"camera_end_index"          :10, 
     "one_session_per_camera"    : true,
       "camera_list": [
-        {"name": "AI1", "device_num": 0}
+        {"name": "AI1", "device_num": 0} // name should be unique across all cameras.
         ,{"name": "AI2", "device_num": 1}
         //
         //,{"name": "WCAM", "device_num": 20}
       ],
-    
+
+    //optional entry used to store video and images.
+    "media_folder": "/home/mhefny",
+
     //"codecs": ["VP8", "VP9", "H264"],
     "codecs": ["VP9","H264"],
     "iphone": true,
 
     "iceServers": [ 
-        //{"urls": "stun:192.168.1.144:33479"}
-        //{"urls": "turn:192.168.1.144:33479"},
-        {"urls": "stun:167.114.113.48:3478"},
+        {"urls": "stun:airgap.droneengage.com:3478","username":"airgap","password":"1234"},
         {"urls": "turn:167.114.113.48:3478","username":"andruav","password":"1234"}
-        // // {"urls": "stun:stun.services.mozilla.com"}
-        //{"urls": "stun:stun1.l.google.com:19302"},
-        //{"urls": "stun:stun3.l.google.com:19302"},
-        //{"urls": "stun:stun4.l.google.com:19302"}
-        // {"urls": "stun:23.21.150.121"},
-        // {"urls": "stun:stunprotocol.org:3478"},
-        // {"urls": "stun:stun01.sipphone.com"},
-        // {"urls": "stun:stun.ekiga.net"},
-        // {"urls": "stun:stun.fwdnet.net"},
-        // {"urls": "stun:stun.ideasip.com"},
-        // {"urls": "stun:stun.iptel.org"},
-        // {"urls": "stun:stun.rixtelecom.se"},
-        // {"urls": "stun:stun.schlund.de"},
-        // {"urls": "stun:stunserver.org"},
-        // {"urls": "stun:stun.softjoys.com"},
-        // {"urls": "stun:stun.voiparound.com"},
-        // {"urls": "stun:stun.voipbuster.com"},
-        // {"urls": "stun:stun.voipstunt.com"},
-        // {"urls": "stun:stun.voxgratia.org"},
-        // {"urls": "stun:stun.services.mozilla.com"},
-        // {"urls": "stun:stun1.l.google.com:19302"},
-        // {"urls": "stun:stun2.l.google.com:19302"},
-        // {"urls": "stun:stun3.l.google.com:19302"},
-        // {"urls": "stun:stun4.l.google.com:19302"},
-        // {"urls": "stun:23.21.150.121"},
-        // {"urls": "stun:stunprotocol.org:3478"},
-        // {"urls": "stun:stun01.sipphone.com"},
-        // {"urls": "stun:stun.ekiga.net"},
-        // {"urls": "stun:stun.fwdnet.net"},
-        // {"urls": "stun:stun.ideasip.com"},
-        // {"urls": "stun:stun.iptel.org"},
-        // {"urls": "stun:stun.rixtelecom.se"},
-        // {"urls": "stun:stun.schlund.de"},
-        // {"urls": "stun:stunserver.org"},
-        // {"urls": "stun:stun.softjoys.com"},
-        // {"urls": "stun:stun.voiparound.com"},
-        // {"urls": "stun:stun.voipbuster.com"},
-        // {"urls": "stun:stun.voipstunt.com"},
-        // {"urls": "stun:stun.voxgratia.org"},
-        // {"urls": "stun:stun.xten.com"}
         ]
 
 }

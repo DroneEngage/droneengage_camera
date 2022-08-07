@@ -38,6 +38,9 @@ class  CVideoRecording
         unsigned char* createBitmapFileHeader (const uint& height, const uint& stride);
         unsigned char* createBitmapInfoHeader (const uint&  height, const uint&  width);
 
+    private:
+        const std::string getMediaFolderPath() const;
+
 
     private:
         uint m_frame_duration = 100;
