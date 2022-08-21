@@ -2,7 +2,7 @@
     "module_id"                 : "HorusEyeLAB1",
     "module_key"                : "E289FEE7-CDAD-44EF-A257-C9A36KDD6BX7", 
     /* UAVOS Communication Server */
-    "s2s_udp_target_ip"           : "192.168.1.144",
+    "s2s_udp_target_ip"           : "192.168.1.125", //"192.168.1.144",
     "s2s_udp_target_port"         : "60000", 
     "s2s_udp_listening_ip"        : "192.168.1.144", 
     "s2s_udp_listening_port"      : "60029",
@@ -18,9 +18,9 @@
       ],
     
     //optional entry used to store video and images.
-    "media_folder": "/home/mhefny",
+    "media_folder": ".",
     "media_image_jpg": false,
-    "send_image_gcs": true,
+    "send_image_gcs": false,
 
     //"codecs": ["VP8", "VP9", "H264"],
     "codecs": ["VP9","H264"],

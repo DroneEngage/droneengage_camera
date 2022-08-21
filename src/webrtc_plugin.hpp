@@ -92,7 +92,7 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         void startImageCapturing (const Json::Value &jMsg);
 
     public: 
-        void onImageRecorded(std::string output_file_name) override ;
+        void onImageRecorded(std::string output_file_name, bool send_image_gcs) override ;
         void onVideoStarted() override ;
         void onVideoStopped() override ;
 

@@ -1,5 +1,6 @@
 
 #include "common.h"
+#include <fstream>
 
 
 
@@ -814,7 +815,7 @@ Json::Value uavos::CWEBRTC_Plugin::getDeviceListAsJSON ()
 }
 
 
-void uavos::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name)
+void uavos::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name, bool send_image_gcs)
 {
     #ifdef DEBUG
     std::cout << _LOG_CONSOLE_TEXT << "DEBUG: onImageRecorded: " << output_file_name << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -822,18 +823,27 @@ void uavos::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name)
     
     if (!m_sendSignalJMSG) return ;
     
-     //FILE* output_file = fopen(filename, "wb+");
+    if (send_image_gcs)
+    {
+        std::ifstream rf(output_file_name, std::ios::out | std::ios::binary);
+        rf.seekg(0, std::ios::end);
+        size_t size = rf.tellg();
+        char * buffer_ptr = new char[size];
+        std::unique_ptr buffer= std::unique_ptr<char []> (buffer_ptr);
+        rf.seekg(0);
+        if(rf.read(buffer_ptr, size))
+            std::cout << "success"<< '\n';
 
-    Json::Value msg;
-    // uavos::STRUCT_SESSION_INFO sessionInfo = m_SessionMap[sessionID];
-    // packet["packet"]["sdp"] = sdp;
-    // packet["packet"]["type"] = type;
-    // packet["number"]  = PartyID; // sessionInfo.channelNumber;
-    // packet["channel"] = sessionInfo.channelName;
+        std::cout << _LOG_CONSOLE_TEXT << "DEBUG: onImageRecorded: " << output_file_name << ":" << std::to_string(size) << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        
+        m_sendBMSG ("",buffer_ptr,size,TYPE_AndruavMessage_IMG, true);
+        buffer.release();
+    }
+    else
+    {
+        m_sendBMSG ("",nullptr,0,TYPE_AndruavMessage_IMG, true);
+    }
     
-    // This is not an intermodule message.
-    // but is remaining location content will be added by communicator module
-    m_sendBMSG ("",nullptr,0,TYPE_AndruavMessage_IMG, false);
 }
 void uavos::CWEBRTC_Plugin::onVideoStarted()
 {

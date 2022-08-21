@@ -10,7 +10,7 @@ namespace stream_webrtc
 class CRecorderEvents
 {
     public:
-        virtual void onImageRecorded(std::string output_file_name){};
+        virtual void onImageRecorded(std::string output_file_name, bool send_image_gcs){};
         virtual void onVideoStarted(){};
         virtual void onVideoStopped(){};
 };
@@ -54,6 +54,7 @@ class  CVideoRecording
     private:
         const std::string getMediaFolderPath() const;
         const bool saveImageinJPG() const;
+        const bool sendImageToGCS() const;
 
     private:
         uint m_frame_duration = 100;

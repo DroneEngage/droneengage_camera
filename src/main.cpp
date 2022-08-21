@@ -90,7 +90,7 @@ void sendJMSG (
     {
         // this is an internal message, should be processed and/or resent by communication module to other modules.
         msgRoutingType = CMD_TYPE_INTERMODULE;
-        ullMessage[INTERMODULE_MODULE_KEY]         = ModuleKey;
+        fullMessage[INTERMODULE_MODULE_KEY]         = ModuleKey;
     }
     else
     {
@@ -101,7 +101,7 @@ void sendJMSG (
     }
     
     fullMessage[ANDRUAV_PROTOCOL_TARGET_ID]         = targetPartyID; // targetID can exist even if routing is intermodule
-    fullMessage[INTERMODULE_COMMAND_TYPE]           = msgRoutingType;
+    fullMessage[INTERMODULE_ROUTING_TYPE]           = msgRoutingType;
     fullMessage[ANDRUAV_PROTOCOL_MESSAGE_TYPE]      = andruav_message_id;
     fullMessage[ANDRUAV_PROTOCOL_MESSAGE_CMD]       = jmsg;
     
@@ -144,7 +144,7 @@ void sendBMSG (
     }
     
     fullMessage[ANDRUAV_PROTOCOL_TARGET_ID]             = targetPartyID; // targetID can exist even if routing is intermodule
-    fullMessage[INTERMODULE_COMMAND_TYPE]               = std::string(msgRoutingType);
+    fullMessage[INTERMODULE_ROUTING_TYPE]               = std::string(msgRoutingType);
     fullMessage[ANDRUAV_PROTOCOL_MESSAGE_TYPE]          = andruav_message_id;
     std::string json_msg = fullMessage.toStyledString();
     
@@ -179,7 +179,7 @@ void sendSignallingJMSG (const char * senderPartyID, const Json::Value& jmsg)
     
     Json::Value webrtcMsg;
     sendJMSG (senderPartyID, jmsg,
-        TYPE_AndruavMessage_Signaling, true);
+        TYPE_AndruavMessage_Signaling, false);
 }
 
 
@@ -312,7 +312,7 @@ const std::string createJSONID (bool reSend)
     const Json::Value& jsonConfig = cConfigFile->GetConfigJSON();
     
     Json::Value jsonID;
-    jsonID[INTERMODULE_COMMAND_TYPE] =  CMD_TYPE_INTERMODULE;
+    jsonID[INTERMODULE_ROUTING_TYPE] =  CMD_TYPE_INTERMODULE;
     jsonID[ANDRUAV_PROTOCOL_MESSAGE_TYPE] =  TYPE_AndruavModule_ID;
     Json::Value ms;
     const Json::Value cameraList = cWEBRTC_Plugin->getDeviceListAsJSON();
@@ -349,7 +349,7 @@ void onReceive (const char * jsonMessage, int len)
 
     int andruav_message_id = jMsg[ANDRUAV_PROTOCOL_MESSAGE_TYPE].asInt();
         
-    if (std::strcmp(jMsg[INTERMODULE_COMMAND_TYPE].asCString(),CMD_TYPE_INTERMODULE)==0)
+    if (std::strcmp(jMsg[INTERMODULE_ROUTING_TYPE].asCString(),CMD_TYPE_INTERMODULE)==0)
     {
         if (andruav_message_id == TYPE_AndruavModule_ID)
         {

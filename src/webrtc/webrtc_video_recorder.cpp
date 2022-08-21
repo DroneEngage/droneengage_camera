@@ -49,6 +49,21 @@ const bool uavos::stream_webrtc::CVideoRecording::saveImageinJPG() const
 }
 
 
+const bool uavos::stream_webrtc::CVideoRecording::sendImageToGCS() const
+{
+    Json::Value& jsonConfig = CConfigFile::getInstance().GetConfigJSON();
+    if (jsonConfig.isMember("send_image_gcs") == false) 
+    {
+        return false;
+    }
+    
+    const bool use_jpeg = jsonConfig["send_image_gcs"].asBool();
+   
+    return use_jpeg;
+}
+
+
+
 bool uavos::stream_webrtc::CVideoRecording::startRecording()
 {
     m_timer_video.reset();
@@ -406,7 +421,7 @@ int  uavos::stream_webrtc::CVideoRecording::saveFrameAsRGB( webrtc::VideoFrame& 
         std::string file_name = output_file_name;
         if (m_recorder_events!= nullptr)
         {
-            m_recorder_events->onImageRecorded(file_name);
+            m_recorder_events->onImageRecorded(file_name, sendImageToGCS());
             return 0;
         }
         return 0;
