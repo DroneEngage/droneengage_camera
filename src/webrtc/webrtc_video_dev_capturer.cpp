@@ -155,8 +155,8 @@ void uavos::stream_webrtc::VideoDevCapturerComposite::OnFrame(const webrtc::Vide
   }
 
     // save image if needed
-  saveFrameAsRGB(frame);
-    
+    saveFrameAsJPG(frame);  
+    saveFrameAsRGB(frame);
   
   if (!m_once)
   {
@@ -166,10 +166,16 @@ void uavos::stream_webrtc::VideoDevCapturerComposite::OnFrame(const webrtc::Vide
 
   int cropped_width = 0;
   int cropped_height = 0;
-  int out_width = 160;
-  int out_height = 120;
+  int out_width = 640;
+  int out_height = 480;
 
   
+  if ((out_width>=frame.width()) || (out_height>=frame.height()))
+  {
+    m_broadCaster.OnFrame(frame);
+    return ;
+  }
+
   if (!m_videoAdapter.AdaptFrameResolution(
           frame.width(), frame.height(), frame.timestamp_us() * 1000,
           &cropped_width, &cropped_height, &out_width, &out_height)) 
@@ -241,8 +247,10 @@ rtc::VideoSinkWants uavos::stream_webrtc::VideoDevCapturerComposite::GetSinkWant
 void uavos::stream_webrtc::VideoDevCapturerComposite::AddOrUpdateSink( rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
                         const rtc::VideoSinkWants& wants) 
 {
+  #ifdef DEBUG
   std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "\r\n" << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: VideoDevCapturerComposite::AddOrUpdateSink" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    
+  #endif
+
   m_broadCaster.AddOrUpdateSink(sink, wants);
   UpdateVideoAdapter();
     
@@ -250,15 +258,16 @@ void uavos::stream_webrtc::VideoDevCapturerComposite::AddOrUpdateSink( rtc::Vide
 
 void uavos::stream_webrtc::VideoDevCapturerComposite::RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
   
+  #ifdef DEBUG
   std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "\r\n" << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: VideoDevCapturerComposite::RemoveSink" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    
+  #endif
+
   m_broadCaster.RemoveSink(sink);
   UpdateVideoAdapter();
 
 }
 
 void uavos::stream_webrtc::VideoDevCapturerComposite::UpdateVideoAdapter() {
-  
   // rtc::VideoSinkWants wants = m_broadCaster.wants();
   
   // m_videoAdapter.OnResolutionFramerateRequest(

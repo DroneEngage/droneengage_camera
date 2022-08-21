@@ -62,7 +62,10 @@
 #include "rtc_tools/video_file_writer.h"
 #include "global.h"
 
-typedef void (*SENDJMSG_CALLBACK)(const char * senderPartyID, const Json::Value&);
+typedef void (*SEND_SIGNAL_JMSG_CALLBACK)(const char * senderPartyID, const Json::Value&);
+typedef void (*SEND_JMSG_CALLBACK)(const std::string& targetPartyID, const Json::Value&, const int&, const bool& );
+typedef void (*SEND_BMSG_CALLBACK)(const std::string& targetPartyID, const char *, const int bmsg_length, const int& , const bool&);
+typedef void (*SEND_MREMSG_CALLBACK)(const int& );
 
 #include "util/helper.hpp"
 #include "util/timer.hpp"

@@ -5,16 +5,14 @@
 #include "common.h"
 #include "udpClient.hpp"
 
-using namespace uavos;
 
 #define MAXLINE 8192 
 char buffer[MAXLINE]; 
     
-CUDPClient::CUDPClient (const char * targetIP, int broadcatsPort, const char * host, int listenningPort)
+void uavos::comm::CUDPClient::init (const char * targetIP, int broadcatsPort, const char * host, int listenningPort)
 {
 
     // pthread initialization
-    m_threadSenderID =0l;
 	m_thread = pthread_self(); // get pthread ID
 	pthread_setschedprio(m_thread, SCHED_FIFO); // setting priority
 
@@ -52,26 +50,137 @@ CUDPClient::CUDPClient (const char * targetIP, int broadcatsPort, const char * h
     std::cout << "Expected Comm Server at " <<  _LOG_CONSOLE_TEXT_BOLD_ << targetIP << ":" <<  broadcatsPort << _NORMAL_CONSOLE_TEXT_ << std::endl;  
 }
 
-CUDPClient::~CUDPClient ()
+uavos::comm::CUDPClient::~CUDPClient ()
 {
     
-    pthread_join(m_threadSenderID, NULL); 	// close the thread
-	pthread_join(m_thread, NULL); 	// close the thread
-	close(m_SocketFD); 					// close UDP socket
-	delete m_ModuleAddress;
-    delete m_CommunicatorModuleAddress;
-    
+    #ifdef DEBUG
+	std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: ~CUDPClient" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+    if (m_stopped_called == false)
+    {
+        #ifdef DEBUG
+	    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: ~CUDPClient" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        #endif
+
+        stop();
+    }
+
+    #ifdef DEBUG
+	std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: ~CUDPClient" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+    // destroy mutex
+	//pthread_mutex_destroy(&m_lock);
+
+    #ifdef DEBUG
+	std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: ~CUDPClient" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
 }
 
-void CUDPClient::init ()
+void uavos::comm::CUDPClient::start ()
 {
     // call directly as we are already in a thread.
-    InternalReceiverEntry();
+    if (m_starrted == true)
+        throw "Starrted called twice";
+
+    startReceiver ();
+    startSenderID();
+
+    m_starrted = true;
 }
 
 
+void uavos::comm::CUDPClient::stop()
+{
 
-void CUDPClient::InternalReceiverEntry()
+    #ifdef DEBUG
+	std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: Stop" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+    m_stopped_called = true;
+
+    if (m_SocketFD != -1)
+    {
+        std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << "Close UDP Socket" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        //https://stackoverflow.com/questions/6389970/unblock-recvfrom-when-socket-is-closed
+        shutdown(m_SocketFD, SHUT_RDWR);
+    }
+    
+    #ifdef DEBUG
+	std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: Stop" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+    try
+    {
+        //pthread_join(m_threadSenderID, NULL); 	// close the thread
+        //pthread_join(m_threadCreateUDPSocket, NULL); 	// close the thread
+        if (m_starrted) 
+        {
+            m_threadCreateUDPSocket.join();
+            m_threadSenderID.join();
+        }
+        //pthread_join(m_thread, NULL); 	// close the thread
+        //close(m_SocketFD); 					// close UDP socket
+        delete m_ModuleAddress;
+        delete m_CommunicatorModuleAddress;
+
+        #ifdef DEBUG
+	    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: Stop" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        #endif
+    }
+    catch(const std::exception& e)
+    {
+        //std::cerr << e.what() << '\n';
+    }
+
+    #ifdef DEBUG
+	std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: Stop" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+    
+}
+
+
+void uavos::comm::CUDPClient::startReceiver ()
+{
+    m_threadCreateUDPSocket = std::thread {[&](){ InternalReceiverEntry(); }};
+}
+
+
+void uavos::comm::CUDPClient::startSenderID ()
+{
+    m_threadSenderID = std::thread {[&](){ InternelSenderIDEntry(); }};
+}
+
+/**
+ * Sending ID Periodically
+ **/
+void uavos::comm::CUDPClient::InternelSenderIDEntry()
+{
+
+    #ifdef DEBUG
+	std::cout << "InternelSenderIDEntry called" << std::endl; 
+    #endif
+
+    while (!m_stopped_called)
+    {   
+        if (m_JsonID.empty() == false)
+        {
+            //std::cout << m_JsonID.is_null() << " - " << m_JsonID.empty() << "-" << m_JsonID.is_string() << std::endl;
+            const std::string msg = m_JsonID;
+            sendMSG(msg.c_str(), msg.length());
+        }
+        sleep (1);
+    }
+
+    #ifdef DEBUG
+	std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: InternelSenderIDEntry EXIT" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+}
+
+void uavos::comm::CUDPClient::InternalReceiverEntry()
 {
     std::cout << "InternalReceiverEntry called" << std::endl; 
     
@@ -94,49 +203,38 @@ void CUDPClient::InternalReceiverEntry()
 /**
  * Store ID Card in JSON
  */
-void CUDPClient::SetJSONID (const Json::Value jsonID)
+void uavos::comm::CUDPClient::SetJSONID (std::string jsonID)
 {
     m_JsonID = jsonID;
 }
 
-void CUDPClient::SetMessageOnReceive (void (*onReceive)(const char *, int len))
+void uavos::comm::CUDPClient::SetMessageOnReceive (void (*onReceive)(const char *, int len))
 {
     m_OnReceive = onReceive;
-
-    if (m_threadSenderID == 0l)
-    {
-	    const bool bsend = (pthread_create(&m_threadSenderID, NULL, this->InternalSenderIDThreadEntryFunc, (void *) this) == 0);
-
-        if (!bsend)
-        {
-            perror("Error creating UDP SenderID thread\n");
-            exit(EXIT_FAILURE); 
-        }
-    }
-
 }
 
-/**
- * Sending ID Periodically
- **/
-void CUDPClient::InternelSenderIDEntry()
-{
-    std::cout << "InternelSenderIDEntry called" << std::endl; 
-    while (1)
-    {
-        SendJMSG(m_JsonID.toStyledString().c_str());
-        sleep (1);
-    }
-}
+// /**
+//  * Sending ID Periodically
+//  **/
+// void uavos::comm::CUDPClient::InternelSenderIDEntry()
+// {
+//     std::cout << "InternelSenderIDEntry called" << std::endl; 
+//     while (1)
+//     {
+//         const std::string& msg = m_JsonID.toStyledString();
+//         sendMSG(msg.c_str(), msg.length());
+//         sleep (1);
+//     }
+// }
 
 
-/**
- * Starts Sender function 
- **/
-void * CUDPClient::InternalSenderIDThreadEntryFunc(void * This) {
-	((CUDPClient *)This)->InternelSenderIDEntry(); 
-    return NULL;
-}
+// /**
+//  * Starts Sender function 
+//  **/
+// void * uavos::comm::CUDPClient::InternalSenderIDThreadEntryFunc(void * This) {
+// 	((CUDPClient *)This)->InternelSenderIDEntry(); 
+//     return NULL;
+// }
 
 
 
@@ -144,9 +242,26 @@ void * CUDPClient::InternalSenderIDThreadEntryFunc(void * This) {
 /**
  * Sends JMSG to Communicator
  **/
-void CUDPClient::SendJMSG(const std::string& jmsg)
+// void CUDPClient::SendJMSG(const std::string& jmsg)
+// {
+//     sendto(m_SocketFD, jmsg.c_str(), jmsg.size(),  
+//         MSG_CONFIRM, (const struct sockaddr *) m_CommunicatorModuleAddress, 
+//             sizeof(struct sockaddr_in)); 
+// }
+
+void uavos::comm::CUDPClient::sendMSG (const char * msg, const int length)
 {
-    sendto(m_SocketFD, jmsg.c_str(), jmsg.size(),  
-        MSG_CONFIRM, (const struct sockaddr *) m_CommunicatorModuleAddress, 
-            sizeof(struct sockaddr_in)); 
+    
+    try
+    {
+        sendto(m_SocketFD, msg, length,  
+            MSG_CONFIRM, (const struct sockaddr *) m_CommunicatorModuleAddress, 
+                sizeof(struct sockaddr_in));         
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
+
 }

@@ -21,7 +21,7 @@ struct session_info {
 
 typedef struct session_info STRUCT_SESSION_INFO;
 
-class CWEBRTC_Plugin : public CCallbacks
+class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
 {
 
 
@@ -62,12 +62,25 @@ class CWEBRTC_Plugin : public CCallbacks
 
         void ExecuteSignalCommand(const Json::Value& cmd);
 
-        void RegisterSendJMSG (SENDJMSG_CALLBACK sendJMSG)
+        void RegisterSendSignalJMSG (SEND_SIGNAL_JMSG_CALLBACK sendSignallingJMSG)
         {
-            m_sendJMSG = sendJMSG;
+            m_sendSignalJMSG = sendSignallingJMSG;
         }
 
+        void RegisterSendJMSG (SEND_JMSG_CALLBACK sendJMSG)
+        {
+            m_sendJMSG = sendJMSG;
+        };
+            
+        void RegisterSendBMSG (SEND_BMSG_CALLBACK sendBMSG)
+        {
+            m_sendBMSG = sendBMSG;
+        };
 
+        void RegisterSendMREMSG (SEND_MREMSG_CALLBACK sendMREMSG)
+        {
+            m_sendMREMSG = sendMREMSG;
+        };
 
     public:
         uavos::stream_webrtc::STRUCT_DEVICE_INFO findDeviceInfoByLocalName (const std::string& localName);
@@ -77,7 +90,12 @@ class CWEBRTC_Plugin : public CCallbacks
     public:
         void processVideoRecording (const Json::Value &jMsg);
         void startImageCapturing (const Json::Value &jMsg);
-            
+
+    public: 
+        void onImageRecorded(std::string output_file_name) override ;
+        void onVideoStarted() override ;
+        void onVideoStopped() override ;
+
     protected:
         void startVideoRecording (const Json::Value &jMsg);
         void stopVideoRecording (const Json::Value &jMsg);
@@ -112,7 +130,10 @@ class CWEBRTC_Plugin : public CCallbacks
         std::vector<uavos::stream_webrtc::STRUCT_DEVICE_INFO> m_audioDeviceInfoList;
 
         rtc::scoped_refptr <uavos::stream_webrtc::CUserMedia> m_connection ;
-        SENDJMSG_CALLBACK m_sendJMSG = NULL;
+        SEND_SIGNAL_JMSG_CALLBACK m_sendSignalJMSG = NULL;
+        SEND_JMSG_CALLBACK      m_sendJMSG = NULL;
+        SEND_BMSG_CALLBACK      m_sendBMSG = NULL;
+        SEND_MREMSG_CALLBACK    m_sendMREMSG = NULL;
 
         std::vector<std::string> deleteMe;
         

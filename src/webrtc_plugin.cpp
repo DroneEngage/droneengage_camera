@@ -151,9 +151,13 @@ void uavos::CWEBRTC_Plugin::addCameraByRange(int startVideoIndex, int endVideoIn
  */
 void uavos::CWEBRTC_Plugin::OnLocalSdpReadytoSend (const char* sessionID, const char* type, const char* sdp)
 {
+    #ifdef DEBUG
     std::cout << _LOG_CONSOLE_TEXT << "DEBUG: OnLocalSdpReadytoSend" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+    
     std::cout << _LOG_CONSOLE_TEXT << "OFFER:" << std::endl <<  _NORMAL_CONSOLE_TEXT_ << std::string(sdp) << std::endl;
-    if (!m_sendJMSG) return ;
+    
+    if (!m_sendSignalJMSG) return ;
     
     Json::Value packet;
     uavos::STRUCT_SESSION_INFO sessionInfo = m_SessionMap[sessionID];
@@ -165,14 +169,18 @@ void uavos::CWEBRTC_Plugin::OnLocalSdpReadytoSend (const char* sessionID, const 
     
     Json::Value w;
     w["w"] = packet;
-    m_sendJMSG (sessionInfo.senderPartyID.c_str(),w);
+    m_sendSignalJMSG (sessionInfo.senderPartyID.c_str(),w);
 }
 
 
 void uavos::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const webrtc::IceCandidateInterface* const candidate)
 {
 
+    #ifdef DEBUG
     std::cout << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: OnIceCandidate:" <<_NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+    
+    if (!m_sendSignalJMSG) return ;
     
     std::string sdp;
     std::string sdp_mid;
@@ -200,7 +208,7 @@ void uavos::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const 
     
     Json::Value w;
     w["w"] = packet;
-    m_sendJMSG (sessionInfo.senderPartyID.c_str(),w);
+    m_sendSignalJMSG (sessionInfo.senderPartyID.c_str(),w);
 }
 
 
@@ -464,7 +472,7 @@ void uavos::CWEBRTC_Plugin::Hangup (const std::string& senderPartyID, const std:
     packet["channel"] = channel;
     Json::Value w;
     w["w"] = packet;
-    m_sendJMSG(senderPartyID.c_str(),w);
+    m_sendSignalJMSG(senderPartyID.c_str(),w);
 }
 
 
@@ -752,7 +760,7 @@ void uavos::CWEBRTC_Plugin::startImageCapturing (const Json::Value &jMsg)
     {
         device_info.capturer->StartCapture();
     }
-    device_info.capturer.get()->takeImage(numberOfImages,timeBetweenShots);
+    device_info.capturer.get()->takeImage(numberOfImages,timeBetweenShots, this);
     device_info.recordFileTimeStamp = uavos::util::CHelper::getFileTimeStamp();
     updateDeviceInfoByLocalName(channelName.c_str(), device_info);
     
@@ -803,4 +811,35 @@ Json::Value uavos::CWEBRTC_Plugin::getDeviceListAsJSON ()
     }
 
     return jsonDeviceList;
+}
+
+
+void uavos::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name)
+{
+    #ifdef DEBUG
+    std::cout << _LOG_CONSOLE_TEXT << "DEBUG: onImageRecorded: " << output_file_name << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+    
+    if (!m_sendSignalJMSG) return ;
+    
+     //FILE* output_file = fopen(filename, "wb+");
+
+    Json::Value msg;
+    // uavos::STRUCT_SESSION_INFO sessionInfo = m_SessionMap[sessionID];
+    // packet["packet"]["sdp"] = sdp;
+    // packet["packet"]["type"] = type;
+    // packet["number"]  = PartyID; // sessionInfo.channelNumber;
+    // packet["channel"] = sessionInfo.channelName;
+    
+    // This is not an intermodule message.
+    // but is remaining location content will be added by communicator module
+    m_sendBMSG ("",nullptr,0,TYPE_AndruavMessage_IMG, false);
+}
+void uavos::CWEBRTC_Plugin::onVideoStarted()
+{
+
+}
+void uavos::CWEBRTC_Plugin::onVideoStopped()
+{
+
 }

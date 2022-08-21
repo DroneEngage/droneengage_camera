@@ -37,8 +37,8 @@ SRCS = ../$(SRC)/main.cpp \
 	   #../$(SRC)/webrtc_PeerConnectionObserver.cpp \
 	   
 
-INCLUDE= -I ../src/ -I ../lib/webrtc-local/third_party/ -I ../lib/webrtc94-local/third_party/abseil-cpp -I ../lib/webrtc94-local/include 
-LIBS = -lpthread    -fexceptions    -ljsoncpp    -lwebrtc -ldl -lX11 -lexpat
+INCLUDE= -I ../src/ -I ../lib/webrtc94-local/third_party/ -I ../lib/webrtc94-local/third_party/libyuv -I ../lib/webrtc94-local/third_party/libyuv/include -I ../lib/webrtc94-local/third_party/abseil-cpp -I ../lib/webrtc94-local/include 
+LIBS = -lpthread    -fexceptions    -ljsoncpp    -lwebrtc -ldl -lX11 -lexpat -ljpeg
 LIBS_RELEASE = $(LIBS) -L ./lib/webrtc94-local/lib/x64/Release/
 LIBS_DEBUG = $(LIBS)  -L ./lib/webrtc94-local/lib/x64/Debug/
 #LIBS = -lpthread  -lstdc++   -fexceptions    -ljsoncpp

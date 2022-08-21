@@ -49,10 +49,8 @@ int uavos::stream_webrtc::CSource::GetDeviceNumber (std::string device_name)
     // Travel through /dev/video [0-63]
     std::string device_name_instance;
         
-    uint32_t count = 0;
     char device[20];
     int fd = -1;
-    bool found = false;
     struct v4l2_capability cap;
     for (int n = 0; n < 64; n++) {
         sprintf(device, "/dev/video%d", n);

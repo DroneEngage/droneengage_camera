@@ -2,13 +2,22 @@
 #include "../common.h"
 #include <chrono>
 #include "webrtc_video_recorder.hpp"
+#include <thread>         // std::thread
 
+extern "C" {
+#if defined(USE_SYSTEM_LIBJPEG)
+#include <jpeglib.h>
+#else
+// Include directory supplied by gn
+#include "jpeglib.h"  // NOLINT
+#endif
+}
 
 
 using namespace uavos;
 using namespace uavos::stream_webrtc;
 
-const int BYTES_PER_PIXEL = 3; /// red, green, & blue
+const int BYTES_PER_PIXEL_RGB24 = 3; /// red, green, & blue
 const int FILE_HEADER_SIZE = 14;
 const int INFO_HEADER_SIZE = 40;
 
@@ -24,6 +33,21 @@ const std::string uavos::stream_webrtc::CVideoRecording::getMediaFolderPath() co
    
     return file_path;
 }
+
+
+const bool uavos::stream_webrtc::CVideoRecording::saveImageinJPG() const
+{
+    Json::Value& jsonConfig = CConfigFile::getInstance().GetConfigJSON();
+    if (jsonConfig.isMember("media_image_jpg") == false) 
+    {
+        return false;
+    }
+    
+    const bool use_jpeg = jsonConfig["media_image_jpg"].asBool();
+   
+    return use_jpeg;
+}
+
 
 bool uavos::stream_webrtc::CVideoRecording::startRecording()
 {
@@ -63,9 +87,10 @@ bool uavos::stream_webrtc::CVideoRecording::stopRecording()
 
 
 
-bool uavos::stream_webrtc::CVideoRecording::takeImage(const uint &image_count, const uint &image_duration)
+bool uavos::stream_webrtc::CVideoRecording::takeImage(const uint &image_count, const uint &image_duration, uavos::stream_webrtc::CRecorderEvents * recorder_events)
 {
     webrtc::MutexLock lock(&m_lock_image);
+    m_recorder_events = recorder_events;
     m_image_count     = image_count;
     m_image_duration  = image_duration * 1000; // convert to ms
     m_timer_image.reset();
@@ -85,6 +110,12 @@ int uavos::stream_webrtc::CVideoRecording::printPlane(const uint8_t* buf,
 }
 
 
+/**
+ * @brief Save a video frame in a file.
+ * 
+ * @param frame 
+ * @return int 
+ */
 int uavos::stream_webrtc::CVideoRecording::printVideoFrame(const webrtc::VideoFrame& frame) 
 {
     
@@ -184,14 +215,126 @@ unsigned char* uavos::stream_webrtc::CVideoRecording::createBitmapInfoHeader (co
     infoHeader[10] = (unsigned char)(h >> 16);
     infoHeader[11] = (unsigned char)(h >> 24);
     infoHeader[12] = (unsigned char)(1);
-    infoHeader[14] = (unsigned char)(BYTES_PER_PIXEL*8);
+    infoHeader[14] = (unsigned char)(BYTES_PER_PIXEL_RGB24*8);
 
     return infoHeader;
 }
 
 
+
+int uavos::stream_webrtc::CVideoRecording::saveFrameAsJPG(webrtc::VideoFrame& frame)
+{
+    if (!saveImageinJPG()) return 0;
+
+    webrtc::MutexLock lock(&m_lock_image);
+
+    if (m_image_count<=0)
+    {
+        return 0;
+    }
+  
+    //#ifdef DEBUG
+    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: m_image_count: " << std::to_string(m_image_count) << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    //#endif  
+        
+    if ((m_image_duration!=0) && (m_timer_image.elapsed_milli() < m_image_duration))
+    {
+        // too soon. wait more time.
+        return 0;
+    }
+    m_timer_image.reset();
+    //#ifdef DEBUG
+    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: m_image_duration: " << std::to_string(m_image_duration) <<  _NORMAL_CONSOLE_TEXT_ << std::endl;
+    //#endif  
+    
+    m_image_count--;
+
+    
+    const int width = frame.width();
+    const int height = frame.height();
+    
+    // webrtc::I420BufferInterface &frame_I420 = *frame.video_frame_buffer()->ToI420();
+    // const int width = frame_I420.width();
+    // const int height = frame_I420.height();
+    // const int chroma_width = frame_I420.ChromaWidth();
+    // const int chroma_height = frame_I420.ChromaHeight();
+
+    
+
+    // Check https://rawpixels.net/
+    size_t file_size = width * height * BYTES_PER_PIXEL_RGB24;
+    std::unique_ptr<uint8_t[]> res_rgb_buffer(new uint8_t[file_size]);
+    
+    // convert to RGB
+    webrtc::ConvertFromI420(frame, webrtc::VideoType::kRGB24, 0,
+                                    res_rgb_buffer.get());
+    // libyuv::ConvertFromI420(
+    //   frame_I420.DataY(), frame_I420.StrideY(), frame_I420.DataU(),
+    //   frame_I420.StrideU(), frame_I420.DataV(), frame_I420.StrideV(),
+    //   res_rgb_buffer.get(), 0, width, height,
+    //   webrtc::ConvertVideoType(webrtc::VideoType::kRGB24));
+    
+    // choose file name
+    std::string output_file_name =  getMediaFolderPath() + "img_" + uavos::util::CHelper::getFileTimeStamp() + "_" + std::to_string(m_image_count) + ".jpg";
+    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    
+    // open file
+    FILE* image_handler = fopen(output_file_name.c_str(), "wb");
+    
+    // Invoking LIBJPEG
+    const int quality = 70;
+    const int kColorPlanes = 3;  // R, G and B.
+
+    struct jpeg_compress_struct cinfo;
+    struct jpeg_error_mgr jerr;
+    JSAMPROW row_pointer[1];
+    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-01" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    cinfo.err = jpeg_std_error(&jerr);
+    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-001" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    jpeg_create_compress(&cinfo);
+    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-1" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    
+    jpeg_stdio_dest(&cinfo, image_handler);
+    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-2" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    
+    cinfo.image_width = width;
+    cinfo.image_height = height;
+    cinfo.input_components = kColorPlanes;
+    cinfo.in_color_space = JCS_EXT_BGR;
+    jpeg_set_defaults(&cinfo);
+    jpeg_set_quality(&cinfo, quality, TRUE);
+    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-3" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    
+    jpeg_start_compress(&cinfo, TRUE);
+    int row_stride = width * kColorPlanes;
+    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-4" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    
+    while (cinfo.next_scanline < cinfo.image_height) {
+        row_pointer[0] = &res_rgb_buffer.get()[cinfo.next_scanline * row_stride];
+        jpeg_write_scanlines(&cinfo, row_pointer, 1);
+    }
+    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG2" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    
+
+    jpeg_finish_compress(&cinfo);
+    jpeg_destroy_compress(&cinfo);
+    fclose(image_handler);
+    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG3" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    return 0;
+}
+
+
+
+/**
+ * @brief Saves a frame as a BMP file.
+ * 
+ * @param frame 
+ * @return int 
+ */
 int  uavos::stream_webrtc::CVideoRecording::saveFrameAsRGB( webrtc::VideoFrame& frame)
 {
+    // dont save twice.
+    if (saveImageinJPG()) return 0;
     
     webrtc::MutexLock lock(&m_lock_image);
 
@@ -217,12 +360,25 @@ int  uavos::stream_webrtc::CVideoRecording::saveFrameAsRGB( webrtc::VideoFrame& 
     m_image_count--;
 
     // Check https://rawpixels.net/
-    size_t file_size = frame.width() * frame.height() * BYTES_PER_PIXEL;
+    size_t file_size = frame.width() * frame.height() * BYTES_PER_PIXEL_RGB24;
     std::unique_ptr<uint8_t[]> res_rgb_buffer(new uint8_t[file_size]);
+    
+    // webrtc::I420BufferInterface &frame_I420 = *frame.video_frame_buffer()->ToI420();
+    // const int width = frame_I420.width();
+    // const int height = frame_I420.height();
+    // const int chroma_width = frame_I420.ChromaWidth();
+    // const int chroma_height = frame_I420.ChromaHeight();
+
     
     // convert to RGB
     webrtc::ConvertFromI420(frame, webrtc::VideoType::kRGB24, 0,
                                     res_rgb_buffer.get());
+    // libyuv::ConvertFromI420(
+    //   frame_I420.DataY(), frame_I420.StrideY(), frame_I420.DataU(),
+    //   frame_I420.StrideU(), frame_I420.DataV(), frame_I420.StrideV(),
+    //   res_rgb_buffer.get(), 0, width, height,
+    //   webrtc::ConvertVideoType(webrtc::VideoType::kRGB24));
+    
 
     // choose file name
     std::string output_file_name =  getMediaFolderPath() + "img_" + uavos::util::CHelper::getFileTimeStamp() + "_" + std::to_string(m_image_count) + ".bmp";
@@ -231,8 +387,7 @@ int  uavos::stream_webrtc::CVideoRecording::saveFrameAsRGB( webrtc::VideoFrame& 
     FILE* image_handler = fopen(output_file_name.c_str(), "wb");
 
     // create BMP Header
-    int widthInBytes = frame.width() * BYTES_PER_PIXEL;
-    unsigned char padding[3] = {0, 0, 0};
+    int widthInBytes = frame.width() * BYTES_PER_PIXEL_RGB24;
     int paddingSize = (4 - (widthInBytes) % 4) % 4;
     int stride = (widthInBytes) + paddingSize;
     unsigned char* fileHeader = createBitmapFileHeader(frame.height(), stride);
@@ -246,5 +401,17 @@ int  uavos::stream_webrtc::CVideoRecording::saveFrameAsRGB( webrtc::VideoFrame& 
     fwrite(res_rgb_buffer.get(), 1, file_size, image_handler);
 
     fclose(image_handler);
+
+    std::thread t =std::thread {[&, output_file_name](){ 
+        std::string file_name = output_file_name;
+        if (m_recorder_events!= nullptr)
+        {
+            m_recorder_events->onImageRecorded(file_name);
+            return 0;
+        }
+        return 0;
+    }};
+
+    t.detach();
     return 0;
 }

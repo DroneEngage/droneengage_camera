@@ -16,8 +16,8 @@
 
 
 
-
 #define TYPE_AndruavMessage_RemoteExecute       1005
+#define TYPE_AndruavMessage_IMG                 1006
 #define TYPE_AndruavMessage_Signaling           1021
 #define TYPE_AndruavMessage_Ctrl_Cameras        1041    
 
@@ -43,8 +43,8 @@
 
 #define ANDRUAV_PROTOCOL_GROUP_ID       "gr"
 #define ANDRUAV_PROTOCOL_SENDER         "sd"
-#define ANDRUAV_PROTOCOL_COMM_TYPE      "cm"
 #define ANDRUAV_PROTOCOL_TARGET_ID      "tg"
 #define ANDRUAV_PROTOCOL_MESSAGE_TYPE   "mt"
 #define ANDRUAV_PROTOCOL_MESSAGE_CMD    "ms"
 #define INTERMODULE_COMMAND_TYPE        "ty"
+#define INTERMODULE_MODULE_KEY          "GU"

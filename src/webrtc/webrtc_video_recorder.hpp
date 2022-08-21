@@ -7,16 +7,28 @@ namespace uavos
 namespace stream_webrtc
 {
     
+class CRecorderEvents
+{
+    public:
+        virtual void onImageRecorded(std::string output_file_name){};
+        virtual void onVideoStarted(){};
+        virtual void onVideoStopped(){};
+};
 
 class  CVideoRecording 
 {
         
     public:
+        void RegisterRecorderEvents (uavos::stream_webrtc::CRecorderEvents * recorder_events) 
+        {
+            m_recorder_events = recorder_events;
+        }
 
+    public:
         bool startRecording();
         bool isRecording();
         bool stopRecording();
-        bool takeImage(const uint &image_count, const uint &image_duration);
+        bool takeImage(const uint &image_count, const uint &image_duration, uavos::stream_webrtc::CRecorderEvents * recorder_events);
     
     protected:
         int printPlane(const uint8_t* buf,
@@ -25,6 +37,7 @@ class  CVideoRecording
                const int& stride);
         int printVideoFrame(const webrtc::VideoFrame& frame);
         int saveFrameAsRGB(webrtc::VideoFrame& frame);
+        int saveFrameAsJPG(webrtc::VideoFrame& frame);
 
 
     protected:
@@ -40,7 +53,7 @@ class  CVideoRecording
 
     private:
         const std::string getMediaFolderPath() const;
-
+        const bool saveImageinJPG() const;
 
     private:
         uint m_frame_duration = 100;
@@ -50,6 +63,8 @@ class  CVideoRecording
         webrtc::Mutex m_lock_image;
         uavos::util::CTimer m_timer_video;
         uavos::util::CTimer m_timer_image;
+
+        uavos::stream_webrtc::CRecorderEvents * m_recorder_events = nullptr;
 };
 
 
