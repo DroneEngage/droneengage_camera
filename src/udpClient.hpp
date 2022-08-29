@@ -50,7 +50,7 @@ class CUDPClient
         void InternelSenderIDEntry();
 
         struct sockaddr_in  *m_ModuleAddress, *m_CommunicatorModuleAddress; 
-        int m_SocketFD; 
+        int m_SocketFD=-1; 
         std::thread m_threadSenderID, m_threadCreateUDPSocket;
         pthread_t m_thread;
         

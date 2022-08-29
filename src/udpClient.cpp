@@ -83,7 +83,7 @@ void uavos::comm::CUDPClient::start ()
 {
     // call directly as we are already in a thread.
     if (m_starrted == true)
-        throw "Starrted called twice";
+        exit(1); //throw "Starrted called twice";
 
     startReceiver ();
     startSenderID();
@@ -112,8 +112,8 @@ void uavos::comm::CUDPClient::stop()
 	std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: Stop" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 
-    try
-    {
+    //try
+    //{
         //pthread_join(m_threadSenderID, NULL); 	// close the thread
         //pthread_join(m_threadCreateUDPSocket, NULL); 	// close the thread
         if (m_starrted) 
@@ -129,11 +129,11 @@ void uavos::comm::CUDPClient::stop()
         #ifdef DEBUG
 	    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: Stop" << _NORMAL_CONSOLE_TEXT_ << std::endl;
         #endif
-    }
-    catch(const std::exception& e)
-    {
-        //std::cerr << e.what() << '\n';
-    }
+    // }
+    // catch(const std::exception& e)
+    // {
+    //     //std::cerr << e.what() << '\n';
+    // }
 
     #ifdef DEBUG
 	std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: Stop" << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -252,16 +252,16 @@ void uavos::comm::CUDPClient::SetMessageOnReceive (void (*onReceive)(const char 
 void uavos::comm::CUDPClient::sendMSG (const char * msg, const int length)
 {
     
-    try
-    {
+    //try
+    //{
         sendto(m_SocketFD, msg, length,  
             MSG_CONFIRM, (const struct sockaddr *) m_CommunicatorModuleAddress, 
                 sizeof(struct sockaddr_in));         
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
-    }
+    //}
+    //catch(const std::exception& e)
+    //{
+    //    std::cerr << e.what() << '\n';
+    //}
     
 
 }

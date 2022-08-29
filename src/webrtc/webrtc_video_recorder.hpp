@@ -69,7 +69,7 @@ class  CVideoRecording
 };
 
 
-};
-}; // namespace uavos
+}
+} // namespace uavos
 
 #endif

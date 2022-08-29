@@ -828,15 +828,16 @@ void uavos::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name, bool s
         std::ifstream rf(output_file_name, std::ios::out | std::ios::binary);
         rf.seekg(0, std::ios::end);
         size_t size = rf.tellg();
-        char * buffer_ptr = new char[size];
-        std::unique_ptr buffer= std::unique_ptr<char []> (buffer_ptr);
+        //char * buffer_ptr = new char[size];
+        //std::unique_ptr buffer= std::unique_ptr<char[]> (buffer_ptr);
+        std::unique_ptr<char[]> buffer(new char[size]);
         rf.seekg(0);
-        if(rf.read(buffer_ptr, size))
+        if(rf.read(buffer.get(), size))
             std::cout << "success"<< '\n';
 
         std::cout << _LOG_CONSOLE_TEXT << "DEBUG: onImageRecorded: " << output_file_name << ":" << std::to_string(size) << _NORMAL_CONSOLE_TEXT_ << std::endl;
         
-        m_sendBMSG ("",buffer_ptr,size,TYPE_AndruavMessage_IMG, true);
+        m_sendBMSG ("",buffer.get(),size,TYPE_AndruavMessage_IMG, true);
         buffer.release();
     }
     else

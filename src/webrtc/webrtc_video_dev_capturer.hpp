@@ -92,9 +92,9 @@ class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::Video
 
         int8_t counter = 0;
         FILE* m_output_file;
-}; 
-
 };
-}; // namespace uavos
+
+}
+} // namespace uavos
 
 #endif

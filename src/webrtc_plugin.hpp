@@ -70,17 +70,17 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         void RegisterSendJMSG (SEND_JMSG_CALLBACK sendJMSG)
         {
             m_sendJMSG = sendJMSG;
-        };
+        }
             
         void RegisterSendBMSG (SEND_BMSG_CALLBACK sendBMSG)
         {
             m_sendBMSG = sendBMSG;
-        };
+        }
 
         void RegisterSendMREMSG (SEND_MREMSG_CALLBACK sendMREMSG)
         {
             m_sendMREMSG = sendMREMSG;
-        };
+        }
 
     public:
         uavos::stream_webrtc::STRUCT_DEVICE_INFO findDeviceInfoByLocalName (const std::string& localName);
