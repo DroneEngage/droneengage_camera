@@ -83,7 +83,7 @@ bool uavos::CWEBRTC_Plugin::addCameraByID (std::string cameraVideoName, int came
             m_videoDeviceInfoList[i].active = 0;
             m_videoDeviceInfoList[i].local_name = cameraVideoName;
     
-            std::cout << _SUCCESS_CONSOLE_TEXT_ << "Camera: " << _SUCCESS_CONSOLE_BOLD_TEXT_ << cameraVideoName << _SUCCESS_CONSOLE_TEXT_ << " selected index:" << _INFO_CONSOLE_TEXT << std::to_string(cameraVideoIndex) << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            std::cout << _SUCCESS_CONSOLE_TEXT_ << "Camera: " << _SUCCESS_CONSOLE_BOLD_TEXT_ << cameraVideoName << _SUCCESS_CONSOLE_TEXT_ << " \\dev\\video" << _INFO_CONSOLE_TEXT << std::to_string(cameraVideoIndex) << _NORMAL_CONSOLE_TEXT_ << std::endl;
             filled = ATOMIC_VAR_INIT(true);
 
             return true;

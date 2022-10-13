@@ -261,8 +261,11 @@ void init (int argc, char *argv[])
         for (auto cameraItem : jsonCameraList)
         {
             if (cameraItem["name"].asString().empty()) continue; // most propably it is an extra comma after last field.
-            std::cout << cameraItem["name"].asString() << "ID:" << cameraItem["device_num"].asInt() << std::endl;
-            cWEBRTC_Plugin->addCameraByID(cameraItem["name"].asString(), cameraItem["device_num"].asInt());
+            std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "Trying to init: " << _INFO_CONSOLE_TEXT << cameraItem["name"].asString() << _LOG_CONSOLE_TEXT_BOLD_ << " \\dev\\video" << _INFO_CONSOLE_TEXT << cameraItem["device_num"].asInt() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            if (!cWEBRTC_Plugin->addCameraByID(cameraItem["name"].asString(), cameraItem["device_num"].asInt()))
+            {
+                std::cout << _ERROR_CONSOLE_TEXT_ << "failed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            }
         }
 	
     }
