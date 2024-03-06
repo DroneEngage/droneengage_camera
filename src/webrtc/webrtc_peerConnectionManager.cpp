@@ -2,6 +2,10 @@
 #include "../common.h"
 
 
+#include "./helpers/json.hpp"
+using Json_de = nlohmann::json;
+
+
 static const rtc::SocketAddress kDefaultLocalAddress("192.168.1.139", 1);
 
 
@@ -24,11 +28,10 @@ bool uavos::stream_webrtc::CPeerConnectionManager::CreatePeerConnection(const st
 {
 	
     
-    uavos::CConfigFile *cConfigFile;
-	cConfigFile = &CConfigFile::getInstance();
-    Json::Value& jsonConfig = cConfigFile->GetConfigJSON();
+    uavos::CConfigFile &cConfigFile = CConfigFile::getInstance();
+    const Json_de& jsonConfig = cConfigFile.GetConfigJSON();
     
-    Json::Value jsonIceServers= jsonConfig.isMember("iceServers")?jsonConfig["iceServers"]:Json::Value();
+    Json_de jsonIceServers= jsonConfig.contains("iceServers")?jsonConfig["iceServers"]:Json_de();
     webrtc::PeerConnectionInterface::IceServer turn_server;
     webrtc::PeerConnectionInterface::IceServer stun_server;
     
@@ -39,17 +42,17 @@ bool uavos::stream_webrtc::CPeerConnectionManager::CreatePeerConnection(const st
     m_config.servers.clear();
 	for (auto iceServer : jsonIceServers)
 	{
-		ICE_SERVER server; // = getIceServerFromUrl(iceServer["uri"].asString());
+		ICE_SERVER server; // = getIceServerFromUrl(iceServer["uri"].get<std::string>());
 		//BUG: could be a bug here ... check examples/unityplugin/simple_peer_connection.cc line 191
-		server.uri = iceServer["uri"].asString();
+		//server.uri = iceServer["uri"].get<std::string>();
         server.tls_cert_policy = webrtc::PeerConnectionInterface::TlsCertPolicy::kTlsCertPolicyInsecureNoCheck;
-        server.urls.push_back(iceServer["urls"].asString()); // = iceServer["urls"].asString();
-		server.hostname = iceServer["urls"].asString();
+        server.urls.push_back(iceServer["urls"].get<std::string>()); // = iceServer["urls"].get<std::string>();
+		server.hostname = iceServer["urls"].get<std::string>();
         if (server.hostname.empty()) continue; // handle leaving extra comma in the config file after the last entry
-        if (iceServer.isMember("username"))
+        if (iceServer.contains("username"))
 		{
-			server.username = iceServer["username"].asString();
-			server.password = iceServer.isMember("password")?iceServer["password"].asString():"";
+			server.username = iceServer["username"].get<std::string>();
+			server.password = iceServer.contains("password")?iceServer["password"].get<std::string>():"";
 		}
         m_config.servers.push_back(server);
 	}
@@ -173,13 +176,28 @@ void uavos::stream_webrtc::CPeerConnectionManager::SetRemoteDescription(const st
 }
 
   
-bool uavos::stream_webrtc::CPeerConnectionManager::AddIceCandidate (const Json::Value& packet)
+bool uavos::stream_webrtc::CPeerConnectionManager::AddIceCandidate (const Json_de& packet)
 {
     webrtc::SdpParseError error;
     
-    std::string SdpName = packet[uavos::stream_webrtc::kCandidateSdpName].asString();
-    std::string SdpMidName = packet[uavos::stream_webrtc::kCandidateSdpMidName].asString();
-    std::string SdpMlineIndexName = packet[uavos::stream_webrtc::kCandidateSdpMlineIndexName].asString();
+    std::string SdpName = "";
+    std::string SdpMidName = "";
+    std::string SdpMlineIndexName = "";
+    
+    if (packet.contains(uavos::stream_webrtc::kCandidateSdpName))
+    {
+        SdpName = packet[uavos::stream_webrtc::kCandidateSdpName].get<std::string>();
+    }
+    
+    if (packet.contains(uavos::stream_webrtc::kCandidateSdpMidName))
+    {
+        SdpMidName = packet[uavos::stream_webrtc::kCandidateSdpMidName].get<std::string>();
+    }
+    
+    if (packet.contains(uavos::stream_webrtc::kCandidateSdpMlineIndexName))
+    {
+        SdpMlineIndexName = packet[uavos::stream_webrtc::kCandidateSdpMlineIndexName].get<int>();
+    }
 
     std::unique_ptr<webrtc::IceCandidateInterface> candidate(
             webrtc::CreateIceCandidate(SdpMidName, std::atoi(SdpMlineIndexName.c_str()), SdpName,  &error));

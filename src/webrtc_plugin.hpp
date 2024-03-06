@@ -6,6 +6,11 @@
 #define MIN_CAMERA_INDEX 0
 #define MAX_CAMERA_INDEX 999
 
+#include "./helpers/json.hpp"
+using Json_de = nlohmann::json;
+
+#include "./uavos_common/uavos_module.hpp"
+
 namespace uavos
 {
 
@@ -58,29 +63,9 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         void addCameraByRange (int startVideoIndex, int endVideoIndex);
         void InitializePeerConnection();
         
-        Json::Value getDeviceListAsJSON ();
+        Json_de getDeviceListAsJSON ();
 
-        void ExecuteSignalCommand(const Json::Value& cmd);
-
-        void RegisterSendSignalJMSG (SEND_SIGNAL_JMSG_CALLBACK sendSignallingJMSG)
-        {
-            m_sendSignalJMSG = sendSignallingJMSG;
-        }
-
-        void RegisterSendJMSG (SEND_JMSG_CALLBACK sendJMSG)
-        {
-            m_sendJMSG = sendJMSG;
-        }
-            
-        void RegisterSendBMSG (SEND_BMSG_CALLBACK sendBMSG)
-        {
-            m_sendBMSG = sendBMSG;
-        }
-
-        void RegisterSendMREMSG (SEND_MREMSG_CALLBACK sendMREMSG)
-        {
-            m_sendMREMSG = sendMREMSG;
-        }
+        void ExecuteSignalCommand(const Json_de& cmd);
 
     public:
         uavos::stream_webrtc::STRUCT_DEVICE_INFO findDeviceInfoByLocalName (const std::string& localName);
@@ -88,8 +73,8 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         void cleaning ();
 
     public:
-        void processVideoRecording (const Json::Value &jMsg);
-        void startImageCapturing (const Json::Value &jMsg);
+        void processVideoRecording (const Json_de &jMsg);
+        void startImageCapturing (const Json_de &jMsg);
 
     public: 
         void onImageRecorded(std::string output_file_name, bool send_image_gcs) override ;
@@ -97,13 +82,13 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         void onVideoStopped() override ;
 
     protected:
-        void startVideoRecording (const Json::Value &jMsg);
-        void stopVideoRecording (const Json::Value &jMsg);
+        void startVideoRecording (const Json_de &jMsg);
+        void stopVideoRecording (const Json_de &jMsg);
             
     protected:
         void SendOffer (const std::string& senderPartyID, const std::string& sessionID, const std::string& channelNumber, const std::string& channelName);
-        void ProcessAnswer (const std::string& senderPartyID, const std::string& sessionID, const std::string& channelNumber, const std::string& channelName, const Json::Value& packet);
-        void ProcessCandidate (const std::string& senderPartyID, const std::string& sessionID, const std::string& channelNumber, const std::string& channelName, const Json::Value& packet);
+        void ProcessAnswer (const std::string& senderPartyID, const std::string& sessionID, const std::string& channelNumber, const std::string& channelName, const Json_de& packet);
+        void ProcessCandidate (const std::string& senderPartyID, const std::string& sessionID, const std::string& channelNumber, const std::string& channelName, const Json_de& packet);
         void Hangup (const std::string& senderPartyID, const std::string& sessionID,  const std::string& number,  const std::string& channel);
 
         bool IsCorrectCameraIndex (const int cameraIndex);
@@ -130,13 +115,11 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         std::vector<uavos::stream_webrtc::STRUCT_DEVICE_INFO> m_audioDeviceInfoList;
 
         rtc::scoped_refptr <uavos::stream_webrtc::CUserMedia> m_connection ;
-        SEND_SIGNAL_JMSG_CALLBACK m_sendSignalJMSG = NULL;
-        SEND_JMSG_CALLBACK      m_sendJMSG = NULL;
-        SEND_BMSG_CALLBACK      m_sendBMSG = NULL;
-        SEND_MREMSG_CALLBACK    m_sendMREMSG = NULL;
+        
 
         std::vector<std::string> deleteMe;
-        
+
+      uavos::comm::CModule &m_module = uavos::comm::CModule::getInstance();              
 };
 
 }

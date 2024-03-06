@@ -2,58 +2,66 @@
 #include <iostream>
 #include <stdlib.h>
 #include <stdio.h>
-#include <jsoncpp/json/json.h>
 #include <sstream>
 #include <fstream>
 #include <memory> 
-#include "global.h"
+#include "./helpers/colors.hpp"
+#include "./helpers/helpers.hpp"
+
 #include "configFile.hpp"
 
 using namespace uavos;
 
 
-Json::Value& CConfigFile::GetConfigJSON()
+const Json_de& CConfigFile::GetConfigJSON()
 {
     return  m_ConfigJSON;
 }
 
 
-void CConfigFile::InitConfigFile (const char* fileURL)
+void CConfigFile::initConfigFile (const char* fileURL)
 {
-    CConfigFile::ReadFile (fileURL);
+    m_file_url = std::string(fileURL);
+
+    std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "Read config file: " << _INFO_CONSOLE_TEXT << fileURL << "\033[0m ...."  << std::endl;
+    
+    CConfigFile::ReadFile (m_file_url.c_str());
     
     CConfigFile::ParseData (m_fileContents.str());
-    
 }
+
+
+void CConfigFile::reloadFile ()
+{
+    CConfigFile::ReadFile (m_file_url.c_str());
+    
+    CConfigFile::ParseData (m_fileContents.str());
+}
+
 
 
 void CConfigFile::ReadFile (const char * fileURL)
 {
     std::ifstream stream;
-    std::cout << "Read config file: " << _LOG_CONSOLE_TEXT_BOLD_ << fileURL << "\033[0m ...." ;
-
+    
     stream.open (fileURL , std::ifstream::in);
     if (!stream) {
-        std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << " FAILED " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "FATAL ERROR:" << _ERROR_CONSOLE_TEXT_ << " FAILED to read config file " << _NORMAL_CONSOLE_TEXT_ << std::endl;
         exit(1); // terminate with error
     }
     
-    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << " succeeded "  << _NORMAL_CONSOLE_TEXT_ << std::endl;
-
+    
+    m_fileContents.str("");
     m_fileContents <<  stream.rdbuf();
+    
+   
     
     return ;
 }
 
 void CConfigFile::ParseData (std::string jsonString)
 {
-    Json::Reader reader;
 
-    reader.parse(jsonString, m_ConfigJSON);
-
-    // cout << "module_id: " << m_ConfigJSON["module_id"] << endl;
-
-    // cout << "module_features: " << m_ConfigJSON["module_features"][1] << endl;
-
-    // cout << "module_features len: " << m_ConfigJSON["module_features"].size() << endl;
+    m_ConfigJSON = Json_de::parse(removeComments(jsonString));
+    
 }

@@ -158,19 +158,17 @@ void uavos::CWEBRTC_Plugin::OnLocalSdpReadytoSend (const char* sessionID, const 
     
     std::cout << _LOG_CONSOLE_TEXT << "OFFER:" << std::endl <<  _NORMAL_CONSOLE_TEXT_ << std::string(sdp) << std::endl;
     
-    if (!m_sendSignalJMSG) return ;
-    
-    Json::Value packet;
+    Json_de packet;
     uavos::STRUCT_SESSION_INFO sessionInfo = m_SessionMap[sessionID];
-    packet["packet"]  = Json::Value();
+    packet["packet"]  = Json_de();
     packet["packet"]["sdp"] = sdp;
     packet["packet"]["type"] = type;
     packet["number"]  = PartyID; // sessionInfo.channelNumber;
     packet["channel"] = sessionInfo.channelName;
     
-    Json::Value w;
+    Json_de w;
     w["w"] = packet;
-    m_sendSignalJMSG (sessionInfo.senderPartyID.c_str(),w);
+    m_module.sendJMSG (sessionInfo.senderPartyID, w, TYPE_AndruavMessage_Signaling, false);
 }
 
 
@@ -181,15 +179,14 @@ void uavos::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const 
     std::cout << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: OnIceCandidate:" <<_NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
     
-    if (!m_sendSignalJMSG) return ;
     
     std::string sdp;
     std::string sdp_mid;
     int sdp_mline_index  = 0;
     
-    Json::Value packet;
+    Json_de packet;
     uavos::STRUCT_SESSION_INFO sessionInfo = m_SessionMap[sessionID];
-    packet["packet"]  = Json::Value();
+    packet["packet"]  = Json_de();
     
     
     if (candidate != nullptr)
@@ -207,10 +204,9 @@ void uavos::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const 
     packet["number"]  = PartyID; 
     packet["channel"] = sessionInfo.channelName;
     
-    Json::Value w;
+    Json_de w;
     w["w"] = packet;
-    m_sendSignalJMSG (sessionInfo.senderPartyID.c_str(),w);
-}
+    m_module.sendJMSG (sessionInfo.senderPartyID, w, TYPE_AndruavMessage_Signaling, false);}
 
 
 void uavos::CWEBRTC_Plugin::OnIceConnectionDisconnected (const std::string& sessionID)
@@ -375,10 +371,10 @@ void uavos::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const s
 void uavos::CWEBRTC_Plugin::ProcessAnswer (
             const std::string& senderPartyID, const std::string& sessionID, 
             const std::string& channelNumber,  const std::string& channelName,
-            const Json::Value& packet)
+            const Json_de& packet)
 {
 
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: CWEBRTC_Plugin::ProcessAnswer" << _NORMAL_CONSOLE_TEXT_ <<  packet.toStyledString() << std::endl;
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: CWEBRTC_Plugin::ProcessAnswer" << _NORMAL_CONSOLE_TEXT_ <<  packet.dump() << std::endl;
     
     if (sessionID.empty())
     {
@@ -395,7 +391,7 @@ void uavos::CWEBRTC_Plugin::ProcessAnswer (
         return ;
     }
 
-    if (!packet.isMember("type") || !packet.isMember("sdp"))
+    if (!packet.contains("type") || !packet.contains("sdp"))
     {
         std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: NO TYPE Or SDP" << _NORMAL_CONSOLE_TEXT_ << std::endl;
         
@@ -404,7 +400,7 @@ void uavos::CWEBRTC_Plugin::ProcessAnswer (
 
     uavos::stream_webrtc::CPeerConnectionManager  * const cPeerConnectionManager = (uavos::stream_webrtc::CPeerConnectionManager  *) m_SessionMap[sessionID].peerConnectionManager.get();
     
-    cPeerConnectionManager->SetRemoteDescription(packet["type"].asCString(), packet["sdp"].asCString());
+    cPeerConnectionManager->SetRemoteDescription(packet["type"].get<std::string>(), packet["sdp"].get<std::string>());
     
 }
 
@@ -413,7 +409,7 @@ void uavos::CWEBRTC_Plugin::ProcessCandidate (
                 const std::string& sessionID,  
                 const std::string& channelNumber, 
                 const std::string& channelName,
-                const Json::Value& packet)
+                const Json_de& packet)
 {
     std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << _LOG_CONSOLE_TEXT << "DEBUG: CWEBRTC_Plugin::ProcessCandidate" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     
@@ -435,7 +431,7 @@ void uavos::CWEBRTC_Plugin::ProcessCandidate (
 
     uavos::stream_webrtc::CPeerConnectionManager  * const cPeerConnectionManager = (uavos::stream_webrtc::CPeerConnectionManager  *) m_SessionMap[sessionID].peerConnectionManager.get();
     
-    std::cout << __FUNCTION__ << __LINE__ << "Key " << _LOG_CONSOLE_TEXT << "DEBUG: ProcessCandidate" << _NORMAL_CONSOLE_TEXT_ << std::endl << packet.toStyledString() << std::endl;
+    std::cout << __FUNCTION__ << __LINE__ << "Key " << _LOG_CONSOLE_TEXT << "DEBUG: ProcessCandidate" << _NORMAL_CONSOLE_TEXT_ << std::endl << packet.dump() << std::endl;
         
     cPeerConnectionManager->AddIceCandidate(packet);
 }
@@ -466,26 +462,27 @@ void uavos::CWEBRTC_Plugin::Hangup (const std::string& senderPartyID, const std:
     eraseSessionInfoBySessionID(sessionID.c_str());
     
     
-    Json::Value packet;
-    packet["packet"]  = Json::Value();
+    Json_de packet;
+    packet["packet"]  = Json_de();
     packet["packet"]["hangup"] = true;
     packet["number"]  = PartyID; 
     packet["channel"] = channel;
-    Json::Value w;
+    Json_de w;
     w["w"] = packet;
-    m_sendSignalJMSG(senderPartyID.c_str(),w);
+    
+    m_module.sendJMSG(senderPartyID, w, TYPE_AndruavMessage_Signaling, false);
 }
 
 
 
-void uavos::CWEBRTC_Plugin::ExecuteSignalCommand(const Json::Value &jMsg)
+void uavos::CWEBRTC_Plugin::ExecuteSignalCommand(const Json_de &jMsg)
 {
     // extract command
-    const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-    const Json::Value w = cmd["w"];
-    std::string number = w["number"].asString();
-    std::string channel = w["channel"].asString();
-    std::string sender  = jMsg[ANDRUAV_PROTOCOL_SENDER].asString();
+    const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
+    const Json_de w = cmd["w"];
+    std::string number = w["number"].get<std::string>();
+    std::string channel = w["channel"].get<std::string>();
+    std::string sender  = jMsg[ANDRUAV_PROTOCOL_SENDER].get<std::string>();
     std::string sessionID = (number + channel);
     
     // https://stackoverflow.com/questions/10699689/how-can-i-get-a-value-from-a-map
@@ -500,29 +497,34 @@ void uavos::CWEBRTC_Plugin::ExecuteSignalCommand(const Json::Value &jMsg)
     }
     
 
-    //std::cout << "Key " << cmd.toStyledString() << std::endl;
-    Json::Value const packet = w["packet"];
+    //std::cout << "Key " << cmd.dump() << std::endl;
+    Json_de const packet = w["packet"];
 
-    if ((packet.isMember("joinme")==true) && (packet["joinme"].asBool()==true))
-    {
+        
+    if ((packet.contains("joinme")==true) && (packet["joinme"].get<bool>()==true))
+    {   
         SendOffer (sender, sessionID, number, channel);
         return ;
     }
 
-    if ((packet.isMember("type")==true) && (packet["type"].asString() == "answer"))
+    if ((packet.contains("type")==true) && (packet["type"].get<std::string>() == "answer"))
     {
+        std::cout << "answer" << std::endl;
+    
         ProcessAnswer (sender, sessionID, number, channel, packet);
         return ;
     }
 
-    if (packet.isMember("candidate")==true)
+    if (packet.contains("candidate")==true)
     {
+        std::cout << "candidate" << std::endl;
         ProcessCandidate (sender, sessionID, number, channel, packet);
         return ;
     }
 
-    if ((packet.isMember("hangup")==true) && (packet["hangup"].asBool()==true))
+    if ((packet.contains("hangup")==true) && (packet["hangup"].get<bool>()==true))
     {
+        std::cout << "hangup" << std::endl;
         Hangup (sender, sessionID, number, channel);
         return ;
     }
@@ -620,18 +622,18 @@ void uavos::CWEBRTC_Plugin::updateDeviceInfoByLocalName (const char* localName, 
 
 }
 
-void uavos::CWEBRTC_Plugin::processVideoRecording (const Json::Value &jMsg)
+void uavos::CWEBRTC_Plugin::processVideoRecording (const Json_de &jMsg)
 {
     // extract command
     
-    const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-    const int subCommand = cmd["C"].asInt();
+    const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
+    const int subCommand = cmd["C"].get<int>();
     
     // double check cmd.
     if (subCommand != RemoteCommand_RECORDVIDEO) return ;
     
-    bool startIfTrue = cmd["Act"].asBool();
-    std::string channelName = cmd["T"].asString();
+    bool startIfTrue = cmd["Act"].get<bool>();
+    std::string channelName = cmd["T"].get<std::string>();
     
     if (startIfTrue == true)
     {
@@ -644,15 +646,15 @@ void uavos::CWEBRTC_Plugin::processVideoRecording (const Json::Value &jMsg)
     
 }
 
-void uavos::CWEBRTC_Plugin::stopVideoRecording (const Json::Value &jMsg)
+void uavos::CWEBRTC_Plugin::stopVideoRecording (const Json_de &jMsg)
 {
     // extract command
     CWEBRTC_Plugin * cWEBRTC_Plugin;
     cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
 
-    const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
+    const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
     
-    std::string channelName = cmd["T"].asString();
+    std::string channelName = cmd["T"].get<std::string>();
     
     uavos::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
     if (device_info.device_num == -1)
@@ -685,15 +687,15 @@ void uavos::CWEBRTC_Plugin::stopVideoRecording (const Json::Value &jMsg)
  *  the script should be able to stop itself if it was running.
  * 
  **/
-void uavos::CWEBRTC_Plugin::startVideoRecording (const Json::Value &jMsg)
+void uavos::CWEBRTC_Plugin::startVideoRecording (const Json_de &jMsg)
 {
     // extract command
     CWEBRTC_Plugin * cWEBRTC_Plugin;
     cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
 
-    const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
+    const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
     
-    const std::string channelName = cmd["T"].asString();
+    const std::string channelName = cmd["T"].get<std::string>();
     
 
     uavos::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
@@ -720,26 +722,21 @@ void uavos::CWEBRTC_Plugin::startVideoRecording (const Json::Value &jMsg)
     //std::cout << __FULL_DEBUG__  << _SUCCESS_CONSOLE_BOLD_TEXT_ << "RecordCMD:"  << recCommand.str() << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 
-    
-    
-    
-    
     return;
-    
 }
 
 
-void uavos::CWEBRTC_Plugin::startImageCapturing (const Json::Value &jMsg)
+void uavos::CWEBRTC_Plugin::startImageCapturing (const Json_de &jMsg)
 {
     // extract command
     CWEBRTC_Plugin * cWEBRTC_Plugin;
     cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
 
-    const Json::Value cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-    std::string channelName = cmd["a"].asString(); // empty ""  means first available camera 
-    const int numberOfImages = cmd["b"].asInt();
-    const int timeBetweenShots = cmd["c"].asInt();
-    //const int distanceBetweenShots = cmd["d"].asInt();  // NOT SUPPORTED
+    const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
+    std::string channelName = cmd["a"].get<std::string>(); // empty ""  means first available camera 
+    const int numberOfImages = cmd["b"].get<int>();
+    const int timeBetweenShots = cmd["c"].get<int>();
+    
     std::cout << __FULL_DEBUG__  << "Channel:" << channelName << std::endl;
     
     uavos::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
@@ -776,9 +773,9 @@ void uavos::CWEBRTC_Plugin::startImageCapturing (const Json::Value &jMsg)
 /**
  * Generates JSON object array of available devices
  **/
-Json::Value uavos::CWEBRTC_Plugin::getDeviceListAsJSON ()
+Json_de uavos::CWEBRTC_Plugin::getDeviceListAsJSON ()
 {
-    Json::Value jsonDeviceList;
+    Json_de jsonDeviceList = Json_de::array();
     
     if (filled == false)
     {
@@ -794,7 +791,7 @@ Json::Value uavos::CWEBRTC_Plugin::getDeviceListAsJSON ()
             continue;
         }
 
-        Json::Value jsonVideoSource;
+        Json_de jsonVideoSource;
 
         jsonVideoSource["v"]        = (bool) true;
         jsonVideoSource["ln"]       = deviceInfo.local_name;
@@ -803,7 +800,7 @@ Json::Value uavos::CWEBRTC_Plugin::getDeviceListAsJSON ()
         jsonVideoSource["r"]        = deviceInfo.recording;
         jsonVideoSource["p"] = EXTERNAL_CAMERA_TYPE_RTCWEBCAM;
         
-        jsonDeviceList.append(jsonVideoSource);
+        jsonDeviceList.push_back(jsonVideoSource);
     
         #ifdef DEBUG
         std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << "getDeviceListAsJSON " << deviceInfo.recording <<  _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -821,8 +818,6 @@ void uavos::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name, bool s
     std::cout << _LOG_CONSOLE_TEXT << "DEBUG: onImageRecorded: " << output_file_name << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
     
-    if (!m_sendSignalJMSG) return ;
-    
     if (send_image_gcs)
     {
         std::ifstream rf(output_file_name, std::ios::out | std::ios::binary);
@@ -837,12 +832,13 @@ void uavos::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name, bool s
 
         std::cout << _LOG_CONSOLE_TEXT << "DEBUG: onImageRecorded: " << output_file_name << ":" << std::to_string(size) << _NORMAL_CONSOLE_TEXT_ << std::endl;
         
-        m_sendBMSG ("",buffer.get(),size,TYPE_AndruavMessage_IMG, true);
+        m_module.sendBMSG ("", buffer.get(), size, TYPE_AndruavMessage_IMG, true, Json_de());
+        
         buffer.release();
     }
     else
     {
-        m_sendBMSG ("",nullptr,0,TYPE_AndruavMessage_IMG, true);
+        m_module.sendBMSG ("", nullptr, 0, TYPE_AndruavMessage_IMG, true, Json_de());
     }
     
 }

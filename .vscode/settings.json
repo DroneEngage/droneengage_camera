@@ -115,6 +115,10 @@
         "semaphore": "cpp",
         "span": "cpp",
         "stop_token": "cpp",
-        "syncstream": "cpp"
+        "syncstream": "cpp",
+        "__node_handle": "cpp",
+        "__verbose_abort": "cpp",
+        "print": "cpp",
+        "propagate_const": "cpp"
     }
 }

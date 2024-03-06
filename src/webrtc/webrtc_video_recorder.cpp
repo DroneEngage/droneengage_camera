@@ -4,6 +4,9 @@
 #include "webrtc_video_recorder.hpp"
 #include <thread>         // std::thread
 
+#include "./helpers/json.hpp"
+using Json_de = nlohmann::json;
+
 extern "C" {
 #if defined(USE_SYSTEM_LIBJPEG)
 #include <jpeglib.h>
@@ -23,13 +26,13 @@ const int INFO_HEADER_SIZE = 40;
 
 const std::string uavos::stream_webrtc::CVideoRecording::getMediaFolderPath() const
 {
-    Json::Value& jsonConfig = CConfigFile::getInstance().GetConfigJSON();
-    if (jsonConfig.isMember("media_folder") == false) 
+    Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
+    if (jsonConfig.contains("media_folder") == false) 
     {
         return std::string();
     }
     
-    const std::string file_path = jsonConfig["media_folder"].asString() + "/";
+    const std::string file_path = jsonConfig["media_folder"].get<std::string>() + "/";
    
     return file_path;
 }
@@ -37,13 +40,13 @@ const std::string uavos::stream_webrtc::CVideoRecording::getMediaFolderPath() co
 
 const bool uavos::stream_webrtc::CVideoRecording::saveImageinJPG() const
 {
-    Json::Value& jsonConfig = CConfigFile::getInstance().GetConfigJSON();
-    if (jsonConfig.isMember("media_image_jpg") == false) 
+    Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
+    if (jsonConfig.contains("media_image_jpg") == false) 
     {
         return false;
     }
     
-    const bool use_jpeg = jsonConfig["media_image_jpg"].asBool();
+    const bool use_jpeg = jsonConfig["media_image_jpg"].get<bool>();
    
     return use_jpeg;
 }
@@ -51,13 +54,13 @@ const bool uavos::stream_webrtc::CVideoRecording::saveImageinJPG() const
 
 const bool uavos::stream_webrtc::CVideoRecording::sendImageToGCS() const
 {
-    Json::Value& jsonConfig = CConfigFile::getInstance().GetConfigJSON();
-    if (jsonConfig.isMember("send_image_gcs") == false) 
+    Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
+    if (jsonConfig.contains("send_image_gcs") == false) 
     {
         return false;
     }
     
-    const bool use_jpeg = jsonConfig["send_image_gcs"].asBool();
+    const bool use_jpeg = jsonConfig["send_image_gcs"].get<bool>();
    
     return use_jpeg;
 }

@@ -36,7 +36,7 @@ class CPeerConnectionManager : public webrtc::CreateSessionDescriptionObserver
         bool CreateOffer();
         bool CreateAnswer();
         void SetRemoteDescription(const std::string& type, const std::string& sdp);
-        bool AddIceCandidate (const Json::Value& packet);
+        bool AddIceCandidate (const Json_de& packet);
         webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpTransceiverInterface>> AddTransceiver(
             rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> track);
         void Close();

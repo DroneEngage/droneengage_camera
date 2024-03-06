@@ -17,35 +17,34 @@ std::vector<webrtc::SdpVideoFormat> uavos::stream_webrtc::CBuiltinVideoEncoderFa
   std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: CBuiltinVideoEncoderFactory::SupportedFormats()" << _NORMAL_CONSOLE_TEXT_ << std::endl;
   #endif
   std::vector<webrtc::SdpVideoFormat> supported_codecs;
-  CConfigFile *cConfigFile;
-  cConfigFile = &CConfigFile::getInstance();
-  Json::Value& jsonConfig = cConfigFile->GetConfigJSON();
+  CConfigFile& cConfigFile = CConfigFile::getInstance();
+  Json_de jsonConfig = cConfigFile.GetConfigJSON();
           
 
-  if (jsonConfig.isMember("codecs"))
+  if (jsonConfig.contains("codecs"))
   {
-      Json::Value codecs= jsonConfig["codecs"];
+      Json_de codecs= jsonConfig["codecs"];
       for (auto codec : codecs)
       {
-        if (!strcmp(uavos::util::CHelper::stringToUpper(codec.asString()).c_str(), "VP8"))
+        if (!strcmp(uavos::util::CHelper::stringToUpper(codec.get<std::string>()).c_str(), "VP8"))
         {
           Add_VP8(supported_codecs);
           continue;
         }
 
-        if (!strcmp(uavos::util::CHelper::stringToUpper(codec.asString()).c_str(), "VP9"))
+        if (!strcmp(uavos::util::CHelper::stringToUpper(codec.get<std::string>()).c_str(), "VP9"))
         {
           Add_VP9 (supported_codecs);
           continue;
         }
 
-        if (!strcmp(uavos::util::CHelper::stringToUpper(codec.asString()).c_str(), "H264"))
+        if (!strcmp(uavos::util::CHelper::stringToUpper(codec.get<std::string>()).c_str(), "H264"))
         {
           Add_H264 (supported_codecs);
           continue;
         }
 
-        if (!strcmp(uavos::util::CHelper::stringToUpper(codec.asString()).c_str(), "AX1"))
+        if (!strcmp(uavos::util::CHelper::stringToUpper(codec.get<std::string>()).c_str(), "AX1"))
         {
           Add_AX1 (supported_codecs);
           continue;
@@ -83,9 +82,8 @@ void uavos::stream_webrtc::CBuiltinVideoEncoderFactory::Add_VP9 (std::vector<web
 
 void uavos::stream_webrtc::CBuiltinVideoEncoderFactory::Add_H264 (std::vector<webrtc::SdpVideoFormat> &supported_codecs)
 {
-  CConfigFile *cConfigFile;
-  cConfigFile = &CConfigFile::getInstance();
-  Json::Value& jsonConfig = cConfigFile->GetConfigJSON();
+  CConfigFile &cConfigFile = CConfigFile::getInstance();
+  Json_de jsonConfig = cConfigFile.GetConfigJSON();
 
   for (const webrtc::SdpVideoFormat& format : webrtc::SupportedH264Codecs())
   {
@@ -96,8 +94,8 @@ void uavos::stream_webrtc::CBuiltinVideoEncoderFactory::Add_H264 (std::vector<we
 
     // select profile level [42e01f] for iphone 
     // check this https://stackoverflow.com/questions/47462247/webrtc-is-not-working-connecting-safari-with-chrome-for-android?rq=1
-    if ((jsonConfig.isMember("iphone")==true) 
-      &&(jsonConfig["iphone"].asBool()==true)
+    if ((jsonConfig.contains("iphone")==true) 
+      &&(jsonConfig["iphone"].get<bool>()==true)
       &&(format.parameters.find("profile-level-id")->second.compare(std::string("42e01f")) ==0)) 
     {
       std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_<< " Selected" << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -135,19 +133,18 @@ std::unique_ptr<webrtc::VideoEncoder> uavos::stream_webrtc::CBuiltinVideoEncoder
   std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: CBuiltinVideoEncoderFactory::CreateVideoEncoder()" << _NORMAL_CONSOLE_TEXT_ << std::endl;
   #endif
   
-  CConfigFile *cConfigFile;
-  cConfigFile = &CConfigFile::getInstance();
-  Json::Value& jsonConfig = cConfigFile->GetConfigJSON();
+  CConfigFile &cConfigFile = CConfigFile::getInstance();
+  Json_de jsonConfig = cConfigFile.GetConfigJSON();
   
   std::cout << format.name << std::endl;
-  if (jsonConfig.isMember("codecs"))
+  if (jsonConfig.contains("codecs"))
   {
-      Json::Value codecs= jsonConfig["codecs"];
+      Json_de codecs= jsonConfig["codecs"];
       for (auto codec : codecs)
       {
         std::cout << codec << std::endl;
-
-        if (!strcmp(uavos::util::CHelper::stringToUpper(format.name).c_str(),codec.asCString()))
+        //TODO: fix this
+        if (!strcmp(uavos::util::CHelper::stringToUpper(format.name).c_str(),codec.get<std::string>().c_str()))
         {
             return CreateVideoEncoder_ (format);
         }

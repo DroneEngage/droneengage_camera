@@ -5,9 +5,11 @@ BIN=bin
 BUILD = build
 SRC = src
 OBJS = $(BUILD)/main.o \
+       $(BUILD)/helpers.o \
        $(BUILD)/configFile.o \
        $(BUILD)/udpClient.o \
-       $(BUILD)/webrtc_fakeAudioCaptureModule.o \
+	   $(BUILD)/uavos_module.o \
+	   $(BUILD)/webrtc_fakeAudioCaptureModule.o \
        $(BUILD)/webrtc_source.o \
 	   $(BUILD)/webrtc_video_recorder.o \
 	   $(BUILD)/webrtc_video_dev_capturer.o \
@@ -18,11 +20,15 @@ OBJS = $(BUILD)/main.o \
 	   $(BUILD)/webrtc_video_encoder_factory.o \
 	   $(BUILD)/webrtc_plugin.o \
 	   $(BUILD)/getopt_cpp.o \
+	   $(BUILD)/util_rpi.o \
 	   #$(BUILD)/webrtc_PeerConnectionObserver.o \
 
 SRCS = ../$(SRC)/main.cpp \
-       ../$(SRC)/configFile.cpp \
-	   ../$(SRC)/udpClient.cpp \
+       ../$(SRC)/helpers/helpers.cpp \
+       ../$(SRC)/helpers/util_rpi.cpp \
+	   ../$(SRC)/configFile.cpp \
+	   ../$(SRC)/uavos_common/udpClient.cpp \
+	   ../$(SRC)/uavos_common/uavos_module.cpp \
 	   ../$(SRC)/webrtc/webrtc_fakeAudioCaptureModule.cpp \
 	   ../$(SRC)/webrtc/webrtc_source.cpp \
 	   ../$(SRC)/webrtc/webrtc_userMedia.cpp \
