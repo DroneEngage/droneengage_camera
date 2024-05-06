@@ -1,0 +1,11 @@
+bin/
+build/
+*.gz
+webrtc_examples
+./media/*
+./*.ignore
+./*.mp4
+./*.bmp
+./*.jpg
+./*.png
+*.a

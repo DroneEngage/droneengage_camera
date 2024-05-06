@@ -1,0 +1,29 @@
+{
+    "module_id"                 : "HorusEye1",
+    "module_key"                : "E289FEE7-FDAD-44EF-A257-C9A36DDD6BE7", 
+
+    /* UAVOS Communication Server */
+    "s2s_udp_target_ip"           : "192.168.1.100",
+    "s2s_udp_target_port"         : "60000", 
+    "s2s_udp_listening_ip"        : "0.0.0.0", 
+    "s2s_udp_listening_port"      : "60014",
+
+
+    // Camera Devices Configuration
+    "camera_start_index"        :0,
+    "camera_end_index"          :0, 
+    "one_camera_at_a_time"      : true,
+    
+    
+
+    "iceServers": [ 
+        //{"urls": "stun:144.217.162.241:3478"},
+        {"urls": "stun:stun.services.mozilla.com"},
+        {"urls": "stun:stun.l.google.com:19302"},
+        {"urls": "stun:stun1.l.google.com:19302"},
+        {"urls": "stun:stun2.l.google.com:19302"},
+        {"urls": "stun:stun3.l.google.com:19302"},
+        {"urls": "stun:stun4.l.google.com:19302"}
+        ]
+
+}

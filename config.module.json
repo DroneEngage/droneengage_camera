@@ -1,0 +1,34 @@
+{
+    "module_id"                 : "HorusEyeLAB1",
+    "module_key"                : "E289FEE7-CDAD-44EF-A257-C9A36KDD6BX7", 
+    /* UAVOS Communication Server */
+    "s2s_udp_target_ip"           : "127.0.0.1", //"192.168.1.144",
+    "s2s_udp_target_port"         : "60000", 
+    "s2s_udp_listening_ip"        : "127.0.0.1", 
+    "s2s_udp_listening_port"      : "60029",
+
+
+    // Camera Devices Configuration
+    "camera_start_index"        :0, 
+    "camera_end_index"          :10, 
+    "one_session_per_camera"    : true,
+      // "camera_list": [
+      //   {"name": "AI1", "device_num": 0} // name should be unique across all cameras.
+      //   //,{"name": "AI2", "device_num": 1}
+      // ],
+    
+    //optional entry used to store video and images.
+    "media_folder": ".",
+    // default: true
+    "media_image_png": false,
+    // default: true
+    "send_image_gcs": true,
+
+    "codecs": ["VP9","H264"],
+
+    "iceServers": [ 
+        {"urls": "stun:airgap.droneengage.com:3478","username":"airgap","password":"1234"},
+        {"urls": "turn:167.114.113.48:3478","username":"andruav","password":"1234"}
+        ]
+
+}

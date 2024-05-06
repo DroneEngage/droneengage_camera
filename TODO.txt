@@ -1,0 +1,2 @@
+1- slide bar to chose compression ratio, jpg, bmp in webclient.
+2- dont save in video module... compvert to extension and send it in memory to de_communicator and de_communicator saves it.
