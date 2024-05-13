@@ -24,10 +24,10 @@ void uavos::comm::CModule::defineModule (
 }
 
 
-bool uavos::comm::CModule::init (const std::string targetIP, int broadcatsPort, const std::string host, int listenningPort)
+bool uavos::comm::CModule::init (const std::string targetIP, int broadcatsPort, const std::string host, int listenningPort,  int chunkSize)
 {
     // UDP Server
-    cUDPClient.init(targetIP.c_str(), broadcatsPort, host.c_str() ,listenningPort);
+    cUDPClient.init(targetIP.c_str(), broadcatsPort, host.c_str() ,listenningPort, chunkSize);
     
     createJSONID(true);
     cUDPClient.start();
@@ -204,13 +204,15 @@ void uavos::comm::CModule::onReceive (const char * message, int len)
         /* code */
         Json_de jMsg = Json_de::parse(message);
         
+        #ifdef DDEBUG
         std::cout << _INFO_CONSOLE_TEXT << "RX MSG: jMsg" << jMsg.dump() <<   _NORMAL_CONSOLE_TEXT_ << std::endl;
+        #endif
 
         if (!jMsg.contains(ANDRUAV_PROTOCOL_MESSAGE_TYPE)) return ;
         
         if (!jMsg.contains(INTERMODULE_ROUTING_TYPE)) return ;
         
-        
+
         if (std::strcmp(jMsg[INTERMODULE_ROUTING_TYPE].get<std::string>().c_str(),CMD_TYPE_INTERMODULE)==0)
         {
             
@@ -222,12 +224,11 @@ void uavos::comm::CModule::onReceive (const char * message, int len)
             const int messageType = jMsg[ANDRUAV_PROTOCOL_MESSAGE_TYPE].get<int>();
             switch (messageType)
             {
-                case TYPE_AndruavModule_ID:
+            case TYPE_AndruavModule_ID:
                 {
-                    if (!cmd.contains("f")) return ;
-            
                     const Json_de moduleID = cmd ["f"];
                     
+                    if (!cmd.contains("f")) return ;
                     if (!moduleID.contains(ANDRUAV_PROTOCOL_SENDER)) return ;
                     if (!moduleID.contains(ANDRUAV_PROTOCOL_GROUP_ID)) return ;
             
@@ -248,7 +249,7 @@ void uavos::comm::CModule::onReceive (const char * message, int len)
                 }
                 break;
             
-                case TYPE_AndruavMessage_DUMMY:
+            case TYPE_AndruavMessage_DUMMY:
                 {
                     std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << " TYPE_AndruavMessage_DUMMY" << _SUCCESS_CONSOLE_TEXT_ << message <<  _NORMAL_CONSOLE_TEXT_ << std::endl;
                         
@@ -258,6 +259,9 @@ void uavos::comm::CModule::onReceive (const char * message, int len)
                 default:
                     break;
             }
+            
+            
+
             
         }
 
