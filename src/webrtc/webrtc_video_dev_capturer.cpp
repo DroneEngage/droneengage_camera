@@ -210,7 +210,7 @@ void uavos::stream_webrtc::VideoDevCapturerComposite::AddOrUpdateSink( rtc::Vide
                         const rtc::VideoSinkWants& wants) 
 {
   #ifdef DEBUG
-  std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "\r\n" << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: VideoDevCapturerComposite::AddOrUpdateSink" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "\r\n" << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: VideoDevCapturerComposite::AddOrUpdateSink" << _NORMAL_CONSOLE_TEXT_ << std::endl;
   #endif
 
   m_broadCaster.AddOrUpdateSink(sink, wants);
@@ -221,7 +221,7 @@ void uavos::stream_webrtc::VideoDevCapturerComposite::AddOrUpdateSink( rtc::Vide
 void uavos::stream_webrtc::VideoDevCapturerComposite::RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
   
   #ifdef DEBUG
-  std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "\r\n" << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: VideoDevCapturerComposite::RemoveSink" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "\r\n" << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: VideoDevCapturerComposite::RemoveSink" << _NORMAL_CONSOLE_TEXT_ << std::endl;
   #endif
 
   m_broadCaster.RemoveSink(sink);

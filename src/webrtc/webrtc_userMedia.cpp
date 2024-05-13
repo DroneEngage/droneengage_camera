@@ -150,7 +150,7 @@ rtc::scoped_refptr<webrtc::VideoTrackInterface> uavos::stream_webrtc::CUserMedia
 
   m_videoTracks.insert(std::make_pair(trackLabel,videoTrackInterface));
 
-  std::cout << __FULL_DEBUG__   <<  _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: CreateVideoTrackInterface " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  std::cout << __FULL_DEBUG__   <<  _LOG_CONSOLE_BOLD_TEXT << "DEBUG: CreateVideoTrackInterface " << _NORMAL_CONSOLE_TEXT_ << std::endl;
 
   return videoTrackInterface;
 }

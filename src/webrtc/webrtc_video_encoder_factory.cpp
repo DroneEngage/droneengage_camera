@@ -14,7 +14,7 @@
 std::vector<webrtc::SdpVideoFormat> uavos::stream_webrtc::CBuiltinVideoEncoderFactory::SupportedFormats() {
 
   #ifdef DEBUG
-  std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: CBuiltinVideoEncoderFactory::SupportedFormats()" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: CBuiltinVideoEncoderFactory::SupportedFormats()" << _NORMAL_CONSOLE_TEXT_ << std::endl;
   #endif
   std::vector<webrtc::SdpVideoFormat> supported_codecs;
   CConfigFile& cConfigFile = CConfigFile::getInstance();
@@ -73,7 +73,7 @@ void uavos::stream_webrtc::CBuiltinVideoEncoderFactory::Add_VP9 (std::vector<web
 {
   for (const webrtc::SdpVideoFormat& format : webrtc::SupportedVP9Codecs())
   {
-    std::cout << _INFO_CONSOLE_TEXT << format.name << _LOG_CONSOLE_TEXT_BOLD_ <<  " Profile-id : " << format.parameters.find("profile-id")->second 
+    std::cout << _INFO_CONSOLE_TEXT << format.name << _LOG_CONSOLE_BOLD_TEXT <<  " Profile-id : " << format.parameters.find("profile-id")->second 
       << _SUCCESS_CONSOLE_BOLD_TEXT_ << " Selected" << _NORMAL_CONSOLE_TEXT_ << std::endl; 
 
     supported_codecs.push_back(format);
@@ -88,7 +88,7 @@ void uavos::stream_webrtc::CBuiltinVideoEncoderFactory::Add_H264 (std::vector<we
   for (const webrtc::SdpVideoFormat& format : webrtc::SupportedH264Codecs())
   {
     
-    std::cout << _INFO_CONSOLE_TEXT << format.name << _LOG_CONSOLE_TEXT_BOLD_ <<  " Profile : " << format.parameters.find("profile-level-id")->second 
+    std::cout << _INFO_CONSOLE_TEXT << format.name << _LOG_CONSOLE_BOLD_TEXT <<  " Profile : " << format.parameters.find("profile-level-id")->second 
           << " level-asymmetry-allowed:" << format.parameters.find("level-asymmetry-allowed")->second 
           << " packetization-mode:" << format.parameters.find("packetization-mode")->second;
 
@@ -118,7 +118,7 @@ std::vector<webrtc::SdpVideoFormat> uavos::stream_webrtc::CBuiltinVideoEncoderFa
     const {
 
   #ifdef DEBUG
-  std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: CBuiltinVideoEncoderFactory::GetSupportedFormats()" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: CBuiltinVideoEncoderFactory::GetSupportedFormats()" << _NORMAL_CONSOLE_TEXT_ << std::endl;
   #endif
 
   return SupportedFormats();
@@ -128,7 +128,7 @@ std::unique_ptr<webrtc::VideoEncoder> uavos::stream_webrtc::CBuiltinVideoEncoder
     const webrtc::SdpVideoFormat& format) {
 
   #ifdef DEBUG
-  std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: CBuiltinVideoEncoderFactory::CreateVideoEncoder()" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: CBuiltinVideoEncoderFactory::CreateVideoEncoder()" << _NORMAL_CONSOLE_TEXT_ << std::endl;
   #endif
   
   CConfigFile &cConfigFile = CConfigFile::getInstance();

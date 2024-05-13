@@ -176,7 +176,7 @@ void uavos::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const 
 {
 
     #ifdef DEBUG
-    std::cout << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: OnIceCandidate:" <<_NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnIceCandidate:" <<_NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
     
     
@@ -242,7 +242,7 @@ void uavos::CWEBRTC_Plugin::cleaning()
     if (deleteMe.size () > 0)
     {
         #ifdef DEBUG
-        std::cout << __FUNCTION__ << __LINE__ << "Key " << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: deleteMe Found" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        std::cout << __FUNCTION__ << __LINE__ << "Key " << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: deleteMe Found" << _NORMAL_CONSOLE_TEXT_ << std::endl;
         #endif
 
         std::string sessionID =  deleteMe[0];
@@ -267,7 +267,7 @@ void uavos::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const s
 
     if (sessionID.empty())
     {
-        std::cout << "Key " << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: null sessionID" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        std::cout << "Key " << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: null sessionID" << _NORMAL_CONSOLE_TEXT_ << std::endl;
         
         return ;
     }
@@ -275,7 +275,7 @@ void uavos::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const s
 
     if (m_singleCameraMode)
     {
-        std::cout << "Key " << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: m_singleCameraMode" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        std::cout << "Key " << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: m_singleCameraMode" << _NORMAL_CONSOLE_TEXT_ << std::endl;
         
         const STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
         if ( sessionInfo != NULL)

@@ -153,7 +153,7 @@ void initUavosModule(int argc, char *argv[])
     }
     else
     {
-        std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "WARNING:" << _INFO_CONSOLE_TEXT << " MISSING FIELD " << _ERROR_CONSOLE_BOLD_TEXT_ << "s2s_udp_packet_size " <<  _INFO_CONSOLE_TEXT << "is missing in config file. default value " << _ERROR_CONSOLE_BOLD_TEXT_  << "8160 " <<  _INFO_CONSOLE_TEXT <<  "is used." << _NORMAL_CONSOLE_TEXT_ << std::endl;    
+        std::cout << _LOG_CONSOLE_BOLD_TEXT << "WARNING:" << _INFO_CONSOLE_TEXT << " MISSING FIELD " << _ERROR_CONSOLE_BOLD_TEXT_ << "s2s_udp_packet_size " <<  _INFO_CONSOLE_TEXT << "is missing in config file. default value " << _ERROR_CONSOLE_BOLD_TEXT_  << "8160 " <<  _INFO_CONSOLE_TEXT <<  "is used." << _NORMAL_CONSOLE_TEXT_ << std::endl;    
     }
 
     cModule.init(jsonConfig["s2s_udp_target_ip"].get<std::string>(),
@@ -190,8 +190,8 @@ void init (int argc, char *argv[])
     std::string  ModuleKey;
 
     //https://stackoverflow.com/questions/2616906/how-do-i-output-coloured-text-to-a-linux-terminal
-    std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "UAVOS Plugin Module: " << _SUCCESS_CONSOLE_BOLD_TEXT_ <<  ModuleID << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "Class Type: " << _SUCCESS_CONSOLE_BOLD_TEXT_<< "camera" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << _LOG_CONSOLE_BOLD_TEXT << "UAVOS Plugin Module: " << _SUCCESS_CONSOLE_BOLD_TEXT_ <<  ModuleID << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << _LOG_CONSOLE_BOLD_TEXT << "Class Type: " << _SUCCESS_CONSOLE_BOLD_TEXT_<< "camera" << _NORMAL_CONSOLE_TEXT_ << std::endl;
 
     std::cout << std::asctime(std::localtime(&instance_time_stamp)) << instance_time_stamp << " seconds since the Epoch" << std::endl;
     
@@ -215,7 +215,7 @@ void init (int argc, char *argv[])
         for (auto cameraItem : jsonCameraList)
         {
             if (cameraItem["name"].get<std::string>().empty()) continue; // most propably it is an extra comma after last field.
-            std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "Trying to init: " << _INFO_CONSOLE_TEXT << cameraItem["name"].get<std::string>() << _LOG_CONSOLE_TEXT_BOLD_ << " \\dev\\video" << _INFO_CONSOLE_TEXT << cameraItem["device_num"].get<int>() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            std::cout << _LOG_CONSOLE_BOLD_TEXT << "Trying to init: " << _INFO_CONSOLE_TEXT << cameraItem["name"].get<std::string>() << _LOG_CONSOLE_BOLD_TEXT << " \\dev\\video" << _INFO_CONSOLE_TEXT << cameraItem["device_num"].get<int>() << _NORMAL_CONSOLE_TEXT_ << std::endl;
             if (!cWEBRTC_Plugin->addCameraByID(cameraItem["name"].get<std::string>(), cameraItem["device_num"].get<int>()))
             {
                 std::cout << _ERROR_CONSOLE_TEXT_ << "failed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -297,8 +297,8 @@ void onReceive (const char * message, int len, Json_de jMsg)
                 {
                     case RemoteCommand_RECORDVIDEO:
                     {
-                        std::cout << "Key " << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: RemoteCommand_RECORDVIDEO" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-                        std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: TYPE_AndruavMessage_Signaling" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                        std::cout << "Key " << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: RemoteCommand_RECORDVIDEO" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                        std::cout << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: TYPE_AndruavMessage_Signaling" << _NORMAL_CONSOLE_TEXT_ << std::endl;
                         if (!jMsg.contains(ANDRUAV_PROTOCOL_SENDER))
                         {
                             // cannot send this command as broadcast.
@@ -326,7 +326,7 @@ void onReceive (const char * message, int len, Json_de jMsg)
                     case RemoteCommand_SWITCHCAM:
                     {
                         //_camera.nextCamera (jmsg.sd);
-                        std::cout << "Key " << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: RemoteCommand_SWITCHCAM" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                        std::cout << "Key " << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: RemoteCommand_SWITCHCAM" << _NORMAL_CONSOLE_TEXT_ << std::endl;
                         createJSONID(false);
                     }
                     break;
@@ -345,7 +345,7 @@ void onReceive (const char * message, int len, Json_de jMsg)
                 
                 Json_de const packet = w["packet"];
                 
-                std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "INFO: TYPE_AndruavMessage_Signaling" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                std::cout << _LOG_CONSOLE_BOLD_TEXT << "INFO: TYPE_AndruavMessage_Signaling" << _NORMAL_CONSOLE_TEXT_ << std::endl;
                 if (!jMsg.contains(ANDRUAV_PROTOCOL_SENDER))
                 {
                     // cannot send this command as broadcast.

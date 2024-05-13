@@ -139,7 +139,7 @@ bool uavos::stream_webrtc::CPeerConnectionManager::CreateOffer() {
 
     m_peerConnection.get()->CreateOffer((CreateSessionDescriptionObserver*)this, options);
 
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: CreateOffer" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: CreateOffer" << _NORMAL_CONSOLE_TEXT_ << std::endl;
         
     return true;
 }
@@ -165,7 +165,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::SetRemoteDescription(const st
 {
 
     #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: SetRemoteDescription" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: SetRemoteDescription" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 
     std::unique_ptr<webrtc::SessionDescriptionInterface> session_description = 
@@ -229,7 +229,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnSuccess(webrtc::SessionDesc
                      << " type created: " << desc->type();
 
   
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  " << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: CPeerConnectionManager::OnSuccess" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  " << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: CPeerConnectionManager::OnSuccess" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     webrtc::SdpParseError error;
     // webrtc::SessionDescriptionInterface *session_description = 
     //             webrtc::CreateSessionDescription(desc->type(), sdp, &error);
@@ -276,7 +276,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnFailure(webrtc::RTCError er
  */
 void uavos::stream_webrtc::CPeerConnectionManager::onsuccess() {
 
-    std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: SetLocalDescripton::onsuccess" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: SetLocalDescripton::onsuccess" << _NORMAL_CONSOLE_TEXT_ << std::endl;
 
     
     if (m_callbacks)
@@ -293,12 +293,12 @@ void uavos::stream_webrtc::CPeerConnectionManager::onsuccess() {
 
 
 void uavos::stream_webrtc::CPeerConnectionManager::onfailed() {
-    std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: SetLocalDescripton::onfailed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: SetLocalDescripton::onfailed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
 }
 
 
 void uavos::stream_webrtc::CPeerConnectionManager::Close() {
-    std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: CPeerConnectionManager::Close" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: CPeerConnectionManager::Close" << _NORMAL_CONSOLE_TEXT_ << std::endl;
 
     m_peerConnection->Close();
     m_peerConnection = nullptr;
@@ -311,31 +311,31 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnSignalingChange(webrtc::Pee
     switch (new_state)
     {
         case webrtc::PeerConnectionInterface::kStable:
-            std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnSignalingChange:kStable" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            std::cout << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnSignalingChange:kStable" << _NORMAL_CONSOLE_TEXT_ << std::endl;
             break;
         
         case webrtc::PeerConnectionInterface::kClosed:
-            std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnSignalingChange:CLOSED" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            std::cout << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnSignalingChange:CLOSED" << _NORMAL_CONSOLE_TEXT_ << std::endl;
             break;
         
         case webrtc::PeerConnectionInterface::kHaveLocalOffer:
-            std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnSignalingChange:kHaveLocalOffer" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            std::cout << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnSignalingChange:kHaveLocalOffer" << _NORMAL_CONSOLE_TEXT_ << std::endl;
             break;
         
         case webrtc::PeerConnectionInterface::kHaveLocalPrAnswer:
-            std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnSignalingChange:kHaveLocalPrAnswer" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            std::cout << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnSignalingChange:kHaveLocalPrAnswer" << _NORMAL_CONSOLE_TEXT_ << std::endl;
             break;
         
         case webrtc::PeerConnectionInterface::kHaveRemoteOffer:
-            std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnSignalingChange:kHaveRemoteOffer" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            std::cout << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnSignalingChange:kHaveRemoteOffer" << _NORMAL_CONSOLE_TEXT_ << std::endl;
             break;
         
         case webrtc::PeerConnectionInterface::kHaveRemotePrAnswer:
-            std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnSignalingChange:kHaveRemotePrAnswer" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            std::cout << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnSignalingChange:kHaveRemotePrAnswer" << _NORMAL_CONSOLE_TEXT_ << std::endl;
             break;
         
         default:
-            std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnSignalingChange:???????" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            std::cout << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnSignalingChange:???????" << _NORMAL_CONSOLE_TEXT_ << std::endl;
             break;
     }
 
@@ -346,7 +346,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnSignalingChange(webrtc::Pee
 void uavos::stream_webrtc::CPeerConnectionManager::OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
 {
     #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnAddStream" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnAddStream" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
         
 }
@@ -355,7 +355,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnAddStream(rtc::scoped_refpt
 void uavos::stream_webrtc::CPeerConnectionManager::OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
 {
     #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnRemoveStream" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnRemoveStream" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
         
 }
@@ -364,7 +364,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnRemoveStream(rtc::scoped_re
 void uavos::stream_webrtc::CPeerConnectionManager::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel)
 {
     #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnDataChannel" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnDataChannel" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 }
 
@@ -373,7 +373,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnDataChannel(rtc::scoped_ref
 void uavos::stream_webrtc::CPeerConnectionManager::OnRenegotiationNeeded()
 {
     #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnRenegotiationNeeded" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnRenegotiationNeeded" << _NORMAL_CONSOLE_TEXT_ << std::endl;
 	#endif
 }
 
@@ -381,7 +381,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnRenegotiationNeeded()
 void uavos::stream_webrtc::CPeerConnectionManager::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state)
 {
     #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnIceConnectionChange state: "  << _INFO_CONSOLE_TEXT << std::endl;
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnIceConnectionChange state: "  << _INFO_CONSOLE_TEXT << std::endl;
     #endif
     
     switch (new_state)
@@ -430,7 +430,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnIceConnectionChange(webrtc:
 void uavos::stream_webrtc::CPeerConnectionManager::OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState new_state)
 {   
     #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnConnectionChange " << "\033[1;33m";
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnConnectionChange " << "\033[1;33m";
     #endif
     
     
@@ -468,7 +468,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnConnectionChange(webrtc::Pe
 void uavos::stream_webrtc::CPeerConnectionManager::OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state)
 { 
     #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnIceGatheringChange " << "\033[1;33m";
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnIceGatheringChange " << "\033[1;33m";
     #endif
 
     switch (new_state)
@@ -500,7 +500,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnIceGatheringChange(webrtc::
 void uavos::stream_webrtc::CPeerConnectionManager::OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
 { 
     #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: OnIceCandidate" << _NORMAL_CONSOLE_TEXT_ << std::endl ;
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnIceCandidate" << _NORMAL_CONSOLE_TEXT_ << std::endl ;
     #endif
 
     if (m_callbacks)
@@ -517,7 +517,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnIceCandidate(const webrtc::
 void uavos::stream_webrtc::CPeerConnectionManager::OnIceCandidatesRemoved(const std::vector<cricket::Candidate>& candidates)
 { 
    #ifdef DEBUG
-   std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  " << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: OnIceCandidatesRemoved" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+   std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  " << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnIceCandidatesRemoved" << _NORMAL_CONSOLE_TEXT_ << std::endl;
    #endif
 }
 
@@ -526,7 +526,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnIceCandidatesRemoved(const 
 void uavos::stream_webrtc::CPeerConnectionManager::OnIceConnectionReceivingChange(bool receiving)
 { 
     #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  " << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: OnIceConnectionReceivingChange" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  " << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnIceConnectionReceivingChange" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 }
 
@@ -541,7 +541,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnAddTrack(rtc::scoped_refptr
                 const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>& streams)
 { 
     #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  " << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: OnAddTrack" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  " << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnAddTrack" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 }
 
@@ -558,7 +558,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnAddTrack(rtc::scoped_refptr
 void uavos::stream_webrtc::CPeerConnectionManager::OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
 { 
     #ifdef DEBUG
-    std::cout << _LOG_CONSOLE_TEXT_BOLD_ << "DEBUG: OnTrack" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnTrack" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 }
 
@@ -574,7 +574,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnTrack(rtc::scoped_refptr<we
 void uavos::stream_webrtc::CPeerConnectionManager::OnRemoveTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver)
 { 
     #ifdef DEBUG
-    std::cout << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: OnRemoveTrack" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnRemoveTrack" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 }
 
@@ -588,7 +588,7 @@ void uavos::stream_webrtc::CPeerConnectionManager::OnRemoveTrack(rtc::scoped_ref
 void uavos::stream_webrtc::CPeerConnectionManager::OnInterestingUsage(int usage_pattern)
 { 
     #ifdef DEBUG
-    std::cout << _LOG_CONSOLE_TEXT_BOLD_ << " DEBUG: OnInterestingUsage" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnInterestingUsage" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 }
 
