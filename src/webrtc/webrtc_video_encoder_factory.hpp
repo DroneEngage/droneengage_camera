@@ -2,7 +2,7 @@
 #define CVIDEOENCODERFACTORY_H
 
 
-namespace uavos
+namespace de
 {
 namespace stream_webrtc
 {

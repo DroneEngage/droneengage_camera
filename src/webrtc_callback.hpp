@@ -1,7 +1,7 @@
 #ifndef WEBRTC_CALLBACK_H
 #define WEBRTC_CALLBACK_H
 
-namespace uavos
+namespace de
 {
 
 

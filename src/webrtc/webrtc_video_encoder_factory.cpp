@@ -11,7 +11,7 @@
 #include "webrtc_video_encoder_factory.hpp"
 
 
-std::vector<webrtc::SdpVideoFormat> uavos::stream_webrtc::CBuiltinVideoEncoderFactory::SupportedFormats() {
+std::vector<webrtc::SdpVideoFormat> de::stream_webrtc::CBuiltinVideoEncoderFactory::SupportedFormats() {
 
   #ifdef DEBUG
   std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: CBuiltinVideoEncoderFactory::SupportedFormats()" << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -26,25 +26,25 @@ std::vector<webrtc::SdpVideoFormat> uavos::stream_webrtc::CBuiltinVideoEncoderFa
       Json_de codecs= jsonConfig["codecs"];
       for (auto codec : codecs)
       {
-        if (!strcmp(uavos::util::CHelper::stringToUpper(codec.get<std::string>()).c_str(), "VP8"))
+        if (!strcmp(de::util::CHelper::stringToUpper(codec.get<std::string>()).c_str(), "VP8"))
         {
           Add_VP8(supported_codecs);
           continue;
         }
 
-        if (!strcmp(uavos::util::CHelper::stringToUpper(codec.get<std::string>()).c_str(), "VP9"))
+        if (!strcmp(de::util::CHelper::stringToUpper(codec.get<std::string>()).c_str(), "VP9"))
         {
           Add_VP9 (supported_codecs);
           continue;
         }
 
-        if (!strcmp(uavos::util::CHelper::stringToUpper(codec.get<std::string>()).c_str(), "H264"))
+        if (!strcmp(de::util::CHelper::stringToUpper(codec.get<std::string>()).c_str(), "H264"))
         {
           Add_H264 (supported_codecs);
           continue;
         }
 
-        if (!strcmp(uavos::util::CHelper::stringToUpper(codec.get<std::string>()).c_str(), "AX1"))
+        if (!strcmp(de::util::CHelper::stringToUpper(codec.get<std::string>()).c_str(), "AX1"))
         {
           Add_AX1 (supported_codecs);
           continue;
@@ -62,14 +62,14 @@ std::vector<webrtc::SdpVideoFormat> uavos::stream_webrtc::CBuiltinVideoEncoderFa
 }
 
 
-void uavos::stream_webrtc::CBuiltinVideoEncoderFactory::Add_VP8 (std::vector<webrtc::SdpVideoFormat> &supported_codecs)
+void de::stream_webrtc::CBuiltinVideoEncoderFactory::Add_VP8 (std::vector<webrtc::SdpVideoFormat> &supported_codecs)
 {
     std::cout << _INFO_CONSOLE_TEXT << "VP8" << _SUCCESS_CONSOLE_BOLD_TEXT_ << " Selected" << _NORMAL_CONSOLE_TEXT_ << std::endl; 
 
     supported_codecs.push_back(webrtc::SdpVideoFormat(cricket::kVp8CodecName));
 }
 
-void uavos::stream_webrtc::CBuiltinVideoEncoderFactory::Add_VP9 (std::vector<webrtc::SdpVideoFormat> &supported_codecs)
+void de::stream_webrtc::CBuiltinVideoEncoderFactory::Add_VP9 (std::vector<webrtc::SdpVideoFormat> &supported_codecs)
 {
   for (const webrtc::SdpVideoFormat& format : webrtc::SupportedVP9Codecs())
   {
@@ -80,7 +80,7 @@ void uavos::stream_webrtc::CBuiltinVideoEncoderFactory::Add_VP9 (std::vector<web
   }
 }
 
-void uavos::stream_webrtc::CBuiltinVideoEncoderFactory::Add_H264 (std::vector<webrtc::SdpVideoFormat> &supported_codecs)
+void de::stream_webrtc::CBuiltinVideoEncoderFactory::Add_H264 (std::vector<webrtc::SdpVideoFormat> &supported_codecs)
 {
   CConfigFile &cConfigFile = CConfigFile::getInstance();
   Json_de jsonConfig = cConfigFile.GetConfigJSON();
@@ -106,7 +106,7 @@ void uavos::stream_webrtc::CBuiltinVideoEncoderFactory::Add_H264 (std::vector<we
   }
 }
 
-void uavos::stream_webrtc::CBuiltinVideoEncoderFactory::Add_AX1 (std::vector<webrtc::SdpVideoFormat> &supported_codecs)
+void de::stream_webrtc::CBuiltinVideoEncoderFactory::Add_AX1 (std::vector<webrtc::SdpVideoFormat> &supported_codecs)
 {
   
     std::cout << _INFO_CONSOLE_TEXT << "AX1" << _SUCCESS_CONSOLE_BOLD_TEXT_ << " Selected" << _NORMAL_CONSOLE_TEXT_ << std::endl; 
@@ -114,7 +114,7 @@ void uavos::stream_webrtc::CBuiltinVideoEncoderFactory::Add_AX1 (std::vector<web
     supported_codecs.push_back(webrtc::SdpVideoFormat(cricket::kAv1CodecName));
 }
 
-std::vector<webrtc::SdpVideoFormat> uavos::stream_webrtc::CBuiltinVideoEncoderFactory::GetSupportedFormats()
+std::vector<webrtc::SdpVideoFormat> de::stream_webrtc::CBuiltinVideoEncoderFactory::GetSupportedFormats()
     const {
 
   #ifdef DEBUG
@@ -124,7 +124,7 @@ std::vector<webrtc::SdpVideoFormat> uavos::stream_webrtc::CBuiltinVideoEncoderFa
   return SupportedFormats();
 }
 
-std::unique_ptr<webrtc::VideoEncoder> uavos::stream_webrtc::CBuiltinVideoEncoderFactory::CreateVideoEncoder(
+std::unique_ptr<webrtc::VideoEncoder> de::stream_webrtc::CBuiltinVideoEncoderFactory::CreateVideoEncoder(
     const webrtc::SdpVideoFormat& format) {
 
   #ifdef DEBUG
@@ -142,7 +142,7 @@ std::unique_ptr<webrtc::VideoEncoder> uavos::stream_webrtc::CBuiltinVideoEncoder
       {
         std::cout << codec << std::endl;
         //TODO: fix this
-        if (!strcmp(uavos::util::CHelper::stringToUpper(format.name).c_str(),codec.get<std::string>().c_str()))
+        if (!strcmp(de::util::CHelper::stringToUpper(format.name).c_str(),codec.get<std::string>().c_str()))
         {
             return CreateVideoEncoder_ (format);
         }
@@ -154,17 +154,17 @@ std::unique_ptr<webrtc::VideoEncoder> uavos::stream_webrtc::CBuiltinVideoEncoder
 
 
 
-std::unique_ptr<webrtc::VideoEncoder> uavos::stream_webrtc::CBuiltinVideoEncoderFactory::CreateVideoEncoder_(const webrtc::SdpVideoFormat& format) 
+std::unique_ptr<webrtc::VideoEncoder> de::stream_webrtc::CBuiltinVideoEncoderFactory::CreateVideoEncoder_(const webrtc::SdpVideoFormat& format) 
 {
-  if (!strcmp(uavos::util::CHelper::stringToUpper(format.name).c_str(), "VP8"))
+  if (!strcmp(de::util::CHelper::stringToUpper(format.name).c_str(), "VP8"))
     {
       return webrtc::VP8Encoder::Create();
     }
-    if (!strcmp(uavos::util::CHelper::stringToUpper(format.name).c_str(), "VP9"))
+    if (!strcmp(de::util::CHelper::stringToUpper(format.name).c_str(), "VP9"))
     {
       return webrtc::VP9Encoder::Create(cricket::VideoCodec(format));
     }
-    if (!strcmp(uavos::util::CHelper::stringToUpper(format.name).c_str(), "H264"))
+    if (!strcmp(de::util::CHelper::stringToUpper(format.name).c_str(), "H264"))
     {
       return webrtc::H264Encoder::Create(cricket::VideoCodec(format));
     }

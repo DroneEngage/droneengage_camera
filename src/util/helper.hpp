@@ -3,7 +3,7 @@
 
 #include "../common.h"
 
-namespace uavos
+namespace de
 {
 namespace util
 {

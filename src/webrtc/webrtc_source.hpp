@@ -2,7 +2,7 @@
 #ifndef CSOURCE_H
 #define CSOURCE_H
 
-namespace uavos
+namespace de
 {
 
 namespace stream_webrtc
@@ -16,7 +16,7 @@ struct device_info {
     std::string device_id;
     std::string product_id;
     std::string unique_name;
-    std::shared_ptr<uavos::stream_webrtc::VideoDevCapturerComposite> capturer;
+    std::shared_ptr<de::stream_webrtc::VideoDevCapturerComposite> capturer;
     bool selected;          // some can be skipped and not listed as available cam.
     int active;             // already streaming
     bool recording;

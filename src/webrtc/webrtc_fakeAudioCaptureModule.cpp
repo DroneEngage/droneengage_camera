@@ -37,7 +37,7 @@ enum {
   MSG_RUN_PROCESS,
 };
 
-uavos::stream_webrtc::CFakeAudioCaptureModule::CFakeAudioCaptureModule()
+de::stream_webrtc::CFakeAudioCaptureModule::CFakeAudioCaptureModule()
     : audio_callback_(nullptr),
       recording_(false),
       playing_(false),
@@ -50,62 +50,62 @@ uavos::stream_webrtc::CFakeAudioCaptureModule::CFakeAudioCaptureModule()
   process_thread_checker_.Detach();
 }
 
-uavos::stream_webrtc::CFakeAudioCaptureModule::~CFakeAudioCaptureModule() {
+de::stream_webrtc::CFakeAudioCaptureModule::~CFakeAudioCaptureModule() {
   if (process_thread_) {
     process_thread_->Stop();
   }
 }
 
-rtc::scoped_refptr<uavos::stream_webrtc::CFakeAudioCaptureModule> uavos::stream_webrtc::CFakeAudioCaptureModule::Create() {
-  auto capture_module = rtc::make_ref_counted<uavos::stream_webrtc::CFakeAudioCaptureModule>();
+rtc::scoped_refptr<de::stream_webrtc::CFakeAudioCaptureModule> de::stream_webrtc::CFakeAudioCaptureModule::Create() {
+  auto capture_module = rtc::make_ref_counted<de::stream_webrtc::CFakeAudioCaptureModule>();
   if (!capture_module->Initialize()) {
     return 0; //nullptr;
   }
   return capture_module;
 }
 
-int uavos::stream_webrtc::CFakeAudioCaptureModule::frames_received() const {
+int de::stream_webrtc::CFakeAudioCaptureModule::frames_received() const {
   webrtc::MutexLock lock(&mutex_);
   return frames_received_;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::ActiveAudioLayer(
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::ActiveAudioLayer(
     AudioLayer* /*audio_layer*/) const {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::RegisterAudioCallback(
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::RegisterAudioCallback(
     webrtc::AudioTransport* audio_callback) {
  return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::Init() {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::Init() {
   // Initialize is called by the factory method. Safe to ignore this Init call.
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::Terminate() {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::Terminate() {
   // Clean up in the destructor. No action here, just success.
   return 0;
 }
 
-bool uavos::stream_webrtc::CFakeAudioCaptureModule::Initialized() const {
+bool de::stream_webrtc::CFakeAudioCaptureModule::Initialized() const {
   RTC_NOTREACHED();
   return 0;
 }
 
-int16_t uavos::stream_webrtc::CFakeAudioCaptureModule::PlayoutDevices() {
+int16_t de::stream_webrtc::CFakeAudioCaptureModule::PlayoutDevices() {
   RTC_NOTREACHED();
   return 0;
 }
 
-int16_t uavos::stream_webrtc::CFakeAudioCaptureModule::RecordingDevices() {
+int16_t de::stream_webrtc::CFakeAudioCaptureModule::RecordingDevices() {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::PlayoutDeviceName(
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::PlayoutDeviceName(
     uint16_t /*index*/,
     char /*name*/[webrtc::kAdmMaxDeviceNameSize],
     char /*guid*/[webrtc::kAdmMaxGuidSize]) {
@@ -113,7 +113,7 @@ int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::PlayoutDeviceName(
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::RecordingDeviceName(
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::RecordingDeviceName(
     uint16_t /*index*/,
     char /*name*/[webrtc::kAdmMaxDeviceNameSize],
     char /*guid*/[webrtc::kAdmMaxGuidSize]) {
@@ -121,24 +121,24 @@ int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::RecordingDeviceName(
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SetPlayoutDevice(uint16_t /*index*/) {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::SetPlayoutDevice(uint16_t /*index*/) {
   // No playout device, just playing from file. Return success.
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SetPlayoutDevice(WindowsDeviceType /*device*/) {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::SetPlayoutDevice(WindowsDeviceType /*device*/) {
   if (play_is_initialized_) {
     return -1;
   }
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SetRecordingDevice(uint16_t /*index*/) {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::SetRecordingDevice(uint16_t /*index*/) {
   // No recording device, just dropping audio. Return success.
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SetRecordingDevice(
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::SetRecordingDevice(
     WindowsDeviceType /*device*/) {
   if (rec_is_initialized_) {
     return -1;
@@ -146,159 +146,159 @@ int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SetRecordingDevice(
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::PlayoutIsAvailable(bool* /*available*/) {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::PlayoutIsAvailable(bool* /*available*/) {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::InitPlayout() {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::InitPlayout() {
   play_is_initialized_ = true;
   return 0;
 }
 
-bool uavos::stream_webrtc::CFakeAudioCaptureModule::PlayoutIsInitialized() const {
+bool de::stream_webrtc::CFakeAudioCaptureModule::PlayoutIsInitialized() const {
   return play_is_initialized_;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::RecordingIsAvailable(bool* /*available*/) {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::RecordingIsAvailable(bool* /*available*/) {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::InitRecording() {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::InitRecording() {
   return 0;
 }
 
-bool uavos::stream_webrtc::CFakeAudioCaptureModule::RecordingIsInitialized() const {
+bool de::stream_webrtc::CFakeAudioCaptureModule::RecordingIsInitialized() const {
   return rec_is_initialized_;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::StartPlayout() {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::StartPlayout() {
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::StopPlayout() {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::StopPlayout() {
   return 0;
 }
 
-bool uavos::stream_webrtc::CFakeAudioCaptureModule::Playing() const {
+bool de::stream_webrtc::CFakeAudioCaptureModule::Playing() const {
   return playing_;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::StartRecording() {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::StartRecording() {
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::StopRecording() {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::StopRecording() {
   return 0;
 }
 
-bool uavos::stream_webrtc::CFakeAudioCaptureModule::Recording() const {
+bool de::stream_webrtc::CFakeAudioCaptureModule::Recording() const {
   return recording_;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::InitSpeaker() {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::InitSpeaker() {
   // No speaker, just playing from file. Return success.
   return 0;
 }
 
-bool uavos::stream_webrtc::CFakeAudioCaptureModule::SpeakerIsInitialized() const {
+bool de::stream_webrtc::CFakeAudioCaptureModule::SpeakerIsInitialized() const {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::InitMicrophone() {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::InitMicrophone() {
   // No microphone, just playing from file. Return success.
   return 0;
 }
 
-bool uavos::stream_webrtc::CFakeAudioCaptureModule::MicrophoneIsInitialized() const {
+bool de::stream_webrtc::CFakeAudioCaptureModule::MicrophoneIsInitialized() const {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SpeakerVolumeIsAvailable(bool* /*available*/) {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::SpeakerVolumeIsAvailable(bool* /*available*/) {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SetSpeakerVolume(uint32_t /*volume*/) {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::SetSpeakerVolume(uint32_t /*volume*/) {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SpeakerVolume(uint32_t* /*volume*/) const {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::SpeakerVolume(uint32_t* /*volume*/) const {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::MaxSpeakerVolume(
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::MaxSpeakerVolume(
     uint32_t* /*max_volume*/) const {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::MinSpeakerVolume(
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::MinSpeakerVolume(
     uint32_t* /*min_volume*/) const {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::MicrophoneVolumeIsAvailable(
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::MicrophoneVolumeIsAvailable(
     bool* /*available*/) {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SetMicrophoneVolume(uint32_t volume) {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::SetMicrophoneVolume(uint32_t volume) {
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::MicrophoneVolume(uint32_t* volume) const {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::MicrophoneVolume(uint32_t* volume) const {
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::MaxMicrophoneVolume(
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::MaxMicrophoneVolume(
     uint32_t* max_volume) const {
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::MinMicrophoneVolume(
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::MinMicrophoneVolume(
     uint32_t* /*min_volume*/) const {
    return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SpeakerMuteIsAvailable(bool* /*available*/) {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::SpeakerMuteIsAvailable(bool* /*available*/) {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SetSpeakerMute(bool /*enable*/) {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::SetSpeakerMute(bool /*enable*/) {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SpeakerMute(bool* /*enabled*/) const {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::SpeakerMute(bool* /*enabled*/) const {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::MicrophoneMuteIsAvailable(bool* /*available*/) {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::MicrophoneMuteIsAvailable(bool* /*available*/) {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SetMicrophoneMute(bool /*enable*/) {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::SetMicrophoneMute(bool /*enable*/) {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::MicrophoneMute(bool* /*enabled*/) const {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::MicrophoneMute(bool* /*enabled*/) const {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::StereoPlayoutIsAvailable(
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::StereoPlayoutIsAvailable(
     bool* available) const {
   // No recording device, just dropping audio. Stereo can be dropped just
   // as easily as mono.
@@ -306,83 +306,83 @@ int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::StereoPlayoutIsAvailable(
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SetStereoPlayout(bool /*enable*/) {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::SetStereoPlayout(bool /*enable*/) {
   // No recording device, just dropping audio. Stereo can be dropped just
   // as easily as mono.
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::StereoPlayout(bool* /*enabled*/) const {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::StereoPlayout(bool* /*enabled*/) const {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::StereoRecordingIsAvailable(
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::StereoRecordingIsAvailable(
     bool* available) const {
   // Keep thing simple. No stereo recording.
   *available = false;
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::SetStereoRecording(bool enable) {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::SetStereoRecording(bool enable) {
   if (!enable) {
     return 0;
   }
   return -1;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::StereoRecording(bool* /*enabled*/) const {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::StereoRecording(bool* /*enabled*/) const {
   RTC_NOTREACHED();
   return 0;
 }
 
-int32_t uavos::stream_webrtc::CFakeAudioCaptureModule::PlayoutDelay(uint16_t* delay_ms) const {
+int32_t de::stream_webrtc::CFakeAudioCaptureModule::PlayoutDelay(uint16_t* delay_ms) const {
   // No delay since audio frames are dropped.
 
   return 0;
 }
 
-void uavos::stream_webrtc::CFakeAudioCaptureModule::OnMessage(rtc::Message* msg) {
+void de::stream_webrtc::CFakeAudioCaptureModule::OnMessage(rtc::Message* msg) {
 
 }
 
-bool uavos::stream_webrtc::CFakeAudioCaptureModule::Initialize() {
+bool de::stream_webrtc::CFakeAudioCaptureModule::Initialize() {
  
   return true;
 }
 
-void uavos::stream_webrtc::CFakeAudioCaptureModule::SetSendBuffer(int value) {
+void de::stream_webrtc::CFakeAudioCaptureModule::SetSendBuffer(int value) {
 
 }
 
-void uavos::stream_webrtc::CFakeAudioCaptureModule::ResetRecBuffer() {
+void de::stream_webrtc::CFakeAudioCaptureModule::ResetRecBuffer() {
 }
 
-bool uavos::stream_webrtc::CFakeAudioCaptureModule::CheckRecBuffer(int value) {
+bool de::stream_webrtc::CFakeAudioCaptureModule::CheckRecBuffer(int value) {
   
   return false;
 }
 
-bool uavos::stream_webrtc::CFakeAudioCaptureModule::ShouldStartProcessing() {
+bool de::stream_webrtc::CFakeAudioCaptureModule::ShouldStartProcessing() {
   return recording_ || playing_;
 }
 
-void uavos::stream_webrtc::CFakeAudioCaptureModule::UpdateProcessing(bool start) {
+void de::stream_webrtc::CFakeAudioCaptureModule::UpdateProcessing(bool start) {
   
 }
 
-void uavos::stream_webrtc::CFakeAudioCaptureModule::StartProcessP() {
+void de::stream_webrtc::CFakeAudioCaptureModule::StartProcessP() {
  
 }
 
-void uavos::stream_webrtc::CFakeAudioCaptureModule::ProcessFrameP() {
+void de::stream_webrtc::CFakeAudioCaptureModule::ProcessFrameP() {
   
 }
 
-void uavos::stream_webrtc::CFakeAudioCaptureModule::ReceiveFrameP() {
+void de::stream_webrtc::CFakeAudioCaptureModule::ReceiveFrameP() {
   
 }
 
-void uavos::stream_webrtc::CFakeAudioCaptureModule::SendFrameP() {
+void de::stream_webrtc::CFakeAudioCaptureModule::SendFrameP() {
  
 }

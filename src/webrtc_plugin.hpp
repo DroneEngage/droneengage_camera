@@ -9,11 +9,11 @@
 #include "./helpers/json_nlohmann.hpp"
 using Json_de = nlohmann::json;
 
-#include "./uavos_common/uavos_module.hpp"
+#include "./de_common/de_module.hpp"
 
 
 
-namespace uavos
+namespace de
 {
 
 typedef struct {
@@ -22,7 +22,7 @@ typedef struct {
     int peerObject;
     std::string channelName;   // equivelant to partyID
     std::string channelNumber; // unique camera name --> deviceID
-    rtc::scoped_refptr<uavos::stream_webrtc::CPeerConnectionManager>  peerConnectionManager;
+    rtc::scoped_refptr<de::stream_webrtc::CPeerConnectionManager>  peerConnectionManager;
     
 } STRUCT_SESSION_INFO;
 
@@ -87,8 +87,8 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         void ExecuteSignalCommand(const Json_de& cmd);
 
     public:
-        uavos::stream_webrtc::STRUCT_DEVICE_INFO findDeviceInfoByLocalName (const std::string& localName);
-        void updateDeviceInfoByLocalName (const char* localName, const uavos::stream_webrtc::STRUCT_DEVICE_INFO &deviceInfo);
+        de::stream_webrtc::STRUCT_DEVICE_INFO findDeviceInfoByLocalName (const std::string& localName);
+        void updateDeviceInfoByLocalName (const char* localName, const de::stream_webrtc::STRUCT_DEVICE_INFO &deviceInfo);
         void cleaning ();
 
     public:
@@ -147,16 +147,16 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         std::map<std::string, STRUCT_SESSION_INFO> m_localTracksMap;
 
         bool filled = ATOMIC_VAR_INIT(false);
-        std::vector<uavos::stream_webrtc::STRUCT_DEVICE_INFO> m_videoDeviceInfoList;
-        std::vector<uavos::stream_webrtc::STRUCT_DEVICE_INFO> m_audioDeviceInfoList;
+        std::vector<de::stream_webrtc::STRUCT_DEVICE_INFO> m_videoDeviceInfoList;
+        std::vector<de::stream_webrtc::STRUCT_DEVICE_INFO> m_audioDeviceInfoList;
 
-        rtc::scoped_refptr <uavos::stream_webrtc::CUserMedia> m_connection ;
+        rtc::scoped_refptr <de::stream_webrtc::CUserMedia> m_connection ;
         
 
         std::vector<std::string> deleteMe;
 
         ANDRUAV_UNIT_LOCATION m_location_info;
-        uavos::comm::CModule &m_module = uavos::comm::CModule::getInstance();              
+        de::comm::CModule &m_module = de::comm::CModule::getInstance();              
 };
 
 }

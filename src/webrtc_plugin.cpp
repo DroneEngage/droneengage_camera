@@ -6,21 +6,21 @@
 
 extern std::string PartyID;
 
-uavos::CWEBRTC_Plugin::~CWEBRTC_Plugin ()
+de::CWEBRTC_Plugin::~CWEBRTC_Plugin ()
 {
     m_videoDeviceInfoList.clear();
     m_audioDeviceInfoList.clear();
 }
 
 
-void uavos::CWEBRTC_Plugin::initCameras(const bool singleCameraMode)
+void de::CWEBRTC_Plugin::initCameras(const bool singleCameraMode)
 {
     filled = ATOMIC_VAR_INIT(false);
         
     m_singleCameraMode = singleCameraMode;
 
     // get available video devices count
-    m_actualVideoSourcesCount = uavos::stream_webrtc::CSource::GetVideoSourcesCount();
+    m_actualVideoSourcesCount = de::stream_webrtc::CSource::GetVideoSourcesCount();
 
     if (m_actualVideoSourcesCount < 0)
     {
@@ -38,7 +38,7 @@ void uavos::CWEBRTC_Plugin::initCameras(const bool singleCameraMode)
     m_videoDeviceInfoList.clear();
     
     // get all devices available.
-    uavos::stream_webrtc::CSource::GetDevices(m_videoDeviceInfoList,m_actualVideoSourcesCount);
+    de::stream_webrtc::CSource::GetDevices(m_videoDeviceInfoList,m_actualVideoSourcesCount);
 
     // Write Available Camera(s) in Console.
     for (uint i=0; i<m_actualVideoSourcesCount; ++i)
@@ -56,9 +56,9 @@ void uavos::CWEBRTC_Plugin::initCameras(const bool singleCameraMode)
     std::cout << _SUCCESS_CONSOLE_TEXT_ << "========================================================"  << _NORMAL_CONSOLE_TEXT_ << std::endl;
 }
 
-void uavos::CWEBRTC_Plugin::InitializePeerConnection()
+void de::CWEBRTC_Plugin::InitializePeerConnection()
 {
-    m_connection = rtc::scoped_refptr<uavos::stream_webrtc::CUserMedia>(new rtc::RefCountedObject<uavos::stream_webrtc::CUserMedia>());
+    m_connection = rtc::scoped_refptr<de::stream_webrtc::CUserMedia>(new rtc::RefCountedObject<de::stream_webrtc::CUserMedia>());
     m_connection->InitializePeerConnection();
 }
 
@@ -70,7 +70,7 @@ void uavos::CWEBRTC_Plugin::InitializePeerConnection()
  * @return true 
  * @return false 
  */
-bool uavos::CWEBRTC_Plugin::addCameraByID (std::string cameraVideoName, int cameraVideoIndex)
+bool de::CWEBRTC_Plugin::addCameraByID (std::string cameraVideoName, int cameraVideoIndex)
 {
     
     
@@ -94,7 +94,7 @@ bool uavos::CWEBRTC_Plugin::addCameraByID (std::string cameraVideoName, int came
     return false;
 }
 
-void uavos::CWEBRTC_Plugin::addCameraByRange(int startVideoIndex, int endVideoIndex)
+void de::CWEBRTC_Plugin::addCameraByRange(int startVideoIndex, int endVideoIndex)
 {
     
     if (startVideoIndex < 0)
@@ -150,7 +150,7 @@ void uavos::CWEBRTC_Plugin::addCameraByRange(int startVideoIndex, int endVideoIn
  * @param type 
  * @param sdp 
  */
-void uavos::CWEBRTC_Plugin::OnLocalSdpReadytoSend (const char* sessionID, const char* type, const char* sdp)
+void de::CWEBRTC_Plugin::OnLocalSdpReadytoSend (const char* sessionID, const char* type, const char* sdp)
 {
     #ifdef DEBUG
     std::cout << _LOG_CONSOLE_TEXT << "DEBUG: OnLocalSdpReadytoSend" << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -159,7 +159,7 @@ void uavos::CWEBRTC_Plugin::OnLocalSdpReadytoSend (const char* sessionID, const 
     std::cout << _LOG_CONSOLE_TEXT << "OFFER:" << std::endl <<  _NORMAL_CONSOLE_TEXT_ << std::string(sdp) << std::endl;
     
     Json_de packet;
-    uavos::STRUCT_SESSION_INFO sessionInfo = m_SessionMap[sessionID];
+    de::STRUCT_SESSION_INFO sessionInfo = m_SessionMap[sessionID];
     packet["packet"]  = Json_de();
     packet["packet"]["sdp"] = sdp;
     packet["packet"]["type"] = type;
@@ -172,7 +172,7 @@ void uavos::CWEBRTC_Plugin::OnLocalSdpReadytoSend (const char* sessionID, const 
 }
 
 
-void uavos::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const webrtc::IceCandidateInterface* const candidate)
+void de::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const webrtc::IceCandidateInterface* const candidate)
 {
 
     #ifdef DEBUG
@@ -185,7 +185,7 @@ void uavos::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const 
     int sdp_mline_index  = 0;
     
     Json_de packet;
-    uavos::STRUCT_SESSION_INFO sessionInfo = m_SessionMap[sessionID];
+    de::STRUCT_SESSION_INFO sessionInfo = m_SessionMap[sessionID];
     packet["packet"]  = Json_de();
     
     
@@ -194,13 +194,13 @@ void uavos::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const 
         candidate->ToString(&sdp);
         sdp_mid = candidate->sdp_mid();
         sdp_mline_index = candidate->sdp_mline_index();
-        packet["packet"][uavos::stream_webrtc::kCandidateSdpName] = sdp;
+        packet["packet"][de::stream_webrtc::kCandidateSdpName] = sdp;
     
     }
     
     
-    packet["packet"][uavos::stream_webrtc::kCandidateSdpMidName] = sdp_mid;
-    packet["packet"][uavos::stream_webrtc::kCandidateSdpMlineIndexName] = sdp_mline_index;
+    packet["packet"][de::stream_webrtc::kCandidateSdpMidName] = sdp_mid;
+    packet["packet"][de::stream_webrtc::kCandidateSdpMlineIndexName] = sdp_mline_index;
     packet["number"]  = PartyID; 
     packet["channel"] = sessionInfo.channelName;
     
@@ -209,12 +209,12 @@ void uavos::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const 
     m_module.sendJMSG (sessionInfo.senderPartyID, w, TYPE_AndruavMessage_Signaling, false);}
 
 
-void uavos::CWEBRTC_Plugin::OnIceConnectionDisconnected (const std::string& sessionID)
+void de::CWEBRTC_Plugin::OnIceConnectionDisconnected (const std::string& sessionID)
 {
     
 
     // commented code below is how to call a function from a thread in webrtc
-    // uavos::stream_webrtc::CUserMedia::g_signaling_thread->Invoke<void>(RTC_FROM_HERE,
+    // de::stream_webrtc::CUserMedia::g_signaling_thread->Invoke<void>(RTC_FROM_HERE,
     // [&] {
     //     std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: INSIDE THREAD" << _NORMAL_CONSOLE_TEXT_ << std::endl;
         
@@ -227,7 +227,7 @@ void uavos::CWEBRTC_Plugin::OnIceConnectionDisconnected (const std::string& sess
     
 }
 
-bool uavos::CWEBRTC_Plugin::IsCorrectCameraIndex (const int cameraIndex)
+bool de::CWEBRTC_Plugin::IsCorrectCameraIndex (const int cameraIndex)
 {
     return true;
 }
@@ -236,7 +236,7 @@ bool uavos::CWEBRTC_Plugin::IsCorrectCameraIndex (const int cameraIndex)
 /**
  * Called periodically from main thread.
  * */
-void uavos::CWEBRTC_Plugin::cleaning()
+void de::CWEBRTC_Plugin::cleaning()
 {
 
     if (deleteMe.size () > 0)
@@ -262,7 +262,7 @@ void uavos::CWEBRTC_Plugin::cleaning()
     }
 }
 
-void uavos::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std::string& sessionID,  const std::string& channelNumber,  const std::string& channelName)
+void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std::string& sessionID,  const std::string& channelNumber,  const std::string& channelName)
 {
 
     if (sessionID.empty())
@@ -292,13 +292,13 @@ void uavos::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const s
         }
         
 
-        uavos::STRUCT_SESSION_INFO sessionInfoNew;
+        de::STRUCT_SESSION_INFO sessionInfoNew;
         sessionInfoNew.senderPartyID = senderPartyID;
         sessionInfoNew.sessionID = sessionID;
         sessionInfoNew.channelNumber = channelNumber;
         sessionInfoNew.channelName = channelName;
         
-        uavos::stream_webrtc::STRUCT_DEVICE_INFO device_info = findDeviceInfoByLocalName(channelName.c_str());
+        de::stream_webrtc::STRUCT_DEVICE_INFO device_info = findDeviceInfoByLocalName(channelName.c_str());
         if (device_info.device_num == -1)
         {
             std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera " << channelName.c_str() << " Not Found" << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -323,10 +323,10 @@ void uavos::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const s
             }
         }
 
-        sessionInfoNew.peerConnectionManager = new rtc::RefCountedObject<uavos::stream_webrtc::CPeerConnectionManager>(this);
+        sessionInfoNew.peerConnectionManager = new rtc::RefCountedObject<de::stream_webrtc::CPeerConnectionManager>(this);
         sessionInfoNew.peerConnectionManager->CreatePeerConnection(sessionID, senderPartyID, channelName, channelNumber);
         
-        rtc::scoped_refptr<uavos::stream_webrtc::CapturerTrackSource>capturerTrackSource = new rtc::RefCountedObject<uavos::stream_webrtc::CapturerTrackSource> (
+        rtc::scoped_refptr<de::stream_webrtc::CapturerTrackSource>capturerTrackSource = new rtc::RefCountedObject<de::stream_webrtc::CapturerTrackSource> (
                         device_info.capturer);
         rtc::scoped_refptr<webrtc::VideoTrackInterface> videoTrackInterface = m_connection->CreateVideoTrackInterface (
                         device_info.unique_name,capturerTrackSource);
@@ -368,7 +368,7 @@ void uavos::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const s
     
 }
 
-void uavos::CWEBRTC_Plugin::ProcessAnswer (
+void de::CWEBRTC_Plugin::ProcessAnswer (
             const std::string& senderPartyID, const std::string& sessionID, 
             const std::string& channelNumber,  const std::string& channelName,
             const Json_de& packet)
@@ -398,13 +398,13 @@ void uavos::CWEBRTC_Plugin::ProcessAnswer (
         return ;
     }
 
-    uavos::stream_webrtc::CPeerConnectionManager  * const cPeerConnectionManager = (uavos::stream_webrtc::CPeerConnectionManager  *) m_SessionMap[sessionID].peerConnectionManager.get();
+    de::stream_webrtc::CPeerConnectionManager  * const cPeerConnectionManager = (de::stream_webrtc::CPeerConnectionManager  *) m_SessionMap[sessionID].peerConnectionManager.get();
     
     cPeerConnectionManager->SetRemoteDescription(packet["type"].get<std::string>(), packet["sdp"].get<std::string>());
     
 }
 
-void uavos::CWEBRTC_Plugin::ProcessCandidate (
+void de::CWEBRTC_Plugin::ProcessCandidate (
                 const std::string& senderPartyID, 
                 const std::string& sessionID,  
                 const std::string& channelNumber, 
@@ -429,7 +429,7 @@ void uavos::CWEBRTC_Plugin::ProcessCandidate (
     }
     
 
-    uavos::stream_webrtc::CPeerConnectionManager  * const cPeerConnectionManager = (uavos::stream_webrtc::CPeerConnectionManager  *) m_SessionMap[sessionID].peerConnectionManager.get();
+    de::stream_webrtc::CPeerConnectionManager  * const cPeerConnectionManager = (de::stream_webrtc::CPeerConnectionManager  *) m_SessionMap[sessionID].peerConnectionManager.get();
     
     std::cout << __FUNCTION__ << __LINE__ << "Key " << _LOG_CONSOLE_TEXT << "DEBUG: ProcessCandidate" << _NORMAL_CONSOLE_TEXT_ << std::endl << packet.dump() << std::endl;
         
@@ -437,7 +437,7 @@ void uavos::CWEBRTC_Plugin::ProcessCandidate (
 }
 
 
-void uavos::CWEBRTC_Plugin::Hangup (const std::string& senderPartyID, const std::string& sessionID,  const std::string& number,  const std::string& channel)
+void de::CWEBRTC_Plugin::Hangup (const std::string& senderPartyID, const std::string& sessionID,  const std::string& number,  const std::string& channel)
 {
 
     std::cout << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_TEXT << "DEBUG:senderPartyID" << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -475,7 +475,7 @@ void uavos::CWEBRTC_Plugin::Hangup (const std::string& senderPartyID, const std:
 
 
 
-void uavos::CWEBRTC_Plugin::ExecuteSignalCommand(const Json_de &jMsg)
+void de::CWEBRTC_Plugin::ExecuteSignalCommand(const Json_de &jMsg)
 {
     // extract command
     const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
@@ -486,7 +486,7 @@ void uavos::CWEBRTC_Plugin::ExecuteSignalCommand(const Json_de &jMsg)
     std::string sessionID = (number + channel);
     
     // https://stackoverflow.com/questions/10699689/how-can-i-get-a-value-from-a-map
-    const uavos::STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
+    const de::STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
     if ( sessionInfo == NULL)
     {
         std::cout << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << sessionID << _NORMAL_CONSOLE_TEXT_ << " not found" << std::endl;
@@ -531,7 +531,7 @@ void uavos::CWEBRTC_Plugin::ExecuteSignalCommand(const Json_de &jMsg)
 }
 
 
-uavos::STRUCT_SESSION_INFO* uavos::CWEBRTC_Plugin::findSessionInfoBySessionID (const char* sessionID)
+de::STRUCT_SESSION_INFO* de::CWEBRTC_Plugin::findSessionInfoBySessionID (const char* sessionID)
 {
     std::map<std::string, STRUCT_SESSION_INFO>::iterator it = m_SessionMap.begin();
  
@@ -551,7 +551,7 @@ uavos::STRUCT_SESSION_INFO* uavos::CWEBRTC_Plugin::findSessionInfoBySessionID (c
 }
 
 
-bool uavos::CWEBRTC_Plugin::eraseSessionInfoBySessionID (const char* sessionID)
+bool de::CWEBRTC_Plugin::eraseSessionInfoBySessionID (const char* sessionID)
 {
     std::map<std::string, STRUCT_SESSION_INFO>::iterator it = m_SessionMap.begin();
  
@@ -572,12 +572,12 @@ bool uavos::CWEBRTC_Plugin::eraseSessionInfoBySessionID (const char* sessionID)
 }
 
 
-uavos::stream_webrtc::STRUCT_DEVICE_INFO uavos::CWEBRTC_Plugin::findDeviceInfoByLocalName (const std::string& localName)
+de::stream_webrtc::STRUCT_DEVICE_INFO de::CWEBRTC_Plugin::findDeviceInfoByLocalName (const std::string& localName)
 {
     
-    for(std::vector<uavos::stream_webrtc::STRUCT_DEVICE_INFO>::iterator it = m_videoDeviceInfoList.begin(); it != m_videoDeviceInfoList.end(); ++it) 
+    for(std::vector<de::stream_webrtc::STRUCT_DEVICE_INFO>::iterator it = m_videoDeviceInfoList.begin(); it != m_videoDeviceInfoList.end(); ++it) 
     {
-        uavos::stream_webrtc::STRUCT_DEVICE_INFO deviceInfo = *it;
+        de::stream_webrtc::STRUCT_DEVICE_INFO deviceInfo = *it;
         if (localName.empty())
         {   // return first available camera if no camera is specified.
             return deviceInfo;
@@ -590,7 +590,7 @@ uavos::stream_webrtc::STRUCT_DEVICE_INFO uavos::CWEBRTC_Plugin::findDeviceInfoBy
     }
     
 
-    uavos::stream_webrtc::STRUCT_DEVICE_INFO deviceInfo_empty;
+    de::stream_webrtc::STRUCT_DEVICE_INFO deviceInfo_empty;
     deviceInfo_empty.device_num = -1;
     return deviceInfo_empty;
 
@@ -601,10 +601,10 @@ uavos::stream_webrtc::STRUCT_DEVICE_INFO uavos::CWEBRTC_Plugin::findDeviceInfoBy
  * Updates Array holding device info with an updated copy of a single device.
  * Location is accessed by camera guid [unique_name]. 
  **/
-void uavos::CWEBRTC_Plugin::updateDeviceInfoByLocalName (const char* localName, const uavos::stream_webrtc::STRUCT_DEVICE_INFO &deviceInfo)
+void de::CWEBRTC_Plugin::updateDeviceInfoByLocalName (const char* localName, const de::stream_webrtc::STRUCT_DEVICE_INFO &deviceInfo)
 {
     
-    for(std::vector<uavos::stream_webrtc::STRUCT_DEVICE_INFO>::iterator it = m_videoDeviceInfoList.begin(); it != m_videoDeviceInfoList.end(); ++it) 
+    for(std::vector<de::stream_webrtc::STRUCT_DEVICE_INFO>::iterator it = m_videoDeviceInfoList.begin(); it != m_videoDeviceInfoList.end(); ++it) 
     {
         if (it->unique_name.compare(localName) == 0 )
         {
@@ -622,7 +622,7 @@ void uavos::CWEBRTC_Plugin::updateDeviceInfoByLocalName (const char* localName, 
 
 }
 
-void uavos::CWEBRTC_Plugin::processVideoRecording (const Json_de &jMsg)
+void de::CWEBRTC_Plugin::processVideoRecording (const Json_de &jMsg)
 {
     // extract command
     
@@ -646,7 +646,7 @@ void uavos::CWEBRTC_Plugin::processVideoRecording (const Json_de &jMsg)
     
 }
 
-void uavos::CWEBRTC_Plugin::stopVideoRecording (const Json_de &jMsg)
+void de::CWEBRTC_Plugin::stopVideoRecording (const Json_de &jMsg)
 {
     // extract command
     CWEBRTC_Plugin * cWEBRTC_Plugin;
@@ -656,7 +656,7 @@ void uavos::CWEBRTC_Plugin::stopVideoRecording (const Json_de &jMsg)
     
     std::string channelName = cmd["T"].get<std::string>();
     
-    uavos::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
+    de::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
     if (device_info.device_num == -1)
     {
         
@@ -687,7 +687,7 @@ void uavos::CWEBRTC_Plugin::stopVideoRecording (const Json_de &jMsg)
  *  the script should be able to stop itself if it was running.
  * 
  **/
-void uavos::CWEBRTC_Plugin::startVideoRecording (const Json_de &jMsg)
+void de::CWEBRTC_Plugin::startVideoRecording (const Json_de &jMsg)
 {
     // extract command
     CWEBRTC_Plugin * cWEBRTC_Plugin;
@@ -698,7 +698,7 @@ void uavos::CWEBRTC_Plugin::startVideoRecording (const Json_de &jMsg)
     const std::string channelName = cmd["T"].get<std::string>();
     
 
-    uavos::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
+    de::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
     if (device_info.device_num == -1)
     {
         
@@ -713,7 +713,7 @@ void uavos::CWEBRTC_Plugin::startVideoRecording (const Json_de &jMsg)
     }
     std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera Found " << channelName.c_str() << _NORMAL_CONSOLE_TEXT_ << std::endl;
     const bool res = device_info.capturer.get()->startRecording();
-    device_info.recordFileTimeStamp = uavos::util::CHelper::getFileTimeStamp();
+    device_info.recordFileTimeStamp = de::util::CHelper::getFileTimeStamp();
     device_info.recording = res;
     updateDeviceInfoByLocalName(channelName.c_str(), device_info);
     
@@ -726,7 +726,7 @@ void uavos::CWEBRTC_Plugin::startVideoRecording (const Json_de &jMsg)
 }
 
 
-void uavos::CWEBRTC_Plugin::startImageCapturing (const Json_de &jMsg)
+void de::CWEBRTC_Plugin::startImageCapturing (const Json_de &jMsg)
 {
     // extract command
     CWEBRTC_Plugin * cWEBRTC_Plugin;
@@ -739,7 +739,7 @@ void uavos::CWEBRTC_Plugin::startImageCapturing (const Json_de &jMsg)
     
     std::cout << __FULL_DEBUG__  << "Channel:" << channelName << std::endl;
     
-    uavos::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
+    de::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
     if (device_info.device_num == -1)
     {
         
@@ -759,7 +759,7 @@ void uavos::CWEBRTC_Plugin::startImageCapturing (const Json_de &jMsg)
         device_info.capturer->StartCapture();
     }
     device_info.capturer.get()->takeImage(numberOfImages,timeBetweenShots, this);
-    device_info.recordFileTimeStamp = uavos::util::CHelper::getFileTimeStamp();
+    device_info.recordFileTimeStamp = de::util::CHelper::getFileTimeStamp();
     updateDeviceInfoByLocalName(channelName.c_str(), device_info);
     
     
@@ -770,7 +770,7 @@ void uavos::CWEBRTC_Plugin::startImageCapturing (const Json_de &jMsg)
     return;
 }
 
-void uavos::CWEBRTC_Plugin::updateLocationInfo(const Json_de &jMsg)
+void de::CWEBRTC_Plugin::updateLocationInfo(const Json_de &jMsg)
 {
     const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
     
@@ -790,7 +790,7 @@ void uavos::CWEBRTC_Plugin::updateLocationInfo(const Json_de &jMsg)
 /**
  * Generates JSON object array of available devices
  **/
-Json_de uavos::CWEBRTC_Plugin::getDeviceListAsJSON ()
+Json_de de::CWEBRTC_Plugin::getDeviceListAsJSON ()
 {
     Json_de jsonDeviceList = Json_de::array();
     
@@ -800,9 +800,9 @@ Json_de uavos::CWEBRTC_Plugin::getDeviceListAsJSON ()
     }
 
 
-    for(std::vector<uavos::stream_webrtc::STRUCT_DEVICE_INFO>::iterator it = m_videoDeviceInfoList.begin(); it != m_videoDeviceInfoList.end(); ++it) {
+    for(std::vector<de::stream_webrtc::STRUCT_DEVICE_INFO>::iterator it = m_videoDeviceInfoList.begin(); it != m_videoDeviceInfoList.end(); ++it) {
     
-        const uavos::stream_webrtc::STRUCT_DEVICE_INFO deviceInfo = *it;
+        const de::stream_webrtc::STRUCT_DEVICE_INFO deviceInfo = *it;
         if (deviceInfo.selected == false)
         {
             continue;
@@ -829,7 +829,7 @@ Json_de uavos::CWEBRTC_Plugin::getDeviceListAsJSON ()
 }
 
 
-void uavos::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name, bool send_image_gcs)
+void de::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name, bool send_image_gcs)
 {
     #ifdef DEBUG
     std::cout << _LOG_CONSOLE_TEXT << "DEBUG: onImageRecorded: " << output_file_name << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -878,11 +878,11 @@ void uavos::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name, bool s
     }
     
 }
-void uavos::CWEBRTC_Plugin::onVideoStarted()
+void de::CWEBRTC_Plugin::onVideoStarted()
 {
 
 }
-void uavos::CWEBRTC_Plugin::onVideoStopped()
+void de::CWEBRTC_Plugin::onVideoStopped()
 {
 
 }

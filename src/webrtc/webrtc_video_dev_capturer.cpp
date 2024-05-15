@@ -1,12 +1,12 @@
 #include "../common.h"
 
-using namespace uavos;
-using namespace uavos::stream_webrtc;
+using namespace de;
+using namespace de::stream_webrtc;
 
 
 
 // create webrtc::VideoCaptureModule capturer.
-bool uavos::stream_webrtc::VideoDevCapturerComposite::Init(size_t width,
+bool de::stream_webrtc::VideoDevCapturerComposite::Init(size_t width,
                        size_t height,
                        size_t target_fps,
                        const char * unique_name) {
@@ -36,7 +36,7 @@ bool uavos::stream_webrtc::VideoDevCapturerComposite::Init(size_t width,
   return true;
 }
 
-bool uavos::stream_webrtc::VideoDevCapturerComposite::StartCapture()
+bool de::stream_webrtc::VideoDevCapturerComposite::StartCapture()
 {
   if (!m_Capturer) {
     return false;
@@ -52,7 +52,7 @@ bool uavos::stream_webrtc::VideoDevCapturerComposite::StartCapture()
   return true;
 }
 
-bool uavos::stream_webrtc::VideoDevCapturerComposite::StopCapture()
+bool de::stream_webrtc::VideoDevCapturerComposite::StopCapture()
 {
   if (!m_Capturer) {
     return false;
@@ -66,7 +66,7 @@ bool uavos::stream_webrtc::VideoDevCapturerComposite::StopCapture()
   return true;
 }
 
-uavos::stream_webrtc::VideoDevCapturerComposite*  uavos::stream_webrtc::VideoDevCapturerComposite::Create(size_t width,
+de::stream_webrtc::VideoDevCapturerComposite*  de::stream_webrtc::VideoDevCapturerComposite::Create(size_t width,
                                  size_t height,
                                  size_t target_fps,
                                  const char * unique_name) {
@@ -84,7 +84,7 @@ uavos::stream_webrtc::VideoDevCapturerComposite*  uavos::stream_webrtc::VideoDev
   return capturer;
 }
 
-void uavos::stream_webrtc::VideoDevCapturerComposite::Destroy() {
+void de::stream_webrtc::VideoDevCapturerComposite::Destroy() {
 
    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << "Key " << "\033[1;31m" << "DESTRUCTOR" << _NORMAL_CONSOLE_TEXT_ << std::endl;
 
@@ -105,7 +105,7 @@ void uavos::stream_webrtc::VideoDevCapturerComposite::Destroy() {
   
 }
 
-uavos::stream_webrtc::VideoDevCapturerComposite::~VideoDevCapturerComposite() {
+de::stream_webrtc::VideoDevCapturerComposite::~VideoDevCapturerComposite() {
   
   std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << "Key " << "\033[1;31m" << "DESTRUCTOR" << _NORMAL_CONSOLE_TEXT_ << std::endl;
         
@@ -113,7 +113,7 @@ uavos::stream_webrtc::VideoDevCapturerComposite::~VideoDevCapturerComposite() {
 }                       
 
 
-void uavos::stream_webrtc::VideoDevCapturerComposite::OnFrame(const webrtc::VideoFrame& original_frame)
+void de::stream_webrtc::VideoDevCapturerComposite::OnFrame(const webrtc::VideoFrame& original_frame)
 {
   webrtc::VideoFrame frame = MaybePreprocess(original_frame);
  
@@ -202,11 +202,11 @@ void uavos::stream_webrtc::VideoDevCapturerComposite::OnFrame(const webrtc::Vide
 }
 
 
-rtc::VideoSinkWants uavos::stream_webrtc::VideoDevCapturerComposite::GetSinkWants() {
+rtc::VideoSinkWants de::stream_webrtc::VideoDevCapturerComposite::GetSinkWants() {
   return m_broadCaster.wants();
 }
 
-void uavos::stream_webrtc::VideoDevCapturerComposite::AddOrUpdateSink( rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
+void de::stream_webrtc::VideoDevCapturerComposite::AddOrUpdateSink( rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
                         const rtc::VideoSinkWants& wants) 
 {
   #ifdef DEBUG
@@ -218,7 +218,7 @@ void uavos::stream_webrtc::VideoDevCapturerComposite::AddOrUpdateSink( rtc::Vide
     
 }
 
-void uavos::stream_webrtc::VideoDevCapturerComposite::RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
+void de::stream_webrtc::VideoDevCapturerComposite::RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
   
   #ifdef DEBUG
   std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "\r\n" << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: VideoDevCapturerComposite::RemoveSink" << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -229,7 +229,7 @@ void uavos::stream_webrtc::VideoDevCapturerComposite::RemoveSink(rtc::VideoSinkI
 
 }
 
-void uavos::stream_webrtc::VideoDevCapturerComposite::UpdateVideoAdapter() {
+void de::stream_webrtc::VideoDevCapturerComposite::UpdateVideoAdapter() {
   // rtc::VideoSinkWants wants = m_broadCaster.wants();
   
   // m_videoAdapter.OnResolutionFramerateRequest(
@@ -238,7 +238,7 @@ void uavos::stream_webrtc::VideoDevCapturerComposite::UpdateVideoAdapter() {
   //                   wants.max_framerate_fps);
 }
 
-webrtc::VideoFrame uavos::stream_webrtc::VideoDevCapturerComposite::MaybePreprocess(const webrtc::VideoFrame& frame) {
+webrtc::VideoFrame de::stream_webrtc::VideoDevCapturerComposite::MaybePreprocess(const webrtc::VideoFrame& frame) {
   webrtc::MutexLock lock(&lock_);
   
   return frame;

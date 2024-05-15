@@ -6,19 +6,19 @@
 
 
 // as a static member it should be initialized here.
-rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> uavos::stream_webrtc::CUserMedia::m_peerConnectionFactory = nullptr;
-std::unique_ptr<rtc::Thread> uavos::stream_webrtc::CUserMedia::g_worker_thread = nullptr;
-std::unique_ptr<rtc::Thread> uavos::stream_webrtc::CUserMedia::g_signaling_thread = nullptr;
-std::unique_ptr<rtc::Thread> uavos::stream_webrtc::CUserMedia::g_networking_thread = nullptr;
-rtc::Thread* uavos::stream_webrtc::CUserMedia::thread = nullptr;
+rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> de::stream_webrtc::CUserMedia::m_peerConnectionFactory = nullptr;
+std::unique_ptr<rtc::Thread> de::stream_webrtc::CUserMedia::g_worker_thread = nullptr;
+std::unique_ptr<rtc::Thread> de::stream_webrtc::CUserMedia::g_signaling_thread = nullptr;
+std::unique_ptr<rtc::Thread> de::stream_webrtc::CUserMedia::g_networking_thread = nullptr;
+rtc::Thread* de::stream_webrtc::CUserMedia::thread = nullptr;
 
-uavos::stream_webrtc::CUserMedia::CUserMedia() 
+de::stream_webrtc::CUserMedia::CUserMedia() 
 {
   m_peerCount =0;
 }
 
 
-uavos::stream_webrtc::CUserMedia::~CUserMedia()
+de::stream_webrtc::CUserMedia::~CUserMedia()
 {
   std::cout << __FULL_DEBUG__   << " " << "Key " << "\033[1;31m" << "DESTRUCTOR" << _NORMAL_CONSOLE_TEXT_ << std::endl;
   
@@ -26,50 +26,50 @@ uavos::stream_webrtc::CUserMedia::~CUserMedia()
 }
 
 
-void uavos::stream_webrtc::CUserMedia::DeletePeerConnection ()
+void de::stream_webrtc::CUserMedia::DeletePeerConnection ()
 {
   std::cout << __FULL_DEBUG__   << " " << "Key " << "\033[1;31m" << "DESTRUCTOR" << _NORMAL_CONSOLE_TEXT_ << std::endl;
   
-  uavos::stream_webrtc::CUserMedia::m_peerConnectionFactory = nullptr;
+  de::stream_webrtc::CUserMedia::m_peerConnectionFactory = nullptr;
 }
 
 
-bool uavos::stream_webrtc::CUserMedia::InitializePeerConnection() {
+bool de::stream_webrtc::CUserMedia::InitializePeerConnection() {
   
   std::cout << "CreateLocalMediaStream Call" << std::endl;
-  if (uavos::stream_webrtc::CUserMedia::m_peerConnectionFactory.get() == nullptr)
+  if (de::stream_webrtc::CUserMedia::m_peerConnectionFactory.get() == nullptr)
   {
     //https://groups.google.com/forum/#!topic/discuss-webrtc/oWYy9JwK56M
     // without creating threads and starting the signal thread messaging will not work
     // and OnSuccess is not called when creating an offer.
     //rtc::Thread::Current()->Start();
-    uavos::stream_webrtc::CUserMedia::g_worker_thread = rtc::Thread::Create();
-    uavos::stream_webrtc::CUserMedia::g_worker_thread->Start();
-    uavos::stream_webrtc::CUserMedia::g_signaling_thread = rtc::Thread::Create();
-    uavos::stream_webrtc::CUserMedia::g_signaling_thread->Start();
-    uavos::stream_webrtc::CUserMedia::g_networking_thread = rtc::Thread::CreateWithSocketServer();
-    uavos::stream_webrtc::CUserMedia::g_networking_thread->Start();
+    de::stream_webrtc::CUserMedia::g_worker_thread = rtc::Thread::Create();
+    de::stream_webrtc::CUserMedia::g_worker_thread->Start();
+    de::stream_webrtc::CUserMedia::g_signaling_thread = rtc::Thread::Create();
+    de::stream_webrtc::CUserMedia::g_signaling_thread->Start();
+    de::stream_webrtc::CUserMedia::g_networking_thread = rtc::Thread::CreateWithSocketServer();
+    de::stream_webrtc::CUserMedia::g_networking_thread->Start();
 
     //rtc::ThreadManager::Instance()->WrapCurrentThread();
 
 
     
 
-    uavos::stream_webrtc::CUserMedia::thread = rtc::ThreadManager::Instance()->WrapCurrentThread();
+    de::stream_webrtc::CUserMedia::thread = rtc::ThreadManager::Instance()->WrapCurrentThread();
   
 
-  std::unique_ptr< webrtc::VideoEncoderFactory> factory = std::make_unique<uavos::stream_webrtc::CBuiltinVideoEncoderFactory>();  //webrtc::CreateBuiltinVideoEncoderFactory();
+  std::unique_ptr< webrtc::VideoEncoderFactory> factory = std::make_unique<de::stream_webrtc::CBuiltinVideoEncoderFactory>();  //webrtc::CreateBuiltinVideoEncoderFactory();
   //std::unique_ptr< webrtc::VideoEncoderFactory> factory = webrtc::CreateBuiltinVideoEncoderFactory();  
 
   // Printed in std::cout so no need to list it.
   std::vector<webrtc::SdpVideoFormat> format = factory->GetSupportedFormats();
 
   
-  uavos::stream_webrtc::CUserMedia::m_peerConnectionFactory = rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> (
+  de::stream_webrtc::CUserMedia::m_peerConnectionFactory = rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> (
             webrtc::CreatePeerConnectionFactory(
-                uavos::stream_webrtc::CUserMedia::g_networking_thread.get(), 
-                uavos::stream_webrtc::CUserMedia::g_worker_thread.get(),
-                uavos::stream_webrtc::CUserMedia::g_signaling_thread.get(),
+                de::stream_webrtc::CUserMedia::g_networking_thread.get(), 
+                de::stream_webrtc::CUserMedia::g_worker_thread.get(),
+                de::stream_webrtc::CUserMedia::g_signaling_thread.get(),
 
                 rtc::scoped_refptr<webrtc::AudioDeviceModule>(CFakeAudioCaptureModule::Create()),
                 // nullptr /* network_thread */, nullptr /* worker_thread */,
@@ -82,7 +82,7 @@ bool uavos::stream_webrtc::CUserMedia::InitializePeerConnection() {
                 nullptr /* audio_processing */).get());
   } 
 
-  if (!uavos::stream_webrtc::CUserMedia::m_peerConnectionFactory.get())
+  if (!de::stream_webrtc::CUserMedia::m_peerConnectionFactory.get())
   {
     // try again
     std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "Internal Error: CreateLocalMediaStream failed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -95,7 +95,7 @@ bool uavos::stream_webrtc::CUserMedia::InitializePeerConnection() {
   return true;
 }
 
-bool uavos::stream_webrtc::CUserMedia::CreateLocalMediaStream(const char * streamId) {
+bool de::stream_webrtc::CUserMedia::CreateLocalMediaStream(const char * streamId) {
   if (m_peerConnectionFactory.get()== nullptr)
   {
     return false;
@@ -108,7 +108,7 @@ bool uavos::stream_webrtc::CUserMedia::CreateLocalMediaStream(const char * strea
 }
 
 
-bool uavos::stream_webrtc::CUserMedia::RemoveVideoTracks ()
+bool de::stream_webrtc::CUserMedia::RemoveVideoTracks ()
 {
     webrtc::VideoTrackVector videoTracks = m_stream.get()->GetVideoTracks(); 
 
@@ -122,7 +122,7 @@ bool uavos::stream_webrtc::CUserMedia::RemoveVideoTracks ()
     return true;
 }
 
-bool uavos::stream_webrtc::CUserMedia::RemoveAudioTracks ()
+bool de::stream_webrtc::CUserMedia::RemoveAudioTracks ()
 {
     webrtc::AudioTrackVector audioTracks = m_stream.get()->GetAudioTracks(); 
 
@@ -137,7 +137,7 @@ bool uavos::stream_webrtc::CUserMedia::RemoveAudioTracks ()
 }
 
 
-rtc::scoped_refptr<webrtc::VideoTrackInterface> uavos::stream_webrtc::CUserMedia::CreateVideoTrackInterface (const std::string& trackLabel, 
+rtc::scoped_refptr<webrtc::VideoTrackInterface> de::stream_webrtc::CUserMedia::CreateVideoTrackInterface (const std::string& trackLabel, 
             webrtc::VideoTrackSourceInterface* videoTrackSourceInterface
         )
 {
@@ -155,7 +155,7 @@ rtc::scoped_refptr<webrtc::VideoTrackInterface> uavos::stream_webrtc::CUserMedia
   return videoTrackInterface;
 }
 
-bool uavos::stream_webrtc::CUserMedia::AddVideoTrack (webrtc::VideoTrackInterface * videoTrackInterface)
+bool de::stream_webrtc::CUserMedia::AddVideoTrack (webrtc::VideoTrackInterface * videoTrackInterface)
 {
         
   std::cout << __FULL_DEBUG__   <<  "\033[0;32m" << "AddVideoTrack "  << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -173,12 +173,12 @@ bool uavos::stream_webrtc::CUserMedia::AddVideoTrack (webrtc::VideoTrackInterfac
 
 }
 
-rtc::scoped_refptr<webrtc::MediaStreamInterface> uavos::stream_webrtc::CUserMedia::GetMediaStream ()
+rtc::scoped_refptr<webrtc::MediaStreamInterface> de::stream_webrtc::CUserMedia::GetMediaStream ()
 {
   return m_stream;
 }
 
-rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> uavos::stream_webrtc::CUserMedia::GetPeerConnectionFactory ()
+rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> de::stream_webrtc::CUserMedia::GetPeerConnectionFactory ()
 {
   return m_peerConnectionFactory;
 }

@@ -1,13 +1,13 @@
 #ifndef CSETSESSIONDESCRIPTIONOBSERVER_H
 
 #define CSETSESSIONDESCRIPTIONOBSERVER_H
-namespace uavos
+namespace de
 {
 namespace stream_webrtc{
 class CSetSessionDescriptionObserver : public webrtc::SetSessionDescriptionObserver
 {
     public:
-        static CSetSessionDescriptionObserver* Create(uavos::CSDOCallBack *csdocallback) {
+        static CSetSessionDescriptionObserver* Create(de::CSDOCallBack *csdocallback) {
             return new rtc::RefCountedObject<CSetSessionDescriptionObserver>(csdocallback);
         }
 
@@ -17,10 +17,10 @@ class CSetSessionDescriptionObserver : public webrtc::SetSessionDescriptionObser
 
          bool no = false;
     protected:
-         CSetSessionDescriptionObserver (uavos::CSDOCallBack *csdocallback):m_csdocallback(csdocallback)
+         CSetSessionDescriptionObserver (de::CSDOCallBack *csdocallback):m_csdocallback(csdocallback)
          {}
 
-         uavos::CSDOCallBack *m_csdocallback;
+         de::CSDOCallBack *m_csdocallback;
 };
 
 }

@@ -2,7 +2,7 @@
 #ifndef USERMEDIA_H
 #define USERMEDIA_H
 
-namespace uavos
+namespace de
 {
 namespace stream_webrtc
 {

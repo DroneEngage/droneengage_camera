@@ -34,7 +34,7 @@
 // }
 
 
-using namespace uavos::stream_webrtc;
+using namespace de::stream_webrtc;
 
 
 
@@ -44,7 +44,7 @@ using namespace uavos::stream_webrtc;
  * @param device_name 
  * @return int 
  */
-int uavos::stream_webrtc::CSource::GetDeviceNumber (std::string device_name)
+int de::stream_webrtc::CSource::GetDeviceNumber (std::string device_name)
 {
     // Travel through /dev/video [0-63]
     std::string device_name_instance;
@@ -89,14 +89,14 @@ int uavos::stream_webrtc::CSource::GetDeviceNumber (std::string device_name)
     return -1;
 }
 
-int uavos::stream_webrtc::CSource::GetDevices (std::vector<STRUCT_DEVICE_INFO> &devicesInfo, const int deviceCount) {
+int de::stream_webrtc::CSource::GetDevices (std::vector<STRUCT_DEVICE_INFO> &devicesInfo, const int deviceCount) {
     
     std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> video_info(webrtc::VideoCaptureFactory::CreateDeviceInfo());
     
     if (!video_info) return 0;
     const int numDevices = video_info->NumberOfDevices();
     int counter = numDevices<deviceCount?numDevices:deviceCount;
-    uavos::util::CHelper::initRandom();
+    de::util::CHelper::initRandom();
     
     for (int i=0; i<counter; ++i)
     {
@@ -113,7 +113,7 @@ int uavos::stream_webrtc::CSource::GetDevices (std::vector<STRUCT_DEVICE_INFO> &
             deviceInfo.device_id    = std::string( id );   //e.g  "platform:v4l2loopback-000"
             deviceInfo.product_id   = std::string( pid );
             deviceInfo.local_name   = std::string( name ) + "#" + std::to_string(i); // id is added as similar cameras have similar names.
-            deviceInfo.unique_name  = uavos::util::CHelper::getShortSemiGUID();
+            deviceInfo.unique_name  = de::util::CHelper::getShortSemiGUID();
             deviceInfo.dev_linux_number = GetDeviceNumber (deviceInfo.device_name); // before create source to avoid permission problems.
             deviceInfo.capturer     = std::shared_ptr<VideoDevCapturerComposite>(VideoDevCapturerComposite::Create(1024,720,30,deviceInfo.device_id.c_str()));
             deviceInfo.active       = 0;
@@ -138,7 +138,7 @@ int uavos::stream_webrtc::CSource::GetDevices (std::vector<STRUCT_DEVICE_INFO> &
     return counter;
 }
 
-int uavos::stream_webrtc::CSource::GetVideoSourcesCount(void)
+int de::stream_webrtc::CSource::GetVideoSourcesCount(void)
 {
     std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> video_info(webrtc::VideoCaptureFactory::CreateDeviceInfo());
  

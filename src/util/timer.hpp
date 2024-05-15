@@ -4,7 +4,7 @@
 #include <iostream>
 #include <chrono>
 
-namespace uavos
+namespace de
 {
 namespace util
 {

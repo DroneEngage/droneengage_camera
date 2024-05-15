@@ -3,7 +3,7 @@
 
 
 
-namespace uavos
+namespace de
 {
 namespace stream_webrtc 
 {
@@ -20,7 +20,7 @@ typedef struct webrtc::PeerConnectionInterface::IceServer ICE_SERVER;
 
 class CPeerConnectionManager : public webrtc::CreateSessionDescriptionObserver 
                              , public webrtc::PeerConnectionObserver 
-                             , public uavos::CSDOCallBack
+                             , public de::CSDOCallBack
 {
 
     public:
@@ -154,12 +154,12 @@ class CPeerConnectionManager : public webrtc::CreateSessionDescriptionObserver
 
 
     protected:
-        //uavos::ICE_SERVER GetIceServerFromUrl(const std::string &url, const std::string &clientIp = "");
+        //de::ICE_SERVER GetIceServerFromUrl(const std::string &url, const std::string &clientIp = "");
 
     private:
         
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> m_peerConnection;
-        //std::unique_ptr <uavos::CPeerConnectionObserver>  m_peerConnectionObserver;
+        //std::unique_ptr <de::CPeerConnectionObserver>  m_peerConnectionObserver;
         //std::unique_ptr <webrtc::PeerConnectionInterface::RTCConfiguration>  m_config;
         webrtc::PeerConnectionInterface::RTCConfiguration  m_config;
 

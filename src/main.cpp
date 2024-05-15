@@ -2,7 +2,7 @@
 #include <getopt.h>
 #include "common.h"
 #include "webrtc_plugin.hpp"
-#include "./uavos_common/uavos_module.hpp"
+#include "./de_common/de_module.hpp"
 #include "./helpers/json_nlohmann.hpp"
 #include "./helpers/helpers.hpp"
 #include "./helpers/util_rpi.hpp"
@@ -13,7 +13,7 @@ using Json_de = nlohmann::json;
 
 #include "version.h"
 
-using namespace uavos;
+using namespace de;
 
 #define MESSAGE_FILTER {TYPE_AndruavMessage_RemoteExecute,\
                         TYPE_AndruavMessage_Signaling,\
@@ -24,16 +24,16 @@ using namespace uavos;
 
 std::time_t instance_time_stamp;
 
-// UAVOS Current PartyID read from communicator
+// DroneEngage Current PartyID read from communicator
 std::string  PartyID;
-// UAVOS Current GroupID read from communicator
+// DroneEngage Current GroupID read from communicator
 std::string  GroupID;
 std::string  ModuleID;
 std::string  ModuleKey;
 
 CConfigFile& cConfigFile = CConfigFile::getInstance();
 
-uavos::comm::CModule& cModule= uavos::comm::CModule::getInstance();
+de::comm::CModule& cModule= de::comm::CModule::getInstance();
 
 CWEBRTC_Plugin * cWEBRTC_Plugin;
 
@@ -190,7 +190,7 @@ void init (int argc, char *argv[])
     std::string  ModuleKey;
 
     //https://stackoverflow.com/questions/2616906/how-do-i-output-coloured-text-to-a-linux-terminal
-    std::cout << _LOG_CONSOLE_BOLD_TEXT << "UAVOS Plugin Module: " << _SUCCESS_CONSOLE_BOLD_TEXT_ <<  ModuleID << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << _LOG_CONSOLE_BOLD_TEXT << "DroneEngage Plugin Module: " << _SUCCESS_CONSOLE_BOLD_TEXT_ <<  ModuleID << _NORMAL_CONSOLE_TEXT_ << std::endl;
     std::cout << _LOG_CONSOLE_BOLD_TEXT << "Class Type: " << _SUCCESS_CONSOLE_BOLD_TEXT_<< "camera" << _NORMAL_CONSOLE_TEXT_ << std::endl;
 
     std::cout << std::asctime(std::localtime(&instance_time_stamp)) << instance_time_stamp << " seconds since the Epoch" << std::endl;

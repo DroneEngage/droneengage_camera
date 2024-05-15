@@ -2,7 +2,7 @@
 
 
 
-void uavos::stream_webrtc::CSetSessionDescriptionObserver::OnSuccess()
+void de::stream_webrtc::CSetSessionDescriptionObserver::OnSuccess()
 {
     std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: CSetSessionDescriptionObserver::OnSuccess" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     RTC_LOG(INFO) << __FUNCTION__;
@@ -13,7 +13,7 @@ void uavos::stream_webrtc::CSetSessionDescriptionObserver::OnSuccess()
 }
 
 
-void uavos::stream_webrtc::CSetSessionDescriptionObserver::OnFailure(webrtc::RTCError error)
+void de::stream_webrtc::CSetSessionDescriptionObserver::OnFailure(webrtc::RTCError error)
 {
     std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "\033[1;31m" << "DEBUG: CSetSessionDescriptionObserver::OnFailure" << "\033[0m" << std::endl;
     RTC_LOG(INFO) << __FUNCTION__ << " " << ToString(error.type()) << ": "

@@ -31,7 +31,7 @@ namespace rtc {
 class Thread;
 }  // namespace rtc
 
-namespace uavos {
+namespace de {
 
 namespace stream_webrtc {
 

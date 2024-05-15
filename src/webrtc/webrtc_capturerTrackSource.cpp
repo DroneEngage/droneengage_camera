@@ -1,14 +1,14 @@
 #include "../common.h"
 
 
-using namespace uavos;
-using namespace uavos::stream_webrtc;
+using namespace de;
+using namespace de::stream_webrtc;
 
 
 /**
  * Statuic function: creates Capturer and inistantiate instance of CapturerTrackSource.
  */
-rtc::scoped_refptr<CapturerTrackSource>   uavos::stream_webrtc::CapturerTrackSource::Create(VideoDevCapturerComposite*  videoDevCapturerComposite) 
+rtc::scoped_refptr<CapturerTrackSource>   de::stream_webrtc::CapturerTrackSource::Create(VideoDevCapturerComposite*  videoDevCapturerComposite) 
 {
 
   if (!videoDevCapturerComposite) 

@@ -8,7 +8,7 @@ OBJS = $(BUILD)/main.o \
        $(BUILD)/helpers.o \
        $(BUILD)/configFile.o \
        $(BUILD)/udpClient.o \
-	   $(BUILD)/uavos_module.o \
+	   $(BUILD)/de_module.o \
 	   $(BUILD)/webrtc_fakeAudioCaptureModule.o \
        $(BUILD)/webrtc_source.o \
 	   $(BUILD)/webrtc_video_recorder.o \
@@ -27,8 +27,8 @@ SRCS = ../$(SRC)/main.cpp \
        ../$(SRC)/helpers/helpers.cpp \
        ../$(SRC)/helpers/util_rpi.cpp \
 	   ../$(SRC)/configFile.cpp \
-	   ../$(SRC)/uavos_common/udpClient.cpp \
-	   ../$(SRC)/uavos_common/uavos_module.cpp \
+	   ../$(SRC)/de_common/udpClient.cpp \
+	   ../$(SRC)/de_common/de_module.cpp \
 	   ../$(SRC)/webrtc/webrtc_fakeAudioCaptureModule.cpp \
 	   ../$(SRC)/webrtc/webrtc_source.cpp \
 	   ../$(SRC)/webrtc/webrtc_userMedia.cpp \

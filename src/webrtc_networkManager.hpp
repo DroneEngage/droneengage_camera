@@ -13,7 +13,7 @@
 
 
 
-namespace uavos {
+namespace de {
 
 const int kFakeIPv4NetworkPrefixLength = 24;
 const int kFakeIPv6NetworkPrefixLength = 64;

@@ -2,7 +2,7 @@
 #define VIDEORECORDER_H
 
 
-namespace uavos
+namespace de
 {
 namespace stream_webrtc
 {
@@ -19,7 +19,7 @@ class  CVideoRecording
 {
         
     public:
-        void RegisterRecorderEvents (uavos::stream_webrtc::CRecorderEvents * recorder_events) 
+        void RegisterRecorderEvents (de::stream_webrtc::CRecorderEvents * recorder_events) 
         {
             m_recorder_events = recorder_events;
         }
@@ -28,7 +28,7 @@ class  CVideoRecording
         bool startRecording();
         bool isRecording();
         bool stopRecording();
-        bool takeImage(const uint &image_count, const uint &image_duration, uavos::stream_webrtc::CRecorderEvents * recorder_events);
+        bool takeImage(const uint &image_count, const uint &image_duration, de::stream_webrtc::CRecorderEvents * recorder_events);
     
     protected:
         int printPlane(const uint8_t* buf,
@@ -63,14 +63,14 @@ class  CVideoRecording
         bool m_video_file_header_written = false;
         webrtc::Mutex m_lock_video;
         webrtc::Mutex m_lock_image;
-        uavos::util::CTimer m_timer_video;
-        uavos::util::CTimer m_timer_image;
+        de::util::CTimer m_timer_video;
+        de::util::CTimer m_timer_image;
 
-        uavos::stream_webrtc::CRecorderEvents * m_recorder_events = nullptr;
+        de::stream_webrtc::CRecorderEvents * m_recorder_events = nullptr;
 };
 
 
 }
-} // namespace uavos
+} // namespace de
 
 #endif

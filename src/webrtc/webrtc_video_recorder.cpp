@@ -19,15 +19,15 @@ extern "C" {
 
 #include "../3rdparty/LodePNG/lodepng.h"
 
-using namespace uavos;
-using namespace uavos::stream_webrtc;
+using namespace de;
+using namespace de::stream_webrtc;
 
 const int BYTES_PER_PIXEL_RGB24 = 3; /// red, green, & blue
 const int BYTES_PER_PIXEL_RGBA = 4; /// red, green, & blue
 const int FILE_HEADER_SIZE = 14;
 const int INFO_HEADER_SIZE = 40;
 
-const std::string uavos::stream_webrtc::CVideoRecording::getMediaFolderPath() const
+const std::string de::stream_webrtc::CVideoRecording::getMediaFolderPath() const
 {
     Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
     if (jsonConfig.contains("media_folder") == false) 
@@ -47,7 +47,7 @@ const std::string uavos::stream_webrtc::CVideoRecording::getMediaFolderPath() co
  * @return true 
  * @return false 
  */
-const bool uavos::stream_webrtc::CVideoRecording::saveImageinPNG() const
+const bool de::stream_webrtc::CVideoRecording::saveImageinPNG() const
 {
     Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
     if (jsonConfig.contains("media_image_png") == false) 
@@ -66,7 +66,7 @@ const bool uavos::stream_webrtc::CVideoRecording::saveImageinPNG() const
  * @return true 
  * @return false 
  */
-const bool uavos::stream_webrtc::CVideoRecording::sendImageToGCS() const
+const bool de::stream_webrtc::CVideoRecording::sendImageToGCS() const
 {
     Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
     if (jsonConfig.contains("send_image_gcs") == false) 
@@ -81,7 +81,7 @@ const bool uavos::stream_webrtc::CVideoRecording::sendImageToGCS() const
 
 
 
-bool uavos::stream_webrtc::CVideoRecording::startRecording()
+bool de::stream_webrtc::CVideoRecording::startRecording()
 {
     m_timer_video.reset();
     stopRecording();
@@ -91,7 +91,7 @@ bool uavos::stream_webrtc::CVideoRecording::startRecording()
 
     std::time_t time_stamp;
     time_stamp = std::time(nullptr);
-    m_video_file_name = getMediaFolderPath() + "v_" + uavos::util::CHelper::getFileTimeStamp() + ".y4m";
+    m_video_file_name = getMediaFolderPath() + "v_" + de::util::CHelper::getFileTimeStamp() + ".y4m";
     m_video_handler = fopen(m_video_file_name.c_str(), "wb");
     
     m_video_file_header_written = false;
@@ -101,7 +101,7 @@ bool uavos::stream_webrtc::CVideoRecording::startRecording()
 }
     
 
-bool uavos::stream_webrtc::CVideoRecording::stopRecording()
+bool de::stream_webrtc::CVideoRecording::stopRecording()
 {
     webrtc::MutexLock lock(&m_lock_video);
 
@@ -119,7 +119,7 @@ bool uavos::stream_webrtc::CVideoRecording::stopRecording()
 
 
 
-bool uavos::stream_webrtc::CVideoRecording::takeImage(const uint &image_count, const uint &image_duration, uavos::stream_webrtc::CRecorderEvents * recorder_events)
+bool de::stream_webrtc::CVideoRecording::takeImage(const uint &image_count, const uint &image_duration, de::stream_webrtc::CRecorderEvents * recorder_events)
 {
     webrtc::MutexLock lock(&m_lock_image);
     m_recorder_events = recorder_events;
@@ -130,7 +130,7 @@ bool uavos::stream_webrtc::CVideoRecording::takeImage(const uint &image_count, c
 }
 
 
-int uavos::stream_webrtc::CVideoRecording::printPlane(const uint8_t* buf,
+int de::stream_webrtc::CVideoRecording::printPlane(const uint8_t* buf,
                const int& width,
                const int& height,
                const int& stride) {
@@ -148,7 +148,7 @@ int uavos::stream_webrtc::CVideoRecording::printPlane(const uint8_t* buf,
  * @param frame 
  * @return int 
  */
-int uavos::stream_webrtc::CVideoRecording::printVideoFrame(const webrtc::VideoFrame& frame) 
+int de::stream_webrtc::CVideoRecording::printVideoFrame(const webrtc::VideoFrame& frame) 
 {
     
     if (m_timer_video.elapsed_milli() < m_frame_duration) return 0;
@@ -197,7 +197,7 @@ int uavos::stream_webrtc::CVideoRecording::printVideoFrame(const webrtc::VideoFr
 
 
 
-unsigned char* uavos::stream_webrtc::CVideoRecording::createBitmapFileHeader (const uint& height, const uint& stride)
+unsigned char* de::stream_webrtc::CVideoRecording::createBitmapFileHeader (const uint& height, const uint& stride)
 {
     int fileSize = FILE_HEADER_SIZE + INFO_HEADER_SIZE + (stride * height);
 
@@ -219,7 +219,7 @@ unsigned char* uavos::stream_webrtc::CVideoRecording::createBitmapFileHeader (co
     return fileHeader;
 }
 
-unsigned char* uavos::stream_webrtc::CVideoRecording::createBitmapInfoHeader (const uint&  height, const uint&  width)
+unsigned char* de::stream_webrtc::CVideoRecording::createBitmapInfoHeader (const uint&  height, const uint&  width)
 {
     static unsigned char infoHeader[] = {
         0,0,0,0, /// header size
@@ -254,7 +254,7 @@ unsigned char* uavos::stream_webrtc::CVideoRecording::createBitmapInfoHeader (co
 
 
 
-int uavos::stream_webrtc::CVideoRecording::saveFrameAsPNG(webrtc::VideoFrame& frame)
+int de::stream_webrtc::CVideoRecording::saveFrameAsPNG(webrtc::VideoFrame& frame)
 {
     if (!saveImageinPNG()) return 0;
 
@@ -298,8 +298,8 @@ int uavos::stream_webrtc::CVideoRecording::saveFrameAsPNG(webrtc::VideoFrame& fr
         }
 
     // choose file name
-    std::string output_file_name = getMediaFolderPath() + "img_" + uavos::util::CHelper::getFileTimeStamp() + "_" + std::to_string(m_image_count) 
-                                    + uavos::CWEBRTC_Plugin::getInstance().getLocationInfoText() + ".png";
+    std::string output_file_name = getMediaFolderPath() + "img_" + de::util::CHelper::getFileTimeStamp() + "_" + std::to_string(m_image_count) 
+                                    + de::CWEBRTC_Plugin::getInstance().getLocationInfoText() + ".png";
     std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "PNG" << _NORMAL_CONSOLE_TEXT_ << std::endl;
 
     // convert RGB buffer to PNG image
@@ -339,7 +339,7 @@ int uavos::stream_webrtc::CVideoRecording::saveFrameAsPNG(webrtc::VideoFrame& fr
 }
 
 
-int uavos::stream_webrtc::CVideoRecording::saveFrameAsJPG(webrtc::VideoFrame& frame)
+int de::stream_webrtc::CVideoRecording::saveFrameAsJPG(webrtc::VideoFrame& frame)
 {
     webrtc::MutexLock lock(&m_lock_image);
 
@@ -375,10 +375,10 @@ int uavos::stream_webrtc::CVideoRecording::saveFrameAsJPG(webrtc::VideoFrame& fr
                                     res_rgb_buffer.get());
     
 
-    std::string location_text = uavos::CWEBRTC_Plugin::getInstance().getLocationInfoText();
+    std::string location_text = de::CWEBRTC_Plugin::getInstance().getLocationInfoText();
 
     // choose file name
-    std::string output_file_name =  getMediaFolderPath() + "img_" + uavos::util::CHelper::getFileTimeStamp() + "_" + std::to_string(m_image_count) + location_text + ".jpg";
+    std::string output_file_name =  getMediaFolderPath() + "img_" + de::util::CHelper::getFileTimeStamp() + "_" + std::to_string(m_image_count) + location_text + ".jpg";
     std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     
     // open file
@@ -463,7 +463,7 @@ int uavos::stream_webrtc::CVideoRecording::saveFrameAsJPG(webrtc::VideoFrame& fr
  * @param frame 
  * @return int 
  */
-int  uavos::stream_webrtc::CVideoRecording::saveFrameAsRGB( webrtc::VideoFrame& frame)
+int  de::stream_webrtc::CVideoRecording::saveFrameAsRGB( webrtc::VideoFrame& frame)
 {
     // dont save twice.
     if (saveImageinPNG()) return 0;
@@ -501,8 +501,8 @@ int  uavos::stream_webrtc::CVideoRecording::saveFrameAsRGB( webrtc::VideoFrame& 
     
     
     // choose file name
-    std::string output_file_name =  getMediaFolderPath() + "img_" + uavos::util::CHelper::getFileTimeStamp() + "_" + std::to_string(m_image_count) 
-                                + uavos::CWEBRTC_Plugin::getInstance().getLocationInfoText() + ".bmp";
+    std::string output_file_name =  getMediaFolderPath() + "img_" + de::util::CHelper::getFileTimeStamp() + "_" + std::to_string(m_image_count) 
+                                + de::CWEBRTC_Plugin::getInstance().getLocationInfoText() + ".bmp";
     
     // open file
     FILE* image_handler = fopen(output_file_name.c_str(), "wb");

@@ -1,7 +1,7 @@
 #ifndef CAPTURETRACKSOURCE_H
 #define CAPTURETRACKSOURCE_H
 
-namespace uavos
+namespace de
 {
 namespace stream_webrtc
 {

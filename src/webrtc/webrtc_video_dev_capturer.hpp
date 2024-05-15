@@ -4,7 +4,7 @@
 #include "webrtc_video_recorder.hpp"
 
 
-namespace uavos
+namespace de
 {
 namespace stream_webrtc
 {
@@ -14,7 +14,7 @@ namespace stream_webrtc
 // is used to borad cast frame data using rtc::VideoBroadcaster.
 class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::VideoFrame> 
                                 , public rtc::VideoSinkInterface  <webrtc::VideoFrame>
-                                , public uavos::stream_webrtc::CVideoRecording
+                                , public de::stream_webrtc::CVideoRecording
 {
     public:
         // Class used to process video frame.
@@ -97,6 +97,6 @@ class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::Video
 };
 
 }
-} // namespace uavos
+} // namespace de
 
 #endif
