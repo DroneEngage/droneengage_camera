@@ -622,29 +622,55 @@ void de::CWEBRTC_Plugin::updateDeviceInfoByLocalName (const char* localName, con
 
 }
 
-void de::CWEBRTC_Plugin::processVideoRecording (const Json_de &jMsg)
+void de::CWEBRTC_Plugin::rotateCameraFrame (const Json_de &jMsg)
 {
     // extract command
-    
+    CWEBRTC_Plugin * cWEBRTC_Plugin;
+    cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
+
     const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-    const int subCommand = cmd["C"].get<int>();
+    std::string channelName = cmd["a"].get<std::string>(); // empty ""  means first available camera 
+    const int rotaion_angle = cmd["r"].get<int>();
     
-    // double check cmd.
-    if (subCommand != RemoteCommand_RECORDVIDEO) return ;
-    
-    bool startIfTrue = cmd["Act"].get<bool>();
-    std::string channelName = cmd["T"].get<std::string>();
-    
-    if (startIfTrue == true)
+    de::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
+    if (device_info.device_num == -1)
     {
-        startVideoRecording (jMsg);
+        
+        #ifdef DEBUG
+            std::cout << __FULL_DEBUG__  <<  _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera " << channelName.c_str() << " Not Found" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        #endif
+
+        return;
     }
-    else
-    {
-        stopVideoRecording (jMsg);
-    }
+
+    device_info.capturer->setFrameRotation((webrtc::VideoRotation)rotaion_angle);
+
     
 }
+
+// void de::CWEBRTC_Plugin::processVideoRecording (const Json_de &jMsg)
+// {
+//     // extract command
+    
+//     const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
+//     const int subCommand = cmd["C"].get<int>();
+    
+//     // double check cmd.
+//     if (subCommand != RemoteCommand_RECORDVIDEO) return ;
+    
+//     bool startIfTrue = cmd["Act"].get<bool>();
+//     std::string channelName = cmd["T"].get<std::string>();
+    
+//     if (startIfTrue == true)
+//     {
+//         startVideoRecording (jMsg);
+//     }
+//     else
+//     {
+//         stopVideoRecording (jMsg);
+//     }
+    
+// }
 
 void de::CWEBRTC_Plugin::stopVideoRecording (const Json_de &jMsg)
 {
@@ -815,7 +841,13 @@ Json_de de::CWEBRTC_Plugin::getDeviceListAsJSON ()
         jsonVideoSource["id"]       = deviceInfo.unique_name;
         jsonVideoSource["active"]   = deviceInfo.active;
         jsonVideoSource["r"]        = deviceInfo.recording;
-        jsonVideoSource["p"] = EXTERNAL_CAMERA_TYPE_RTCWEBCAM;
+        
+        jsonVideoSource["p"]        = EXTERNAL_CAMERA_TYPE_RTCWEBCAM;
+        jsonVideoSource["s"]        = EXTERNAL_CAMERA_SUPPORT_ROTATION  | EXTERNAL_CAMERA_SUPPORT_RECORDING | EXTERNAL_CAMERA_SUPPORT_PHOTO;
+        
+        //ANDRUAV ONLY
+        //jsonVideoSource[CAMERA_TYPE "f"]                    = ANDROID_DUAL_CAM; facing/rearing (true,false)
+        //jsonVideoSource[CAMERA_TYPE "z"]					  = Support Zooming
         
         jsonDeviceList.push_back(jsonVideoSource);
     

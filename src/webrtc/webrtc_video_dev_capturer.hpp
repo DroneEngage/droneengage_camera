@@ -46,6 +46,14 @@ class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::Video
             return m_Capturer->CaptureStarted();}    
     
     public:
+
+        void setFrameRotation (webrtc::VideoRotation rotation)
+        {
+            m_rotation = rotation;
+        }
+
+
+    public:
         // rtc::VideoSourceInterface
         void AddOrUpdateSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override;
@@ -92,6 +100,7 @@ class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::Video
 
         bool m_once = false;
 
+        webrtc::VideoRotation m_rotation;
         int8_t counter = 0;
         FILE* m_output_file;
 };

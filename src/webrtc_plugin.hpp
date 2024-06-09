@@ -92,10 +92,10 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         void cleaning ();
 
     public:
-        void processVideoRecording (const Json_de &jMsg);
+        //void processVideoRecording (const Json_de &jMsg);
         void startImageCapturing (const Json_de &jMsg);
         void updateLocationInfo(const Json_de &jMsg);
-
+        void rotateCameraFrame(const Json_de &jMsg);
 
     public:
         const std::string getLocationInfoText()
@@ -117,7 +117,6 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         void onVideoStarted() override ;
         void onVideoStopped() override ;
 
-    protected:
         void startVideoRecording (const Json_de &jMsg);
         void stopVideoRecording (const Json_de &jMsg);
             

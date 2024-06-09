@@ -241,6 +241,12 @@
 
 #define EXTERNAL_CAMERA_TYPE_UNKNOWN                        0
 #define EXTERNAL_CAMERA_TYPE_RTCWEBCAM                      2
+#define EXTERNAL_CAMERA_SUPPORT_ZOOMING                     0x1
+#define EXTERNAL_CAMERA_SUPPORT_ROTATION                    0x2
+#define EXTERNAL_CAMERA_SUPPORT_RECORDING                   0x4
+#define EXTERNAL_CAMERA_SUPPORT_PHOTO                       0x8
+#define EXTERNAL_CAMERA_SUPPORT_DUAL_CAM                    0x10
+#define EXTERNAL_CAMERA_SUPPORT_FLASHING                    0x20
 
 #define RemoteCommand_STREAMVIDEO 		                    110
 #define RemoteCommand_RECORDVIDEO 		                    111
@@ -256,6 +262,7 @@
 // #define RC_SUB_ACTION_JOYSTICK_CHANNELS_GUIDED           8
 
 // Remote Execute Commands
+#define RemoteCommand_ROTATECAM                             105 // Rotate Camera
 #define RemoteCommand_TELEMETRYCTRL                         108 // Telemetry streaming
 #define RemoteCommand_STREAMVIDEO                           110
 #define RemoteCommand_CONNECT_FCB                           118

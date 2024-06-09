@@ -304,7 +304,19 @@ void onReceive (const char * message, int len, Json_de jMsg)
                             // cannot send this command as broadcast.
                             return ;                    
                         }
-                        cWEBRTC_Plugin->processVideoRecording(jMsg);   
+
+                        bool startIfTrue = cmd["Act"].get<bool>();
+                        std::string channelName = cmd["T"].get<std::string>();
+                        
+                        if (startIfTrue == true)
+                        {
+                            cWEBRTC_Plugin->startVideoRecording (jMsg);
+                        }
+                        else
+                        {
+                            cWEBRTC_Plugin->stopVideoRecording (jMsg);
+                        }
+                        
                         createJSONID(false);
                     }
                     break;
@@ -328,6 +340,14 @@ void onReceive (const char * message, int len, Json_de jMsg)
                         //_camera.nextCamera (jmsg.sd);
                         std::cout << "Key " << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: RemoteCommand_SWITCHCAM" << _NORMAL_CONSOLE_TEXT_ << std::endl;
                         createJSONID(false);
+                    }
+                    break;
+
+
+                    case RemoteCommand_ROTATECAM:
+                    {   
+                        const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
+                        cWEBRTC_Plugin->rotateCameraFrame(jMsg);
                     }
                     break;
                 }
