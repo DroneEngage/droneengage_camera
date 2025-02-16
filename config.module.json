@@ -4,7 +4,7 @@
     /* DroneEngage Communication Server */
     "s2s_udp_target_ip"           : "127.0.0.1", //"192.168.1.144",
     "s2s_udp_target_port"         : "60000", 
-    "s2s_udp_listening_ip"        : "127.0.0.1", 
+    "s2s_udp_listening_ip"        : "0.0.0.0", 
     "s2s_udp_listening_port"      : "60029", 
     "s2s_udp_packet_size"         : "8192",
 
