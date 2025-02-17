@@ -1,0 +1,6 @@
+svgo/.svgo.yml
+typescript/lib/lib.d.ts
+typescript/lib/lib.*.d.ts
+typescript/lib/tsc.js
+typescript/lib/tsserver.js
+typescript/lib/typescript.js

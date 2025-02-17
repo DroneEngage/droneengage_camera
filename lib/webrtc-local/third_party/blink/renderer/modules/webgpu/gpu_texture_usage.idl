@@ -1,0 +1,20 @@
+// Copyright 2019 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// https://gpuweb.github.io/gpuweb/
+
+typedef [EnforceRange] unsigned long GPUTextureUsageFlags;
+[
+    Exposed(Window WebGPU, Worker WebGPU)
+] interface GPUTextureUsage {
+    const unsigned long COPY_SRC = 1;
+    const unsigned long COPY_DST = 2;
+    const unsigned long TEXTURE_BINDING = 4;
+    const unsigned long STORAGE_BINDING = 8;
+    const unsigned long RENDER_ATTACHMENT = 16;
+
+    // Deprecated names. Use TEXTURE_BINDING and STORAGE_BINDING instead.
+    [CallWith=ExecutionContext] static readonly attribute unsigned long SAMPLED; // 4
+    [CallWith=ExecutionContext] static readonly attribute unsigned long STORAGE; // 8
+};

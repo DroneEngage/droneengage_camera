@@ -1,0 +1,65 @@
+[
+  {
+    "name": "disable-layout-ng",
+    "args": ["--disable-blink-features=LayoutNG"]
+  },
+  {
+    "name": "layout-ng-fragment-item",
+    "args": ["--enable-blink-features=LayoutNGFragmentItem"]
+  },
+  {
+    "name": "back-forward-cache",
+    "args": ["--enable-features=BackForwardCache"]
+  },
+  {
+    "name": "composite-after-paint",
+    "args": ["--enable-blink-features=CompositeAfterPaint"]
+  },
+  {
+    "name": "enable-percent-based-scrolling",
+    "args": ["--enable-features=PercentBasedScrolling"]
+  },
+  {
+    "name": "new-system-colors",
+    "args": ["--enable-blink-features=NewSystemColors"]
+  },
+  {
+    "name": "highdpi",
+    "args": ["--force-device-scale-factor=1.5"]
+  },
+  {
+    "name": "skia-gl",
+    "args": [
+          "--enable-gpu-rasterization",
+          "--enable-features=UseSkiaRenderer",
+          "--use-gl=any",
+          "--enable-oop-rasterization",
+          "--disable-software-compositing-fallback",
+          "--disable-headless-mode"
+    ]
+  },
+  {
+    "name": "skia-vulkan-native",
+    "args": [
+          "--enable-gpu-rasterization",
+          "--enable-features=UseSkiaRenderer,Vulkan",
+          "--use-gl=any",
+          "--enable-oop-rasterization",
+          "--disable-software-compositing-fallback",
+          "--use-vulkan=native",
+          "--disable-vulkan-fallback-to-gl-for-testing",
+          "--disable-headless-mode"
+    ]
+  },
+  {
+    "name": "skia-vulkan-swiftshader",
+    "args": [
+          "--enable-gpu-rasterization",
+          "--enable-features=UseSkiaRenderer,Vulkan",
+          "--enable-oop-rasterization",
+          "--use-vulkan=swiftshader",
+          "--disable-vulkan-fallback-to-gl-for-testing"
+    ]
+  }
+]
+
