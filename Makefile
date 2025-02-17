@@ -45,8 +45,8 @@ SRCS = ../$(SRC)/main.cpp \
 
 INCLUDE= -I ../src/ -I ../lib/webrtc94-local/third_party/ -I ../lib/webrtc94-local/third_party/libyuv -I ../lib/webrtc94-local/third_party/libyuv/include -I ../lib/webrtc94-local/third_party/abseil-cpp -I ../lib/webrtc94-local/include 
 LIBS = -lpthread    -fexceptions    -ljsoncpp    -lwebrtc -ldl -lX11 -lexpat -ljpeg
-LIBS_RELEASE = $(LIBS) -L ./lib/webrtc94-local/lib/x64/Release/
-LIBS_DEBUG = $(LIBS)  -L ./lib/webrtc94-local/lib/x64/Debug/ 
+LIBS_RELEASE = $(LIBS) -L ./lib/webrtc94-local/lib/Release/
+LIBS_DEBUG = $(LIBS)  -L ./lib/webrtc94-local/lib/Debug/ 
 CXXFLAGS =
 CXXFLAGS_RELEASE= $(CXXFLAGS) -DRELEASE -s   -Werror=unused-variable -Werror=unused-result
 CXXFLAGS_DEBUG= $(CXXFLAGS)  -DDEBUG -g
