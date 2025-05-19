@@ -6,9 +6,6 @@
 using Json_de = nlohmann::json;
 
 
-static const rtc::SocketAddress kDefaultLocalAddress("192.168.1.139", 1);
-
-
 de::stream_webrtc::CPeerConnectionManager::CPeerConnectionManager ():m_callbacks(NULL)
 {
 }
@@ -20,13 +17,49 @@ de::stream_webrtc::CPeerConnectionManager::CPeerConnectionManager (CCallbacks *c
 
 de::stream_webrtc::CPeerConnectionManager::~CPeerConnectionManager()
 {
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << "\033[1;31m" << "DESTRUCTOR" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " "  << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
 }
 
+void de::stream_webrtc::CPeerConnectionManager::CreateSomeMediaDeps(webrtc::PeerConnectionFactoryDependencies& media_deps) {
+// CHECK /home/mhefny/TDisk_6T/Work/webrtc_2025/webrtc/src/webrtc_lib_link_test.cc
+//   media_deps.adm =
+//       CreateAudioDeviceModule(*media_deps.env, AudioDeviceModule::kDummyAudio);
+//   media_deps.audio_encoder_factory =
+//       webrtc::CreateAudioEncoderFactory<webrtc::AudioEncoderOpus>();
+//   media_deps.audio_decoder_factory =
+//       webrtc::CreateAudioDecoderFactory<webrtc::AudioDecoderOpus>();
+//   media_deps.video_encoder_factory =
+//       std::make_unique<VideoEncoderFactoryTemplate<
+//           LibvpxVp8EncoderTemplateAdapter, LibvpxVp9EncoderTemplateAdapter,
+//           OpenH264EncoderTemplateAdapter, LibaomAv1EncoderTemplateAdapter>>();
+//   media_deps.video_decoder_factory =
+//       std::make_unique<VideoDecoderFactoryTemplate<
+//           LibvpxVp8DecoderTemplateAdapter, LibvpxVp9DecoderTemplateAdapter,
+//           OpenH264DecoderTemplateAdapter, Dav1dDecoderTemplateAdapter>>();
+//   media_deps.audio_processing_builder =
+//       std::make_unique<BuiltinAudioProcessingBuilder>();
+}
+
+webrtc::PeerConnectionFactoryDependencies de::stream_webrtc::CPeerConnectionManager::CreateSomePcfDeps() {
+  webrtc::PeerConnectionFactoryDependencies pcf_deps;
+  pcf_deps.signaling_thread = webrtc::Thread::Current();
+  pcf_deps.network_thread = webrtc::Thread::Current();
+  pcf_deps.worker_thread = webrtc::Thread::Current();
+  pcf_deps.event_log_factory = std::make_unique<webrtc::RtcEventLogFactory>();
+  CreateSomeMediaDeps(pcf_deps);
+  webrtc::EnableMedia(pcf_deps);
+  return pcf_deps;
+}
 
 bool de::stream_webrtc::CPeerConnectionManager::CreatePeerConnection(const std::string &sessionID, const std::string &peerID, const std::string &channelNumber, const std::string &channelName) 
 {
 	
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
     
     de::CConfigFile &cConfigFile = CConfigFile::getInstance();
     const Json_de& jsonConfig = cConfigFile.GetConfigJSON();
@@ -56,76 +89,101 @@ bool de::stream_webrtc::CPeerConnectionManager::CreatePeerConnection(const std::
 		}
         m_config.servers.push_back(server);
 	}
-    //m_config.enable_ice_renomination = true;
-    //// WHEN ENABLED NO ONICECANDIDATE is triggered.
-    // 1- m_config.tcp_candidate_policy = webrtc::PeerConnectionInterface::TcpCandidatePolicy::kTcpCandidatePolicyDisabled; 
-    /////
+    
     m_config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;  // using planB makes offer Bundle writes video.
     
-    // stranges:
-    // m_config.bundle_policy = webrtc::PeerConnectionInterface::BundlePolicy::kBundlePolicyMaxCompat;
-    //m_config.disable_ipv6 = true;
-    //m_config.disable_ipv6_on_wifi = false;
-    
-    // BAD CHOICE m_config.use_media_transport_for_data_channels = true;
-    // BAD CHOICE m_config.use_datagram_transport = true;
-    //m_config.prune_turn_ports = true;
     
     
     de::CNetworkManager * fnm = new de::CNetworkManager();
-    //fnm->AddInterface (kDefaultLocalAddress,"wifi",rtc::AdapterType::ADAPTER_TYPE_WIFI);   // << IP ADDED TO HOST BUT TCP NOT UDP !!!
     
-    //rtc::BasicNetworkManager * bnm = new rtc::BasicNetworkManager();
-    cricket::BasicPortAllocator* bpa = new cricket::BasicPortAllocator(fnm);
-    std::unique_ptr<cricket::PortAllocator> port_allocator(bpa);
-    // port_allocator->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
-    //                           cricket::PORTALLOCATOR_DISABLE_RELAY);
+    // webrtc::BasicPortAllocator* bpa = new webrtc::BasicPortAllocator(fnm);
+    // std::unique_ptr<webrtc::PortAllocator> port_allocator(bpa);
 
+    auto pcf_deps = CreateSomePcfDeps();
+    auto peer_connection_deps = webrtc::PeerConnectionDependencies(this);
+    //auto dependencies = std::make_unique<webrtc::PeerConnectionDependencies>(this);
+    auto peer_connection_or_error =
+        de::stream_webrtc::CUserMedia::GetPeerConnectionFactory().get()->CreatePeerConnectionOrError(
+                m_config, std::move(peer_connection_deps)); 
+
+    // Handle the RTCErrorOr result
+    if (peer_connection_or_error.ok()) {
+        m_peerConnection = peer_connection_or_error.MoveValue();
+    } else {
+        // Handle error: peer_connection_or_error.error().message()
+        RTC_LOG(LS_ERROR) << "Failed to create peer connection: " << peer_connection_or_error.error().message();
+        m_peerConnection = nullptr; // Explicitly set to nullptr on failure
+        // Consider returning an error code or throwing an exception here
+    }
     
-    // const cricket::FakePortAllocatorSession* session =
-    //   static_cast<const cricket::FakePortAllocatorSession*>(
-    //       port_allocator.get()->GetPooledSession());
-    
-
-    RTC_LOG(INFO) << __FUNCTION__ << "CreatePeerConnection peerid:" << peerID;
-    m_peerConnection = de::stream_webrtc::CUserMedia::GetPeerConnectionFactory().get()->CreatePeerConnection(
-                m_config, std::move(port_allocator) // */
-                , nullptr, (PeerConnectionObserver*)this);
-
     m_sessionID = sessionID;
     m_peerID = peerID;
     m_channelNumber = channelName;
     m_channelName = channelName;
 
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
 	return m_peerConnection.get() != nullptr;;
 }	
 
-webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpTransceiverInterface>> de::stream_webrtc::CPeerConnectionManager::AddTransceiver(
-    rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> track)
+webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>> de::stream_webrtc::CPeerConnectionManager::AddTransceiver(
+    webrtc::scoped_refptr<webrtc::MediaStreamTrackInterface> track)
 {
-    webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpTransceiverInterface>> result =
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+	webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>> result =
       m_peerConnection.get()->AddTransceiver(track);
-      return result;
+    
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+	return result;
 }
 bool de::stream_webrtc::CPeerConnectionManager::AddStream(webrtc::MediaStreamInterface *stream) {
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
     if (!m_peerConnection.get())
         return false;
+
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+	
     return m_peerConnection.get()->AddStream(stream);
 
 }
 
 
-void de::stream_webrtc::CPeerConnectionManager::AddTrack(rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> track,
+void de::stream_webrtc::CPeerConnectionManager::AddTrack(webrtc::scoped_refptr<webrtc::MediaStreamTrackInterface> track,
     const std::vector<std::string>& stream_ids) {
    
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
     if (!m_peerConnection.get())
         return ;
    
     m_peerConnection.get()->AddTrack(track, stream_ids);
 
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
 }
 
 bool de::stream_webrtc::CPeerConnectionManager::CreateOffer() {
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
     if (!m_peerConnection.get())
         return false;
 
@@ -140,7 +198,12 @@ bool de::stream_webrtc::CPeerConnectionManager::CreateOffer() {
     m_peerConnection.get()->CreateOffer((CreateSessionDescriptionObserver*)this, options);
 
     std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: CreateOffer" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-        
+      
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+    
     return true;
 }
 
@@ -157,6 +220,12 @@ bool de::stream_webrtc::CPeerConnectionManager::CreateAnswer() {
     
     
     // m_peerConnection.get()->CreateAnswer((CreateSessionDescriptionObserver*)this, options);
+
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+    
     return true;
 }
 
@@ -164,21 +233,29 @@ bool de::stream_webrtc::CPeerConnectionManager::CreateAnswer() {
 void de::stream_webrtc::CPeerConnectionManager::SetRemoteDescription(const std::string& type, const std::string& sdp)
 {
 
-    #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: SetRemoteDescription" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 
-    std::unique_ptr<webrtc::SessionDescriptionInterface> session_description = 
-            webrtc::CreateSessionDescription(webrtc::SdpType::kAnswer, sdp);
-    rtc::scoped_refptr<CSetSessionDescriptionObserver> observer = new rtc::RefCountedObject<CSetSessionDescriptionObserver>(this);
-    observer.get()->no = true;
-    m_peerConnection.get()->SetRemoteDescription(observer.get(),session_description.release());
+    std::unique_ptr<webrtc::SessionDescriptionInterface> session_description = webrtc::CreateSessionDescription(webrtc::SdpType::kAnswer, sdp);
+            
+    auto  observer = CSetSessionDescriptionObserver::Create(this);
+    observer->no = true;
+    m_peerConnection.get()->SetRemoteDescription(observer,session_description.release());
+
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
 }
 
   
 bool de::stream_webrtc::CPeerConnectionManager::AddIceCandidate (const Json_de& packet)
 {
-    webrtc::SdpParseError error;
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+	webrtc::SdpParseError error;
     
     std::string SdpName = "";
     std::string SdpMidName = "";
@@ -203,21 +280,32 @@ bool de::stream_webrtc::CPeerConnectionManager::AddIceCandidate (const Json_de& 
             webrtc::CreateIceCandidate(SdpMidName, std::atoi(SdpMlineIndexName.c_str()), SdpName,  &error));
     
     if (!candidate.get()) {
-      RTC_LOG(WARNING) << "Can't parse received candidate message. "
+      RTC_LOG(LS_WARNING) << "Can't parse received candidate message. "
                        << "SdpParseError was: " << error.description;
       return false;
     }
 
     if (!m_peerConnection.get()->AddIceCandidate (candidate.get()))
     {
-        RTC_LOG(WARNING) << "Failed in AddIceCandidate";
+        RTC_LOG(LS_WARNING) << "Failed in AddIceCandidate";
       
     }
+
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+	
     return true;
 }
 
 void de::stream_webrtc::CPeerConnectionManager::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
     
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+	
     std::string sdp;
     desc->ToString(&sdp);
     // m_test_sdb = sdp.c_str();
@@ -231,40 +319,35 @@ void de::stream_webrtc::CPeerConnectionManager::OnSuccess(webrtc::SessionDescrip
   
     std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  " << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: CPeerConnectionManager::OnSuccess" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     webrtc::SdpParseError error;
-    // webrtc::SessionDescriptionInterface *session_description = 
-    //             webrtc::CreateSessionDescription(desc->type(), sdp, &error);
-    
-
-    //std::unique_ptr<webrtc::IceCandidateInterface> candidate(cricket::Candidate());
-    cricket::Candidate candidate;
-    candidate.set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
-    candidate.set_protocol(cricket::UDP_PROTOCOL_NAME);
-    candidate.set_address(kDefaultLocalAddress);
-    candidate.set_type(cricket::LOCAL_PORT_TYPE);
-    
-
-
     
     m_peerConnection.get()->SetLocalDescription(
                 CSetSessionDescriptionObserver::Create(this), desc);
 
-    // if (m_callbacks)
-    // {
-    //     m_callbacks->OnLocalSdpReadytoSend(m_sessionID.c_str(), desc->type().c_str(), sdp.c_str());
-    // }
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
 
-    return ;
+	return ;
 }
 
 // FROM:         
 //      SetSessionDescriptionObserver AND
 //      CreateSessionDescriptionObserver
 void de::stream_webrtc::CPeerConnectionManager::OnFailure(webrtc::RTCError error) {
-    std::cout << ToString(error.type()) << ": " << error.message() << std::endl;
+    
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+	std::cout << ToString(error.type()) << ": " << error.message() << std::endl;
 
   // TODO(hta): include error.type in the message
  
     std::cout << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << "\033[1;31m" << " DEBUG: CPeerConnectionManager::OnFailure" << ToString(error.type()) << ": " << error.message() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+
+	#ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
 
 	return ;
 }
@@ -276,9 +359,11 @@ void de::stream_webrtc::CPeerConnectionManager::OnFailure(webrtc::RTCError error
  */
 void de::stream_webrtc::CPeerConnectionManager::onsuccess() {
 
-    std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: SetLocalDescripton::onsuccess" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
 
-    
+	
     if (m_callbacks)
     {
         std::string type;
@@ -289,26 +374,45 @@ void de::stream_webrtc::CPeerConnectionManager::onsuccess() {
 
         m_callbacks->OnLocalSdpReadytoSend(m_sessionID.c_str(), type.c_str(), sdp.c_str());
     }
+
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+	
 }
 
 
 void de::stream_webrtc::CPeerConnectionManager::onfailed() {
-    std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: SetLocalDescripton::onfailed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: SetLocalDescripton::onfailed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
 }
 
 
 void de::stream_webrtc::CPeerConnectionManager::Close() {
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+	
     std::cout << __FILE__ << "." << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: CPeerConnectionManager::Close" << _NORMAL_CONSOLE_TEXT_ << std::endl;
 
     m_peerConnection->Close();
     m_peerConnection = nullptr;
-    
+
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
 }
 
 // Triggered when the SignalingState changed.
 void de::stream_webrtc::CPeerConnectionManager::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state)
 {
-    switch (new_state)
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+	switch (new_state)
     {
         case webrtc::PeerConnectionInterface::kStable:
             std::cout << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnSignalingChange:kStable" << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -339,32 +443,36 @@ void de::stream_webrtc::CPeerConnectionManager::OnSignalingChange(webrtc::PeerCo
             break;
     }
 
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
    
 }
 
 // Triggered when media is received on a new stream from remote peer.
-void de::stream_webrtc::CPeerConnectionManager::OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
+void de::stream_webrtc::CPeerConnectionManager::OnAddStream(webrtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
 {
-    #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnAddStream" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
         
 }
 
 // Triggered when a remote peer closes a stream.
-void de::stream_webrtc::CPeerConnectionManager::OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
+void de::stream_webrtc::CPeerConnectionManager::OnRemoveStream(webrtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
 {
-    #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnRemoveStream" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
         
 }
 
 // Triggered when a remote peer opens a data channel.
-void de::stream_webrtc::CPeerConnectionManager::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel)
+void de::stream_webrtc::CPeerConnectionManager::OnDataChannel(webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel)
 {
-    #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnDataChannel" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 }
 
@@ -372,16 +480,16 @@ void de::stream_webrtc::CPeerConnectionManager::OnDataChannel(rtc::scoped_refptr
 // has begun.
 void de::stream_webrtc::CPeerConnectionManager::OnRenegotiationNeeded()
 {
-    #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnRenegotiationNeeded" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-	#endif
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
 }
 
 
 void de::stream_webrtc::CPeerConnectionManager::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state)
 {
-    #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnIceConnectionChange state: "  << _INFO_CONSOLE_TEXT << std::endl;
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
     
     switch (new_state)
@@ -423,14 +531,16 @@ void de::stream_webrtc::CPeerConnectionManager::OnIceConnectionChange(webrtc::Pe
 
     std::cout << _NORMAL_CONSOLE_TEXT_ << std::endl;
     
-    
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
 }
 
 // Called any time the PeerConnectionState changes.
 void de::stream_webrtc::CPeerConnectionManager::OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState new_state)
 {   
-    #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnConnectionChange " << "\033[1;33m";
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
     
     
@@ -461,14 +571,18 @@ void de::stream_webrtc::CPeerConnectionManager::OnConnectionChange(webrtc::PeerC
     }
     
     std::cout << _NORMAL_CONSOLE_TEXT_ << std::endl;
+
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
 }
 
 
 // Called any time the IceGatheringState changes.
 void de::stream_webrtc::CPeerConnectionManager::OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state)
 { 
-    #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnIceGatheringChange " << "\033[1;33m";
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 
     switch (new_state)
@@ -493,20 +607,27 @@ void de::stream_webrtc::CPeerConnectionManager::OnIceGatheringChange(webrtc::Pee
 
     std::cout  << _NORMAL_CONSOLE_TEXT_ << std::endl;
     
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
 }
 
 
 // A new ICE candidate has been gathered.
 void de::stream_webrtc::CPeerConnectionManager::OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
 { 
-    #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnIceCandidate" << _NORMAL_CONSOLE_TEXT_ << std::endl ;
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 
     if (m_callbacks)
     {
         m_callbacks->OnIceCandidate(m_sessionID, candidate);
     }
+
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
     
 }
 
@@ -514,10 +635,10 @@ void de::stream_webrtc::CPeerConnectionManager::OnIceCandidate(const webrtc::Ice
 // Ice candidates have been removed.
 // TODO(honghaiz): Make this a pure virtual method when all its subclasses
 // implement it.
-void de::stream_webrtc::CPeerConnectionManager::OnIceCandidatesRemoved(const std::vector<cricket::Candidate>& candidates)
+void de::stream_webrtc::CPeerConnectionManager::OnIceCandidatesRemoved(const std::vector<webrtc::Candidate>& candidates)
 { 
-   #ifdef DEBUG
-   std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  " << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnIceCandidatesRemoved" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+   #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
    #endif
 }
 
@@ -525,8 +646,8 @@ void de::stream_webrtc::CPeerConnectionManager::OnIceCandidatesRemoved(const std
 // Called when the ICE connection receiving status changes.
 void de::stream_webrtc::CPeerConnectionManager::OnIceConnectionReceivingChange(bool receiving)
 { 
-    #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  " << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnIceConnectionReceivingChange" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 }
 
@@ -537,11 +658,11 @@ void de::stream_webrtc::CPeerConnectionManager::OnIceConnectionReceivingChange(b
 // Note: This is called with both Plan B and Unified Plan semantics. Unified
 // Plan users should prefer OnTrack, OnAddTrack is only called as backwards
 // compatibility (and is called in the exact same situations as OnTrack).
-void de::stream_webrtc::CPeerConnectionManager::OnAddTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
-                const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>& streams)
+void de::stream_webrtc::CPeerConnectionManager::OnAddTrack(webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
+                const std::vector<webrtc::scoped_refptr<webrtc::MediaStreamInterface>>& streams)
 { 
-    #ifdef DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  " << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnAddTrack" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 }
 
@@ -555,10 +676,10 @@ void de::stream_webrtc::CPeerConnectionManager::OnAddTrack(rtc::scoped_refptr<we
 // This behavior is specified in section 2.2.8.2.5 of the "Set the
 // RTCSessionDescription" algorithm:
 // https://w3c.github.io/webrtc-pc/#set-description
-void de::stream_webrtc::CPeerConnectionManager::OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
+void de::stream_webrtc::CPeerConnectionManager::OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
 { 
-    #ifdef DEBUG
-    std::cout << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: OnTrack" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 }
 
@@ -571,10 +692,10 @@ void de::stream_webrtc::CPeerConnectionManager::OnTrack(rtc::scoped_refptr<webrt
 // will have changed direction to either sendonly or inactive.
 // https://w3c.github.io/webrtc-pc/#process-remote-track-removal
 // TODO(hbos,deadbeef): Make pure virtual when all subclasses implement it.
-void de::stream_webrtc::CPeerConnectionManager::OnRemoveTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver)
+void de::stream_webrtc::CPeerConnectionManager::OnRemoveTrack(webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver)
 { 
-    #ifdef DEBUG
-    std::cout << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnRemoveTrack" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 }
 
@@ -587,8 +708,8 @@ void de::stream_webrtc::CPeerConnectionManager::OnRemoveTrack(rtc::scoped_refptr
 // implementation-defined.
 void de::stream_webrtc::CPeerConnectionManager::OnInterestingUsage(int usage_pattern)
 { 
-    #ifdef DEBUG
-    std::cout << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnInterestingUsage" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 }
 

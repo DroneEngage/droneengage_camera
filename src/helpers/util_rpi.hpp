@@ -29,7 +29,7 @@ namespace helpers
 
         public:
             
-            ~CUtil_Rpi (){};
+            ~CUtil_Rpi (){}
            
         public:
             int get_rpi_model ()  const;

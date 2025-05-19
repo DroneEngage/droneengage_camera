@@ -8,7 +8,7 @@ class CSetSessionDescriptionObserver : public webrtc::SetSessionDescriptionObser
 {
     public:
         static CSetSessionDescriptionObserver* Create(de::CSDOCallBack *csdocallback) {
-            return new rtc::RefCountedObject<CSetSessionDescriptionObserver>(csdocallback);
+            return new webrtc::RefCountedObject<CSetSessionDescriptionObserver>(csdocallback);
         }
 
         void OnSuccess() override;

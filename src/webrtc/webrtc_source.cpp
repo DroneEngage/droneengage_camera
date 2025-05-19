@@ -11,14 +11,15 @@
 #include "../common.h"
 
 
+
 //OPENCV Capturer check this : https://sourcey.com/articles/webrtc-custom-opencv-video-capture
 
-// rtc::scoped_refptr<webrtc::VideoCaptureModule> CSource::GetVideoCapturerByIndex(const char * device_id) {
+// webrtc::scoped_refptr<webrtc::VideoCaptureModule> CSource::GetVideoCapturerByIndex(const char * device_id) {
 
 //     std::cout << "GetVideoCapturerByIndex called" << std::endl;
 //     std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> video_info(webrtc::VideoCaptureFactory::CreateDeviceInfo());
 
-//     rtc::scoped_refptr<webrtc::VideoCaptureModule>  capturerModule = webrtc::VideoCaptureFactory::Create(device_id);
+//     webrtc::scoped_refptr<webrtc::VideoCaptureModule>  capturerModule = webrtc::VideoCaptureFactory::Create(device_id);
 
 //     if (!capturerModule) {
 //         std::cout << "capturerModule is null" << std::endl;
@@ -46,6 +47,10 @@ using namespace de::stream_webrtc;
  */
 int de::stream_webrtc::CSource::GetDeviceNumber (std::string device_name)
 {
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
     // Travel through /dev/video [0-63]
     std::string device_name_instance;
         
@@ -86,11 +91,19 @@ int de::stream_webrtc::CSource::GetDeviceNumber (std::string device_name)
         if (strcmp (device_name.c_str(),camera_name)==0) return n;
     }
 
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
     return -1;
 }
 
 int de::stream_webrtc::CSource::GetDevices (std::vector<STRUCT_DEVICE_INFO> &devicesInfo, const int deviceCount) {
     
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
     std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> video_info(webrtc::VideoCaptureFactory::CreateDeviceInfo());
     
     if (!video_info) return 0;
@@ -115,6 +128,7 @@ int de::stream_webrtc::CSource::GetDevices (std::vector<STRUCT_DEVICE_INFO> &dev
             deviceInfo.local_name   = std::string( name ) + "#" + std::to_string(i); // id is added as similar cameras have similar names.
             deviceInfo.unique_name  = de::util::CHelper::getShortSemiGUID();
             deviceInfo.dev_linux_number = GetDeviceNumber (deviceInfo.device_name); // before create source to avoid permission problems.
+            //TODO: Check RESOLUTION HERE
             deviceInfo.capturer     = std::shared_ptr<VideoDevCapturerComposite>(VideoDevCapturerComposite::Create(1024,720,30,deviceInfo.device_id.c_str()));
             deviceInfo.active       = 0;
             deviceInfo.selected     = false;
@@ -135,17 +149,28 @@ int de::stream_webrtc::CSource::GetDevices (std::vector<STRUCT_DEVICE_INFO> &dev
            
         }
     }
+
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
     return counter;
 }
 
 int de::stream_webrtc::CSource::GetVideoSourcesCount(void)
 {
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
     std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> video_info(webrtc::VideoCaptureFactory::CreateDeviceInfo());
  
     if (video_info) return video_info->NumberOfDevices();
 
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
     return 0;
 }
-
 
 

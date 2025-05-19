@@ -16,11 +16,11 @@ class CapturerTrackSource : public webrtc::VideoTrackSource {
  
   ~CapturerTrackSource()
   {
-        std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << "Key " << "\033[1;31m" << "DESTRUCTOR" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << "Key " << "DESTRUCTOR" << _NORMAL_CONSOLE_TEXT_ << std::endl;
   }
  
  
- static rtc::scoped_refptr<CapturerTrackSource>   Create(VideoDevCapturerComposite*  videoDevCapturerComposite);
+  static webrtc::scoped_refptr<CapturerTrackSource>   Create(VideoDevCapturerComposite*  videoDevCapturerComposite);
 
  
   void Start() { SetState(webrtc::MediaSourceInterface::SourceState::kLive); }
@@ -29,12 +29,12 @@ class CapturerTrackSource : public webrtc::VideoTrackSource {
 
 
  protected:
- // private constructor
-   explicit CapturerTrackSource(
+    // private constructor
+    explicit CapturerTrackSource(
       std::shared_ptr<VideoDevCapturerComposite> capturer)
       : webrtc::VideoTrackSource(/*remote=*/false), m_capturer(capturer) {}
 
-  rtc::VideoSourceInterface<webrtc::VideoFrame>* source() override {
+    webrtc::VideoSourceInterface<webrtc::VideoFrame>* source() override {
       return m_capturer.get();
     }
 

@@ -8,17 +8,15 @@ using namespace de::stream_webrtc;
 /**
  * Statuic function: creates Capturer and inistantiate instance of CapturerTrackSource.
  */
-rtc::scoped_refptr<CapturerTrackSource>   de::stream_webrtc::CapturerTrackSource::Create(VideoDevCapturerComposite*  videoDevCapturerComposite) 
+webrtc::scoped_refptr<CapturerTrackSource> de::stream_webrtc::CapturerTrackSource::Create(VideoDevCapturerComposite* videoDevCapturerComposite)
 {
-
-  if (!videoDevCapturerComposite) 
+  if (!videoDevCapturerComposite)
   {
-    std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "BAD  VideoDevCapturerComposit" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "BAD  VideoDevCapturerComposite" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     return nullptr;
   }
 
-  std::shared_ptr<VideoDevCapturerComposite> capturer (videoDevCapturerComposite);
-  // attach to webrtc::VideoTrackSource and create CapturerTrackSource instance.
-  return new rtc::RefCountedObject<CapturerTrackSource>(capturer);
+  std::shared_ptr<VideoDevCapturerComposite> capturer(videoDevCapturerComposite);
+  return webrtc::make_ref_counted<CapturerTrackSource>(capturer);
 }
 

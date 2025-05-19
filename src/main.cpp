@@ -1,12 +1,12 @@
+//#include <signal.h>
 #include <stdio.h>
 #include <getopt.h>
 #include "common.h"
 #include "webrtc_plugin.hpp"
 #include "./de_common/de_module.hpp"
-#include "./helpers/json_nlohmann.hpp"
-#include "./helpers/helpers.hpp"
 #include "./helpers/util_rpi.hpp"
-
+#include "./de_common/configFile.hpp"
+#include "./de_common/localConfigFile.hpp"
 using Json_de = nlohmann::json;
 
 #include "./helpers/getopt_cpp.hpp"
@@ -21,27 +21,30 @@ using namespace de;
                         TYPE_AndruavModule_Location_Info, \
                         TYPE_AndruavMessage_DUMMY}
 
-
+static webrtc::Thread* the_default_thread = webrtc::Thread::Current();
 std::time_t instance_time_stamp;
 
 // DroneEngage Current PartyID read from communicator
 std::string  PartyID;
 // DroneEngage Current GroupID read from communicator
 std::string  GroupID;
-std::string  ModuleID;
 std::string  ModuleKey;
 
-CConfigFile& cConfigFile = CConfigFile::getInstance();
+de::CConfigFile& cConfigFile = CConfigFile::getInstance();
+de::CLocalConfigFile& cLocalConfigFile = de::CLocalConfigFile::getInstance();
 
 de::comm::CModule& cModule= de::comm::CModule::getInstance();
 
-CWEBRTC_Plugin * cWEBRTC_Plugin;
+CWEBRTC_Plugin& cWEBRTC_Plugin = CWEBRTC_Plugin::getInstance(); 
 
 /**
  * @brief hardware serial number
  * 
  */
 static std::string hardware_serial;
+static bool m_exit = false;
+
+//void quit_handler( int sig );
 
 void initSerial()
 {
@@ -54,8 +57,8 @@ void initSerial()
 void onReceive (const char * message, int len, Json_de jMsg);
 pthread_t createUDPSocket_thread;
 
-static std::string configName = "config.module.json";
-
+static std::string configName = "de_camera.config.module.json";
+static std::string localConfigName = "de_camera.config.local";
 
 /**
  * @brief display version info
@@ -81,7 +84,7 @@ void _usage(void)
 
 void createJSONID(const bool resend)
 {
-    const Json_de cameraList = cWEBRTC_Plugin->getDeviceListAsJSON();
+    const Json_de cameraList = cWEBRTC_Plugin.getDeviceListAsJSON();
     cModule.appendExtraField ("m", cameraList);
     cModule.createJSONID(resend);
 }
@@ -127,12 +130,13 @@ void initUavosModule(int argc, char *argv[])
 {
 
     const Json_de& jsonConfig = cConfigFile.GetConfigJSON();
-
+    de::CLocalConfigFile& cLocalConfigFile = de::CLocalConfigFile::getInstance();
+    
     // UDP Server
     cModule.defineModule(
         MODULE_CLASS_VIDEO,
         jsonConfig["module_id"],
-        jsonConfig["module_key"],
+        cLocalConfigFile.getStringField("module_key"),
         version_string,
         Json_de::array(MESSAGE_FILTER)
     );
@@ -172,6 +176,9 @@ void init (int argc, char *argv[])
 {
     instance_time_stamp = std::time(nullptr);
     
+    //signal(SIGINT,quit_handler);
+    //signal(SIGTERM,quit_handler);
+
     //initialize serial
     initSerial();
 
@@ -183,12 +190,21 @@ void init (int argc, char *argv[])
 
 
     cConfigFile.initConfigFile (configName.c_str());
+    cLocalConfigFile.InitConfigFile (localConfigName.c_str());
+
+    ModuleKey = cLocalConfigFile.getStringField("module_key");
+    if (ModuleKey=="")
+    {
+        ModuleKey = std::to_string(get_time_usec());
+        cLocalConfigFile.addStringField("module_key",ModuleKey.c_str());
+        cLocalConfigFile.apply();
+    }
+
+    
     Json_de jsonConfig = cConfigFile.GetConfigJSON();
     
-    ModuleID = jsonConfig["module_id"].get<std::string>();
-    ModuleKey = jsonConfig["module_key"].get<std::string>();
-    std::string  ModuleKey;
-
+    const std::string ModuleID = jsonConfig["module_id"].get<std::string>();
+    
     //https://stackoverflow.com/questions/2616906/how-do-i-output-coloured-text-to-a-linux-terminal
     std::cout << _LOG_CONSOLE_BOLD_TEXT << "DroneEngage Plugin Module: " << _SUCCESS_CONSOLE_BOLD_TEXT_ <<  ModuleID << _NORMAL_CONSOLE_TEXT_ << std::endl;
     std::cout << _LOG_CONSOLE_BOLD_TEXT << "Class Type: " << _SUCCESS_CONSOLE_BOLD_TEXT_<< "camera" << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -196,10 +212,9 @@ void init (int argc, char *argv[])
     std::cout << std::asctime(std::localtime(&instance_time_stamp)) << instance_time_stamp << " seconds since the Epoch" << std::endl;
     
     // INIT WEBRTC
-    cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
     
     const bool singleCameraMode = jsonConfig.contains("one_session_per_camera")?jsonConfig["one_session_per_camera"].get<bool>():true;
-    cWEBRTC_Plugin->initCameras(singleCameraMode);
+    cWEBRTC_Plugin.initCameras(singleCameraMode);
     if (jsonConfig.contains("camera_list"))
     {
         Json_de jsonCameraList= jsonConfig["camera_list"];
@@ -216,7 +231,7 @@ void init (int argc, char *argv[])
         {
             if (cameraItem["name"].get<std::string>().empty()) continue; // most propably it is an extra comma after last field.
             std::cout << _LOG_CONSOLE_BOLD_TEXT << "Trying to init: " << _INFO_CONSOLE_TEXT << cameraItem["name"].get<std::string>() << _LOG_CONSOLE_BOLD_TEXT << " \\dev\\video" << _INFO_CONSOLE_TEXT << cameraItem["device_num"].get<int>() << _NORMAL_CONSOLE_TEXT_ << std::endl;
-            if (!cWEBRTC_Plugin->addCameraByID(cameraItem["name"].get<std::string>(), cameraItem["device_num"].get<int>()))
+            if (! cWEBRTC_Plugin.addCameraByID(cameraItem["name"].get<std::string>(), cameraItem["device_num"].get<int>()))
             {
                 std::cout << _ERROR_CONSOLE_TEXT_ << "failed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
             }
@@ -226,12 +241,12 @@ void init (int argc, char *argv[])
     {
         const int minCameraIndex = jsonConfig.contains("camera_start_index")?jsonConfig["camera_start_index"].get<int>():0;
         const int maxCameraIndex = jsonConfig.contains("camera_end_index")?jsonConfig["camera_end_index"].get<int>():999;
-        cWEBRTC_Plugin->addCameraByRange(minCameraIndex, maxCameraIndex);
+        cWEBRTC_Plugin.addCameraByRange(minCameraIndex, maxCameraIndex);
     }
 
-    //BUG: for unknown reason calling "InitializePeerConnection" with the "cWEBRTC_Plugin->init" generates strange error.type
+    //BUG: for unknown reason calling "InitializePeerConnection" with the "cWEBRTC_Plugin.init" generates strange error.type
     // error is: if you send JSON of camera lists and the list length is one then it will corrupt  and will not talk to server.
-    cWEBRTC_Plugin->InitializePeerConnection();
+    cWEBRTC_Plugin.InitializePeerConnection();
     
     initUavosModule (argc,argv);
 }
@@ -239,9 +254,32 @@ void init (int argc, char *argv[])
 
 void uninit ()
 {
-   delete cWEBRTC_Plugin;
+    m_exit = true;
+   //cWEBRTC_Plugin.cleaning();
 }
 
+// ------------------------------------------------------------------------------
+//   Quit Signal Handler
+// ------------------------------------------------------------------------------
+// this function is called when you press Ctrl-C
+// void quit_handler( int sig )
+// {
+// 	std::cout << _INFO_CONSOLE_TEXT << std::endl << "TERMINATING AT USER REQUEST" <<  _NORMAL_CONSOLE_TEXT_ << std::endl;
+	
+// 	try 
+//     {
+//         uninit();
+// 	}
+// 	catch (int error)
+//     {
+//         #ifdef DEBUG
+//             std::cout <<__PRETTY_FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: quit_handler" << std::to_string(error)<< _NORMAL_CONSOLE_TEXT_ << std::endl;
+//         #endif
+
+//     }
+
+//     exit(0);
+// }
 
 /*
     Process received messages from UDP client.
@@ -278,13 +316,13 @@ void onReceive (const char * message, int len, Json_de jMsg)
         {
             case TYPE_AndruavModule_Location_Info:
             {
-                cWEBRTC_Plugin->updateLocationInfo(jMsg);
+                cWEBRTC_Plugin.updateLocationInfo(jMsg);
             }
             break;
 
             case TYPE_AndruavMessage_Ctrl_Cameras:
             {
-                cWEBRTC_Plugin->startImageCapturing(jMsg);
+                cWEBRTC_Plugin.startImageCapturing(jMsg);
                 createJSONID (false);
             }
             break;
@@ -310,11 +348,11 @@ void onReceive (const char * message, int len, Json_de jMsg)
                         
                         if (startIfTrue == true)
                         {
-                            cWEBRTC_Plugin->startVideoRecording (jMsg);
+                            cWEBRTC_Plugin.startVideoRecording (jMsg);
                         }
                         else
                         {
-                            cWEBRTC_Plugin->stopVideoRecording (jMsg);
+                            cWEBRTC_Plugin.stopVideoRecording (jMsg);
                         }
                         
                         createJSONID(false);
@@ -329,7 +367,7 @@ void onReceive (const char * message, int len, Json_de jMsg)
                         // {
                         //     // act true is not handled here.
                         //     //TODO: replace act false with hangout signalling or replicate it with another signalling message "hangout"
-                        //     cWEBRTC_Plugin->
+                        
                         // }
                         createJSONID(false);
                     }
@@ -347,7 +385,7 @@ void onReceive (const char * message, int len, Json_de jMsg)
                     case RemoteCommand_ROTATECAM:
                     {   
                         const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-                        cWEBRTC_Plugin->rotateCameraFrame(jMsg);
+                        cWEBRTC_Plugin.rotateCameraFrame(jMsg);
                     }
                     break;
                 }
@@ -371,11 +409,11 @@ void onReceive (const char * message, int len, Json_de jMsg)
                     // cannot send this command as broadcast.
                     return ;                    
                 }
-                //
-                cWEBRTC_Plugin->ExecuteSignalCommand(jMsg);  
+                
+                cWEBRTC_Plugin.ExecuteSignalCommand(jMsg);  
                 if ((packet.contains("joinme")==true) || (packet.contains("hangup")==true))
                 {
-                    const Json_de cameraList = cWEBRTC_Plugin->getDeviceListAsJSON();
+                    const Json_de cameraList = cWEBRTC_Plugin.getDeviceListAsJSON();
                     createJSONID(false);
                 }
             }
@@ -395,9 +433,10 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        if (cWEBRTC_Plugin!= NULL)
+        if (m_exit)
         {
-            cWEBRTC_Plugin->cleaning();
+            cWEBRTC_Plugin.cleaning();
+            break ;
         }
         sleep (1);
         //sleep (1000);

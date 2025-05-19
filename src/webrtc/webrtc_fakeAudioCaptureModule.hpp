@@ -21,36 +21,29 @@
 #define PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
 
 #include <memory>
-#include "../common.h"
-//#include "common_types.h"  // NOLINT(build/include)
-// #include "rtc_base/criticalsection.h"
-// #include "rtc_base/messagehandler.h"
-// #include "rtc_base/scoped_ref_ptr.h"
 
-namespace rtc {
-class Thread;
-}  // namespace rtc
+
+
 
 namespace de {
 
 namespace stream_webrtc {
 
-class CFakeAudioCaptureModule : public webrtc::AudioDeviceModule,
-                               public rtc::MessageHandler {
- public:
-  typedef uint16_t Sample;
+class CFakeAudioCaptureModule : public webrtc::AudioDeviceModule {
+  public:
+    typedef uint16_t Sample;
 
   // The value for the following constants have been derived by running VoE
   // using a real ADM. The constants correspond to 10ms of mono audio at 44kHz.
   static const size_t kNumberSamples = 440;
   static const size_t kNumberBytesPerSample = sizeof(Sample);
 
-  // Creates a FakeAudioCaptureModule or returns NULL on failure.
-  static rtc::scoped_refptr<CFakeAudioCaptureModule> Create();
+  // Creates a CFakeAudioCaptureModule or returns NULL on failure.
+  static webrtc::scoped_refptr<CFakeAudioCaptureModule> Create();
 
   // Returns the number of frames that have been successfully pulled by the
   // instance. Note that correctly detecting success can only be done if the
-  // pulled frame was generated/pushed from a FakeAudioCaptureModule.
+  // pulled frame was generated/pushed from a CFakeAudioCaptureModule.
   int frames_received() const RTC_LOCKS_EXCLUDED(mutex_);
 
   int32_t ActiveAudioLayer(AudioLayer* audio_layer) const override;
@@ -136,6 +129,10 @@ class CFakeAudioCaptureModule : public webrtc::AudioDeviceModule,
   int32_t EnableBuiltInNS(bool enable) override { return -1; }
 
   int32_t GetPlayoutUnderrunCount() const override { return -1; }
+
+  std::optional<webrtc::AudioDeviceModule::Stats> GetStats() const override {
+    return webrtc::AudioDeviceModule::Stats();
+  }
 #if defined(WEBRTC_IOS)
   int GetPlayoutAudioParameters(
       webrtc::AudioParameters* params) const override {
@@ -148,14 +145,11 @@ class CFakeAudioCaptureModule : public webrtc::AudioDeviceModule,
 
   // End of functions inherited from webrtc::AudioDeviceModule.
 
-  // The following function is inherited from rtc::MessageHandler.
-  void OnMessage(rtc::Message* msg) override;
-
  protected:
   // The constructor is protected because the class needs to be created as a
   // reference counted object (for memory managment reasons). It could be
   // exposed in which case the burden of proper instantiation would be put on
-  // the creator of a FakeAudioCaptureModule instance. To create an instance of
+  // the creator of a CFakeAudioCaptureModule instance. To create an instance of
   // this class use the Create(..) API.
   CFakeAudioCaptureModule();
   // The destructor is protected because it is reference counted and should not
@@ -163,7 +157,7 @@ class CFakeAudioCaptureModule : public webrtc::AudioDeviceModule,
   virtual ~CFakeAudioCaptureModule();
 
  private:
-  // Initializes the state of the FakeAudioCaptureModule. This API is called on
+  // Initializes the state of the CFakeAudioCaptureModule. This API is called on
   // creation by the Create() API.
   bool Initialize();
   // SetBuffer() sets all samples in send_buffer_ to `value`.
@@ -213,7 +207,7 @@ class CFakeAudioCaptureModule : public webrtc::AudioDeviceModule,
   bool started_ RTC_GUARDED_BY(mutex_);
   int64_t next_frame_time_ RTC_GUARDED_BY(process_thread_checker_);
 
-  std::unique_ptr<rtc::Thread> process_thread_;
+  std::unique_ptr<webrtc::Thread> process_thread_;
 
   // Buffer for storing samples received from the webrtc::AudioTransport.
   char rec_buffer_[kNumberSamples * kNumberBytesPerSample];
@@ -228,8 +222,9 @@ class CFakeAudioCaptureModule : public webrtc::AudioDeviceModule,
   // Protects variables that are accessed from process_thread_ and
   // the main thread.
   mutable webrtc::Mutex mutex_;
-  webrtc::SequenceChecker process_thread_checker_;
+  webrtc::SequenceChecker process_thread_checker_{
+      webrtc::SequenceChecker::kDetached};
 };
-}
-}
-#endif  // PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
+} // namespace stream_webrtc
+}  // namespace de  
+#endif  // PC_TEST_FAKE_AUDIO_CAPTURE_MODULE_H_

@@ -32,13 +32,13 @@ class CPeerConnectionManager : public webrtc::CreateSessionDescriptionObserver
         
         bool CreatePeerConnection(const std::string &sessionID, const std::string &peerID, const std::string &channelNumber, const std::string &channelName);
         bool AddStream(webrtc::MediaStreamInterface *stream);
-        void AddTrack(rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> track, const std::vector<std::string>& stream_ids);
+        void AddTrack(webrtc::scoped_refptr<webrtc::MediaStreamTrackInterface> track, const std::vector<std::string>& stream_ids);
         bool CreateOffer();
         bool CreateAnswer();
         void SetRemoteDescription(const std::string& type, const std::string& sdp);
         bool AddIceCandidate (const Json_de& packet);
-        webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpTransceiverInterface>> AddTransceiver(
-            rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> track);
+        webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>> AddTransceiver(
+            webrtc::scoped_refptr<webrtc::MediaStreamTrackInterface> track);
         void Close();
 
 
@@ -71,14 +71,14 @@ class CPeerConnectionManager : public webrtc::CreateSessionDescriptionObserver
             void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override;
 
             // Triggered when media is received on a new stream from remote peer.
-            void OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
+            void OnAddStream(webrtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
 
             // Triggered when a remote peer closes a stream.
-            void OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
+            void OnRemoveStream(webrtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
 
             // Triggered when a remote peer opens a data channel.
             void OnDataChannel(
-                rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override;
+                webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override;
 
             // Triggered when renegotiation is needed. For example, an ICE restart
             // has begun.
@@ -109,7 +109,7 @@ class CPeerConnectionManager : public webrtc::CreateSessionDescriptionObserver
             // Ice candidates have been removed.
             // TODO(honghaiz): Make this a pure virtual method when all its subclasses
             // implement it.
-            void OnIceCandidatesRemoved(const std::vector<cricket::Candidate>& candidates) override;
+            void OnIceCandidatesRemoved(const std::vector<webrtc::Candidate>& candidates) override;
 
             // Called when the ICE connection receiving status changes.
             void OnIceConnectionReceivingChange(bool receiving) override;
@@ -120,8 +120,8 @@ class CPeerConnectionManager : public webrtc::CreateSessionDescriptionObserver
             // Note: This is called with both Plan B and Unified Plan semantics. Unified
             // Plan users should prefer OnTrack, OnAddTrack is only called as backwards
             // compatibility (and is called in the exact same situations as OnTrack).
-            void OnAddTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
-                const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>& streams) override;
+            void OnAddTrack(webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
+                const std::vector<webrtc::scoped_refptr<webrtc::MediaStreamInterface>>& streams) override;
 
             // This is called when signaling indicates a transceiver will be receiving
             // media from the remote endpoint. This is fired during a call to
@@ -132,7 +132,7 @@ class CPeerConnectionManager : public webrtc::CreateSessionDescriptionObserver
             // This behavior is specified in section 2.2.8.2.5 of the "Set the
             // RTCSessionDescription" algorithm:
             // https://w3c.github.io/webrtc-pc/#set-description
-            void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) override;
+            void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) override;
 
             // Called when signaling indicates that media will no longer be received on a
             // track.
@@ -142,7 +142,7 @@ class CPeerConnectionManager : public webrtc::CreateSessionDescriptionObserver
             // will have changed direction to either sendonly or inactive.
             // https://w3c.github.io/webrtc-pc/#process-remote-track-removal
             // TODO(hbos,deadbeef): Make pure virtual when all subclasses implement it.
-            void OnRemoveTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
+            void OnRemoveTrack(webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
 
             // Called when an interesting usage is detected by WebRTC.
             // An appropriate action is to add information about the context of the
@@ -157,8 +157,9 @@ class CPeerConnectionManager : public webrtc::CreateSessionDescriptionObserver
         //de::ICE_SERVER GetIceServerFromUrl(const std::string &url, const std::string &clientIp = "");
 
     private:
-        
-        rtc::scoped_refptr<webrtc::PeerConnectionInterface> m_peerConnection;
+        webrtc::PeerConnectionFactoryDependencies CreateSomePcfDeps();
+        void CreateSomeMediaDeps(webrtc::PeerConnectionFactoryDependencies& media_deps);
+        webrtc::scoped_refptr<webrtc::PeerConnectionInterface> m_peerConnection;
         //std::unique_ptr <de::CPeerConnectionObserver>  m_peerConnectionObserver;
         //std::unique_ptr <webrtc::PeerConnectionInterface::RTCConfiguration>  m_config;
         webrtc::PeerConnectionInterface::RTCConfiguration  m_config;

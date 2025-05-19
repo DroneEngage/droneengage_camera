@@ -2,6 +2,7 @@
 #define VIDEORECORDER_H
 
 
+
 namespace de
 {
 namespace stream_webrtc
@@ -10,9 +11,12 @@ namespace stream_webrtc
 class CRecorderEvents
 {
     public:
-        virtual void onImageRecorded(std::string output_file_name, bool send_image_gcs){};
-        virtual void onVideoStarted(){};
-        virtual void onVideoStopped(){};
+    
+        virtual ~CRecorderEvents() {}
+
+        virtual void onImageRecorded(std::string output_file_name, bool send_image_gcs){}
+        virtual void onVideoStarted(){}
+        virtual void onVideoStopped(){}
 };
 
 class  CVideoRecording 
@@ -54,8 +58,8 @@ class  CVideoRecording
 
     private:
         const std::string getMediaFolderPath() const;
-        const bool saveImageinPNG() const;
-        const bool sendImageToGCS() const;
+        bool saveImageinPNG() const;
+        bool sendImageToGCS() const;
 
     private:
         uint m_frame_duration = 100;

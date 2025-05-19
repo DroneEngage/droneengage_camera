@@ -119,12 +119,12 @@ namespace comm
              * @param party_id 
              * @param group_id 
              */
-            void setPartyID (const std::string& party_id, const std::string& group_id){};
+            void setPartyID (const std::string& party_id, const std::string& group_id){}
             
 
             
             // called from main
-            void OnConnectionStatusChangedWithAndruavServer (const int status){};
+            void OnConnectionStatusChangedWithAndruavServer (const int status){}
 
             /**
              * @brief Get the Module Features object
@@ -255,6 +255,6 @@ namespace comm
             void (*m_OnReceive)(const char *, int len, Json_de jMsg) = nullptr;
 
     };
-};
-};
+}
+}
 #endif

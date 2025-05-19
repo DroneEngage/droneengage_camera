@@ -21,7 +21,8 @@ namespace comm
 class CCallBack_UDPClient
 {
     public:
-        virtual void onReceive (const char *, int len) {};
+        virtual ~CCallBack_UDPClient () {}
+        virtual void onReceive (const char *, int len) {}
 };
 
 class CUDPClient

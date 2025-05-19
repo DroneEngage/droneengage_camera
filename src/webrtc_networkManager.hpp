@@ -19,7 +19,7 @@ const int kFakeIPv4NetworkPrefixLength = 24;
 const int kFakeIPv6NetworkPrefixLength = 64;
 
 // Fake network manager that allows us to manually specify the IPs to use.
-class CNetworkManager : public rtc::FakeNetworkManager {
+class CNetworkManager : public webrtc::FakeNetworkManager {
  public:
   CNetworkManager() {}
 

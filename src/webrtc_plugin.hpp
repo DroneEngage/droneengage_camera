@@ -1,4 +1,3 @@
-
 #ifndef CWEBRTC_PLUGIN_H
 #define CWEBRTC_PLUGIN_H
 
@@ -6,28 +5,32 @@
 #define MIN_CAMERA_INDEX 0
 #define MAX_CAMERA_INDEX 999
 
+#include "common.h"
+
 #include "./helpers/json_nlohmann.hpp"
 using Json_de = nlohmann::json;
 
 #include "./de_common/de_module.hpp"
 
-
+#include "webrtc_callback.hpp"
+#include "webrtc/webrtc_source.hpp"
+#include "webrtc/webrtc_video_recorder.hpp"
 
 namespace de
 {
 
-typedef struct {
+typedef struct STRUCT_SESSION_INFO_TAG{
     std::string  senderPartyID; 
     std::string  sessionID; // combination of channelName and channelNumber
     int peerObject;
     std::string channelName;   // equivelant to partyID
     std::string channelNumber; // unique camera name --> deviceID
-    rtc::scoped_refptr<de::stream_webrtc::CPeerConnectionManager>  peerConnectionManager;
+    webrtc::scoped_refptr<de::stream_webrtc::CPeerConnectionManager>  peerConnectionManager;
     
 } STRUCT_SESSION_INFO;
 
 
-typedef struct {
+typedef struct ANDRUAV_UNIT_LOCATION_TAG{
 
     int32_t latitude = 0;
     int32_t longitude = 0;
@@ -145,11 +148,11 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         std::map<std::string, STRUCT_SESSION_INFO> m_SessionMap;
         std::map<std::string, STRUCT_SESSION_INFO> m_localTracksMap;
 
-        bool filled = ATOMIC_VAR_INIT(false);
+        std::atomic<bool> filled = false;
         std::vector<de::stream_webrtc::STRUCT_DEVICE_INFO> m_videoDeviceInfoList;
         std::vector<de::stream_webrtc::STRUCT_DEVICE_INFO> m_audioDeviceInfoList;
 
-        rtc::scoped_refptr <de::stream_webrtc::CUserMedia> m_connection ;
+        webrtc::scoped_refptr <de::stream_webrtc::CUserMedia> m_connection ;
         
 
         std::vector<std::string> deleteMe;

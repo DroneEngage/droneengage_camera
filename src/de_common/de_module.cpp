@@ -266,11 +266,11 @@ void de::comm::CModule::onReceive (const char * message, int len)
         }
 
         if (m_OnReceive!= nullptr) m_OnReceive(message, len, jMsg);
-    // }
-    // catch(const std::exception& e)
-    // {
-    //     std::cout << "ERROR:" << e.what() << std::endl ;
-    // }
+    
+    #ifdef DDEBUG        
+        std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << "RX MSG: :len " << std::to_string(len) << ":" << message <<   _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+   
 }
 
 

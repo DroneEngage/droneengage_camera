@@ -2,6 +2,11 @@
 #ifndef CSOURCE_H
 #define CSOURCE_H
 
+#include <string>
+#include <vector>   
+
+
+
 namespace de
 {
 
@@ -28,7 +33,6 @@ typedef struct device_info STRUCT_DEVICE_INFO;
 class CSource
 {
     public:
-        //static rtc::scoped_refptr<webrtc::VideoCaptureModule> GetVideoCapturerByIndex(const char * device_id);
         static int GetDevices (std::vector<STRUCT_DEVICE_INFO> &deviceInfo, const int deviceCount);
         static int GetVideoSourcesCount (void);
 

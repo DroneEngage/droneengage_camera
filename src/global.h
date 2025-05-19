@@ -11,3 +11,5 @@
 #define _NORMAL_CONSOLE_TEXT_        "\033[0m" // Restore normal console colour
 
 #define __FULL_DEBUG__   _LOG_CONSOLE_TEXT << __FILE__ << "." << _SUCCESS_CONSOLE_TEXT_ <<  __FUNCTION__  << "." << __LINE__ << ": " << _NORMAL_CONSOLE_TEXT_ 
+
+#define DDEBUG 1

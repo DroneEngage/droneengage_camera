@@ -7,7 +7,7 @@ namespace de
 namespace stream_webrtc
 {
 
-class CUserMedia  : public rtc::RefCountInterface
+class CUserMedia  : public webrtc::RefCountInterface
 {
 
     public:
@@ -19,26 +19,32 @@ class CUserMedia  : public rtc::RefCountInterface
         static bool InitializePeerConnection ();
         bool CreateLocalMediaStream (const char * streamId);
         static void DeletePeerConnection ();
-        rtc::scoped_refptr<webrtc::VideoTrackInterface> CreateVideoTrackInterface (
+        webrtc::scoped_refptr<webrtc::VideoTrackInterface> CreateVideoTrackInterface (
             const std::string& trackLabel, 
             webrtc::VideoTrackSourceInterface* videoTrackSourceInterface);
-        bool AddVideoTrack (webrtc::VideoTrackInterface * videoTrackInterface);
         bool RemoveVideoTracks ();
         bool RemoveAudioTracks ();
-        rtc::scoped_refptr<webrtc::MediaStreamInterface> GetMediaStream ();
+        webrtc::scoped_refptr<webrtc::MediaStreamInterface> GetMediaStream ()
+        {
+            return m_stream;
+        }
         
-        static rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> GetPeerConnectionFactory ();
+        static webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> GetPeerConnectionFactory ()
+        {
+            return m_peerConnectionFactory;
+        }
     protected:
         int m_peerCount;
-        rtc::scoped_refptr<webrtc::MediaStreamInterface> m_stream;
-        static rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> m_peerConnectionFactory;
+        webrtc::scoped_refptr<webrtc::MediaStreamInterface> m_stream;
+        static webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> m_peerConnectionFactory;
+        //TODO: change to std::map<std::string, webrtc::scoped_refptr<webrtc::VideoTrackInterface>> m_videoTracks;
         std::map<std::string, webrtc::VideoTrackInterface*> m_videoTracks;
         std::map<std::string, webrtc::AudioTrackInterface*> m_audioTracks;
     public:         
-        static std::unique_ptr<rtc::Thread> g_worker_thread;
-        static std::unique_ptr<rtc::Thread> g_signaling_thread;
-        static std::unique_ptr<rtc::Thread> g_networking_thread;
-        static rtc::Thread* thread;
+        static std::unique_ptr<webrtc::Thread> g_worker_thread;
+        static std::unique_ptr<webrtc::Thread> g_signaling_thread;
+        static std::unique_ptr<webrtc::Thread> g_networking_thread;
+        static webrtc::Thread* thread;
         
 };
 }

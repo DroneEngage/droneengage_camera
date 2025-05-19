@@ -26,7 +26,7 @@ class CTimer
         std::chrono::time_point<m_clock> m_begin;
     };
 
-};
-};
+}
+}
 
 #endif 

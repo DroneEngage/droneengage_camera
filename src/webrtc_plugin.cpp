@@ -3,6 +3,9 @@
 #include <fstream>
 #include "helpers/helpers.hpp"
 
+#include "webrtc/webrtc_video_dev_capturer.hpp"
+#include "webrtc/webrtc_source.hpp"
+#include "webrtc_plugin.hpp"
 
 extern std::string PartyID;
 
@@ -15,7 +18,7 @@ de::CWEBRTC_Plugin::~CWEBRTC_Plugin ()
 
 void de::CWEBRTC_Plugin::initCameras(const bool singleCameraMode)
 {
-    filled = ATOMIC_VAR_INIT(false);
+    filled = false;
         
     m_singleCameraMode = singleCameraMode;
 
@@ -51,14 +54,19 @@ void de::CWEBRTC_Plugin::initCameras(const bool singleCameraMode)
         << _SUCCESS_CONSOLE_TEXT_ << " device name:" << _INFO_BOLD_CONSOLE_TEXT << m_videoDeviceInfoList[i].device_name 
         << _SUCCESS_CONSOLE_TEXT_ << " device id:" << _INFO_BOLD_CONSOLE_TEXT << m_videoDeviceInfoList[i].device_id 
         << _NORMAL_CONSOLE_TEXT_ << std::endl;
+
+        m_videoDeviceInfoList[i].capturer->StartCapture();
+        m_videoDeviceInfoList[i].active += 1;
+
     }
 
+    
     std::cout << _SUCCESS_CONSOLE_TEXT_ << "========================================================"  << _NORMAL_CONSOLE_TEXT_ << std::endl;
 }
 
 void de::CWEBRTC_Plugin::InitializePeerConnection()
 {
-    m_connection = rtc::scoped_refptr<de::stream_webrtc::CUserMedia>(new rtc::RefCountedObject<de::stream_webrtc::CUserMedia>());
+    m_connection = webrtc::scoped_refptr<de::stream_webrtc::CUserMedia>(new webrtc::RefCountedObject<de::stream_webrtc::CUserMedia>());
     m_connection->InitializePeerConnection();
 }
 
@@ -84,7 +92,7 @@ bool de::CWEBRTC_Plugin::addCameraByID (std::string cameraVideoName, int cameraV
             m_videoDeviceInfoList[i].local_name = cameraVideoName;
     
             std::cout << _SUCCESS_CONSOLE_TEXT_ << "Camera: " << _SUCCESS_CONSOLE_BOLD_TEXT_ << cameraVideoName << _SUCCESS_CONSOLE_TEXT_ << " \\dev\\video" << _INFO_CONSOLE_TEXT << std::to_string(cameraVideoIndex) << _NORMAL_CONSOLE_TEXT_ << std::endl;
-            filled = ATOMIC_VAR_INIT(true);
+            filled = true;
 
             return true;
         }
@@ -152,6 +160,7 @@ void de::CWEBRTC_Plugin::addCameraByRange(int startVideoIndex, int endVideoIndex
  */
 void de::CWEBRTC_Plugin::OnLocalSdpReadytoSend (const char* sessionID, const char* type, const char* sdp)
 {
+    
     #ifdef DEBUG
     std::cout << _LOG_CONSOLE_TEXT << "DEBUG: OnLocalSdpReadytoSend" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
@@ -174,7 +183,6 @@ void de::CWEBRTC_Plugin::OnLocalSdpReadytoSend (const char* sessionID, const cha
 
 void de::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const webrtc::IceCandidateInterface* const candidate)
 {
-
     #ifdef DEBUG
     std::cout << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnIceCandidate:" <<_NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
@@ -206,25 +214,16 @@ void de::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const web
     
     Json_de w;
     w["w"] = packet;
-    m_module.sendJMSG (sessionInfo.senderPartyID, w, TYPE_AndruavMessage_Signaling, false);}
+    m_module.sendJMSG (sessionInfo.senderPartyID, w, TYPE_AndruavMessage_Signaling, false);
+    
+}
 
 
 void de::CWEBRTC_Plugin::OnIceConnectionDisconnected (const std::string& sessionID)
 {
     
 
-    // commented code below is how to call a function from a thread in webrtc
-    // de::stream_webrtc::CUserMedia::g_signaling_thread->Invoke<void>(RTC_FROM_HERE,
-    // [&] {
-    //     std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: INSIDE THREAD" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-        
-    //     // sessionInfo->peerConnectionManager->Close();
-    //      // eraseSessionInfoBySessionID(sessionID.c_str());
-    // });
-
     deleteMe.push_back(sessionID);
-    
-    
 }
 
 bool de::CWEBRTC_Plugin::IsCorrectCameraIndex (const int cameraIndex)
@@ -238,7 +237,6 @@ bool de::CWEBRTC_Plugin::IsCorrectCameraIndex (const int cameraIndex)
  * */
 void de::CWEBRTC_Plugin::cleaning()
 {
-
     if (deleteMe.size () > 0)
     {
         #ifdef DEBUG
@@ -264,6 +262,9 @@ void de::CWEBRTC_Plugin::cleaning()
 
 void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std::string& sessionID,  const std::string& channelNumber,  const std::string& channelName)
 {
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
 
     if (sessionID.empty())
     {
@@ -281,10 +282,6 @@ void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std:
         if ( sessionInfo != NULL)
         {
             std::cout << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << sessionID << _NORMAL_CONSOLE_TEXT_ << " found" << std::endl;
-            //m_SessionMap[sessionID].connection.get()->RemoveVideoTracks();
-            //m_SessionMap[sessionID].connection.get()->RemoveAudioTracks();
-            //m_SessionMap[sessionID].connection.get()->DeletePeerConnection();
-            
         }
         else
         {
@@ -306,13 +303,18 @@ void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std:
             return ;
         }
 
-        if ((device_info.active <= 0))
+        
+        if ((!device_info.capturer->isCapturing()))
         {
+            std::cout << _LOG_CONSOLE_TEXT << "Start Capturing " << _INFO_BOLD_CONSOLE_TEXT << device_info.device_name.c_str() <<  _NORMAL_CONSOLE_TEXT_ << std::endl;
             if (!device_info.capturer->StartCapture())
             {
                 // failed to start capturer.
                 // send error message.
                 std::cout << _ERROR_CONSOLE_TEXT_ << "Capturer " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: Failed to start Capturer" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                #ifdef DDEBUG
+                std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << __FILE__ << ".3." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                #endif
                 return ;
             }
             else
@@ -323,22 +325,11 @@ void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std:
             }
         }
 
-        sessionInfoNew.peerConnectionManager = new rtc::RefCountedObject<de::stream_webrtc::CPeerConnectionManager>(this);
+        sessionInfoNew.peerConnectionManager = new webrtc::RefCountedObject<de::stream_webrtc::CPeerConnectionManager>(this);
         sessionInfoNew.peerConnectionManager->CreatePeerConnection(sessionID, senderPartyID, channelName, channelNumber);
         
-        rtc::scoped_refptr<de::stream_webrtc::CapturerTrackSource>capturerTrackSource = new rtc::RefCountedObject<de::stream_webrtc::CapturerTrackSource> (
-                        device_info.capturer);
-        rtc::scoped_refptr<webrtc::VideoTrackInterface> videoTrackInterface = m_connection->CreateVideoTrackInterface (
-                        device_info.unique_name,capturerTrackSource);
-        
-        
-        // initiate sending offer at the end of series of events.
-        ///m_connection->CreateLocalMediaStream(sessionID.c_str());
-        ///webrtc::MediaStreamInterface * stream = m_connection->GetMediaStream().get();
-        ///m_connection->AddVideoTrack(videoTrackInterface.get());
-        ///sessionInfoNew.peerConnectionManager->AddStream(stream);
-        
-        //capturerTrackSource.get()->Start();
+        webrtc::scoped_refptr<de::stream_webrtc::CapturerTrackSource> capturerTrackSource = webrtc::make_ref_counted<de::stream_webrtc::CapturerTrackSource>(device_info.capturer);
+        webrtc::scoped_refptr<webrtc::VideoTrackInterface> videoTrackInterface = m_connection->CreateVideoTrackInterface(device_info.unique_name, capturerTrackSource.get());
         
         // IMPORTANT
         // This function creates a stream for this SINGLE TRACK. SO name the stream with the same of the track.
@@ -351,21 +342,13 @@ void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std:
         m_SessionMap.insert(std::make_pair(sessionID.c_str(),sessionInfoNew));
        
 
-        // if (session == undefined)
-        // {
-        //     session = {};
-        //     session.number      = number;
-        //     session.channel     = channel;
-        //     _sessions[number + channel] = session;
-        //     //session.tag  = commObject;
-        // }
-        // session.tag  = commObject;
-    }
-    else
-    {
-        /* code */
+        
     }
     
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+  
 }
 
 void de::CWEBRTC_Plugin::ProcessAnswer (
@@ -374,7 +357,10 @@ void de::CWEBRTC_Plugin::ProcessAnswer (
             const Json_de& packet)
 {
 
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: CWEBRTC_Plugin::ProcessAnswer" << _NORMAL_CONSOLE_TEXT_ <<  packet.dump() << std::endl;
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+  
     
     if (sessionID.empty())
     {
@@ -402,6 +388,9 @@ void de::CWEBRTC_Plugin::ProcessAnswer (
     
     cPeerConnectionManager->SetRemoteDescription(packet["type"].get<std::string>(), packet["sdp"].get<std::string>());
     
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
 }
 
 void de::CWEBRTC_Plugin::ProcessCandidate (
@@ -411,12 +400,21 @@ void de::CWEBRTC_Plugin::ProcessCandidate (
                 const std::string& channelName,
                 const Json_de& packet)
 {
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+  
+    
     std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << _LOG_CONSOLE_TEXT << "DEBUG: CWEBRTC_Plugin::ProcessCandidate" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     
     if (sessionID.empty())
     {
         std::cout << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: null sessionID" << _NORMAL_CONSOLE_TEXT_ << std::endl;
         
+        #ifdef DDEBUG
+        std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << __FILE__ << ".1." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        #endif
+  
         return ;
     }
 
@@ -425,6 +423,10 @@ void de::CWEBRTC_Plugin::ProcessCandidate (
     {
         std::cout << __FUNCTION__ << __LINE__ << "Key " << _LOG_CONSOLE_TEXT << "DEBUG: Session not Found" << _NORMAL_CONSOLE_TEXT_ << std::endl;
         
+        #ifdef DDEBUG
+        std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << __FILE__ << ".2." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        #endif
+  
         return ;
     }
     
@@ -434,26 +436,37 @@ void de::CWEBRTC_Plugin::ProcessCandidate (
     std::cout << __FUNCTION__ << __LINE__ << "Key " << _LOG_CONSOLE_TEXT << "DEBUG: ProcessCandidate" << _NORMAL_CONSOLE_TEXT_ << std::endl << packet.dump() << std::endl;
         
     cPeerConnectionManager->AddIceCandidate(packet);
+
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
 }
 
 
 void de::CWEBRTC_Plugin::Hangup (const std::string& senderPartyID, const std::string& sessionID,  const std::string& number,  const std::string& channel)
 {
-
-    std::cout << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_TEXT << "DEBUG:senderPartyID" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+  
         
     if (sessionID.empty())
     {
-        std::cout << "Key " << _LOG_CONSOLE_TEXT << "DEBUG: null sessionID" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-        
+        #ifdef DDEBUG
+        std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << __FILE__ << ".1." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        #endif
+  
         return ;
     }
 
     const STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
     if ( sessionInfo == NULL)
     {
-        std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: Session not Found" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-        
+        #ifdef DDEBUG
+        std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << __FILE__ << ".1." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        #endif
+  
         return ;
     }
     
@@ -471,6 +484,10 @@ void de::CWEBRTC_Plugin::Hangup (const std::string& senderPartyID, const std::st
     w["w"] = packet;
     
     m_module.sendJMSG(senderPartyID, w, TYPE_AndruavMessage_Signaling, false);
+
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
 }
 
 
@@ -715,6 +732,10 @@ void de::CWEBRTC_Plugin::stopVideoRecording (const Json_de &jMsg)
  **/
 void de::CWEBRTC_Plugin::startVideoRecording (const Json_de &jMsg)
 {
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
     // extract command
     CWEBRTC_Plugin * cWEBRTC_Plugin;
     cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
@@ -730,8 +751,13 @@ void de::CWEBRTC_Plugin::startVideoRecording (const Json_de &jMsg)
         
         std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera " << channelName.c_str() << " Not Found" << _NORMAL_CONSOLE_TEXT_ << std::endl;
   
+        #ifdef DDEBUG
+        std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        #endif
+
         return;
     }
+    
     
     if (!device_info.capturer->isCapturing())
     {
@@ -744,8 +770,8 @@ void de::CWEBRTC_Plugin::startVideoRecording (const Json_de &jMsg)
     updateDeviceInfoByLocalName(channelName.c_str(), device_info);
     
     
-    #ifdef DEBUG
-    //std::cout << __FULL_DEBUG__  << _SUCCESS_CONSOLE_BOLD_TEXT_ << "RecordCMD:"  << recCommand.str() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 
     return;
@@ -754,6 +780,11 @@ void de::CWEBRTC_Plugin::startVideoRecording (const Json_de &jMsg)
 
 void de::CWEBRTC_Plugin::startImageCapturing (const Json_de &jMsg)
 {
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+
+   
     // extract command
     CWEBRTC_Plugin * cWEBRTC_Plugin;
     cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
@@ -769,8 +800,8 @@ void de::CWEBRTC_Plugin::startImageCapturing (const Json_de &jMsg)
     if (device_info.device_num == -1)
     {
         
-        #ifdef DEBUG
-            std::cout << __FULL_DEBUG__  <<  _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera " << channelName.c_str() << " Not Found" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        #ifdef DDEBUG
+        std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
         #endif
 
         return;
@@ -790,7 +821,7 @@ void de::CWEBRTC_Plugin::startImageCapturing (const Json_de &jMsg)
     
     
     #ifdef DDEBUG
-        std::cout << __FULL_DEBUG__  << _SUCCESS_CONSOLE_BOLD_TEXT_ << "RecordCMD:"  << recCommand.str() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 
     return;
@@ -851,7 +882,7 @@ Json_de de::CWEBRTC_Plugin::getDeviceListAsJSON ()
         
         jsonDeviceList.push_back(jsonVideoSource);
     
-        #ifdef DEBUG
+        #ifdef DDEBUG
         std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << "getDeviceListAsJSON " << deviceInfo.recording <<  _NORMAL_CONSOLE_TEXT_ << std::endl;
         #endif
                         
@@ -863,7 +894,7 @@ Json_de de::CWEBRTC_Plugin::getDeviceListAsJSON ()
 
 void de::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name, bool send_image_gcs)
 {
-    #ifdef DEBUG
+    #ifdef DDEBUG
     std::cout << _LOG_CONSOLE_TEXT << "DEBUG: onImageRecorded: " << output_file_name << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
     Json_de msg_cmd = {};

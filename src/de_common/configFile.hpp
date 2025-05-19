@@ -3,7 +3,7 @@
 #define CCONFIGFILE_H
 
 #include <sstream>
-#include "./helpers/json_nlohmann.hpp"
+#include "../helpers/json_nlohmann.hpp"
 using Json_de = nlohmann::json;
 
 namespace de
@@ -40,7 +40,7 @@ namespace de
             void initConfigFile (const char* fileURL);
             void reloadFile ();
             const Json_de& GetConfigJSON();
-            std::string getFileName () const {return m_file_url;};
+            std::string getFileName () const {return m_file_url;}
             
         protected:
             void ReadFile (const char * fileURL);

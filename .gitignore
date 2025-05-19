@@ -1,0 +1,6 @@
+bin/
+build/
+lib/
+WEBRTC_EXAMPLES
+compiled_bin/
+*.local

@@ -1,16 +1,14 @@
 #include "../common.h"
 
-#include "webrtc_userMedia.hpp"
 
-#include "webrtc_fakeAudioCaptureModule.hpp"
+
 
 
 // as a static member it should be initialized here.
-rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> de::stream_webrtc::CUserMedia::m_peerConnectionFactory = nullptr;
-std::unique_ptr<rtc::Thread> de::stream_webrtc::CUserMedia::g_worker_thread = nullptr;
-std::unique_ptr<rtc::Thread> de::stream_webrtc::CUserMedia::g_signaling_thread = nullptr;
-std::unique_ptr<rtc::Thread> de::stream_webrtc::CUserMedia::g_networking_thread = nullptr;
-rtc::Thread* de::stream_webrtc::CUserMedia::thread = nullptr;
+webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> de::stream_webrtc::CUserMedia::m_peerConnectionFactory = nullptr;
+std::unique_ptr<webrtc::Thread> de::stream_webrtc::CUserMedia::g_worker_thread = nullptr;
+std::unique_ptr<webrtc::Thread> de::stream_webrtc::CUserMedia::g_signaling_thread = nullptr;
+std::unique_ptr<webrtc::Thread> de::stream_webrtc::CUserMedia::g_networking_thread = nullptr;
 
 de::stream_webrtc::CUserMedia::CUserMedia() 
 {
@@ -20,71 +18,95 @@ de::stream_webrtc::CUserMedia::CUserMedia()
 
 de::stream_webrtc::CUserMedia::~CUserMedia()
 {
-  std::cout << __FULL_DEBUG__   << " " << "Key " << "\033[1;31m" << "DESTRUCTOR" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-  
+  #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  #endif
+
   DeletePeerConnection();
+
+  #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  #endif
+
 }
 
 
 void de::stream_webrtc::CUserMedia::DeletePeerConnection ()
 {
-  std::cout << __FULL_DEBUG__   << " " << "Key " << "\033[1;31m" << "DESTRUCTOR" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-  
+  #ifdef DDEBUG
+    std::cout << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  #endif
+
   de::stream_webrtc::CUserMedia::m_peerConnectionFactory = nullptr;
+
+  #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  #endif
+
 }
 
 
 bool de::stream_webrtc::CUserMedia::InitializePeerConnection() {
   
+  #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  #endif
+
   std::cout << "CreateLocalMediaStream Call" << std::endl;
   if (de::stream_webrtc::CUserMedia::m_peerConnectionFactory.get() == nullptr)
   {
     //https://groups.google.com/forum/#!topic/discuss-webrtc/oWYy9JwK56M
     // without creating threads and starting the signal thread messaging will not work
     // and OnSuccess is not called when creating an offer.
-    //rtc::Thread::Current()->Start();
-    de::stream_webrtc::CUserMedia::g_worker_thread = rtc::Thread::Create();
+    //webrtc::Thread::Current()->Start();
+    de::stream_webrtc::CUserMedia::g_worker_thread = webrtc::Thread::Create();
+    de::stream_webrtc::CUserMedia::g_worker_thread->SetName("webrtc_worker", nullptr);
     de::stream_webrtc::CUserMedia::g_worker_thread->Start();
-    de::stream_webrtc::CUserMedia::g_signaling_thread = rtc::Thread::Create();
+    de::stream_webrtc::CUserMedia::g_signaling_thread = webrtc::Thread::Create();
+    de::stream_webrtc::CUserMedia::g_signaling_thread->SetName("webrtc_signaling", nullptr);
     de::stream_webrtc::CUserMedia::g_signaling_thread->Start();
-    de::stream_webrtc::CUserMedia::g_networking_thread = rtc::Thread::CreateWithSocketServer();
+    de::stream_webrtc::CUserMedia::g_networking_thread = webrtc::Thread::CreateWithSocketServer();
+    de::stream_webrtc::CUserMedia::g_networking_thread->SetName("webrtc_networking", nullptr);
     de::stream_webrtc::CUserMedia::g_networking_thread->Start();
 
-    //rtc::ThreadManager::Instance()->WrapCurrentThread();
+    
 
 
     
 
-    de::stream_webrtc::CUserMedia::thread = rtc::ThreadManager::Instance()->WrapCurrentThread();
+  std::unique_ptr< webrtc::VideoEncoderFactory> factory = std::make_unique<de::stream_webrtc::CBuiltinVideoEncoderFactory>();  
   
-
-  std::unique_ptr< webrtc::VideoEncoderFactory> factory = std::make_unique<de::stream_webrtc::CBuiltinVideoEncoderFactory>();  //webrtc::CreateBuiltinVideoEncoderFactory();
-  //std::unique_ptr< webrtc::VideoEncoderFactory> factory = webrtc::CreateBuiltinVideoEncoderFactory();  
-
-  // Printed in std::cout so no need to list it.
-  std::vector<webrtc::SdpVideoFormat> format = factory->GetSupportedFormats();
-
+  //!TODO IMPPORTANT REVIEW CreatePeerConnectionFactory FUNCTION in webrtc/src/pc/test/peer_connection_test_wrapper.cc
   
-  de::stream_webrtc::CUserMedia::m_peerConnectionFactory = rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> (
+  de::stream_webrtc::CUserMedia::m_peerConnectionFactory = 
             webrtc::CreatePeerConnectionFactory(
                 de::stream_webrtc::CUserMedia::g_networking_thread.get(), 
                 de::stream_webrtc::CUserMedia::g_worker_thread.get(),
                 de::stream_webrtc::CUserMedia::g_signaling_thread.get(),
 
-                rtc::scoped_refptr<webrtc::AudioDeviceModule>(CFakeAudioCaptureModule::Create()),
-                // nullptr /* network_thread */, nullptr /* worker_thread */,
-                // nullptr /* signaling_thread */, nullptr /* default_adm */,
+                webrtc::scoped_refptr<webrtc::AudioDeviceModule>(CFakeAudioCaptureModule::Create()),
                 webrtc::CreateBuiltinAudioEncoderFactory(),
                 webrtc::CreateBuiltinAudioDecoderFactory(),
                 std::move (factory),
-                webrtc::CreateBuiltinVideoDecoderFactory(), 
-                nullptr /* audio_mixer */,
-                nullptr /* audio_processing */).get());
+                std::make_unique<webrtc::VideoDecoderFactoryTemplate<
+                      webrtc::LibvpxVp8DecoderTemplateAdapter,
+                      webrtc::LibvpxVp9DecoderTemplateAdapter,
+                      webrtc::OpenH264DecoderTemplateAdapter,
+                      webrtc::Dav1dDecoderTemplateAdapter>>(), 
+                nullptr, /* audio_mixer */
+                nullptr, /* audio_processing */
+                nullptr,
+                nullptr);
+                
+  
+  #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << ".1" << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  #endif
+
   } 
 
-  if (!de::stream_webrtc::CUserMedia::m_peerConnectionFactory.get())
+  if (!de::stream_webrtc::CUserMedia::m_peerConnectionFactory)
   {
-    // try again
     std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "Internal Error: CreateLocalMediaStream failed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     DeletePeerConnection();
     return false;
@@ -92,25 +114,42 @@ bool de::stream_webrtc::CUserMedia::InitializePeerConnection() {
   
   std::cout << "CreatePeerConnectionFactory Created" << std::endl;
   
+  #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << ".2" << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  #endif
+  
   return true;
 }
 
 bool de::stream_webrtc::CUserMedia::CreateLocalMediaStream(const char * streamId) {
+  
+  #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  #endif
+  
   if (m_peerConnectionFactory.get()== nullptr)
   {
     return false;
   }
-
-  m_stream = rtc::scoped_refptr<webrtc::MediaStreamInterface> (m_peerConnectionFactory.get()->CreateLocalMediaStream(streamId).get());
+  
+  m_stream  = m_peerConnectionFactory->CreateLocalMediaStream(streamId);
   std::cout << _SUCCESS_CONSOLE_TEXT_ << "stream created :" << streamId << _NORMAL_CONSOLE_TEXT_ << std::endl;
 
+  #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  #endif
+  
   return true;
 }
 
 
 bool de::stream_webrtc::CUserMedia::RemoveVideoTracks ()
 {
-    webrtc::VideoTrackVector videoTracks = m_stream.get()->GetVideoTracks(); 
+  #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  #endif
+  
+  webrtc::VideoTrackVector videoTracks = m_stream.get()->GetVideoTracks(); 
 
     if (videoTracks.empty())
     return true;
@@ -118,12 +157,22 @@ bool de::stream_webrtc::CUserMedia::RemoveVideoTracks ()
     for (auto& track : videoTracks) {
       m_stream.get()->RemoveTrack (track);
     }
+
+  #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  #endif
+  
+  
     
     return true;
 }
 
 bool de::stream_webrtc::CUserMedia::RemoveAudioTracks ()
 {
+    #ifdef DDEBUG
+    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+  
     webrtc::AudioTrackVector audioTracks = m_stream.get()->GetAudioTracks(); 
 
     if (audioTracks.empty())
@@ -133,55 +182,44 @@ bool de::stream_webrtc::CUserMedia::RemoveAudioTracks ()
       m_stream.get()->RemoveTrack (track);
     }
     
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
+  
     return true;
 }
 
 
-rtc::scoped_refptr<webrtc::VideoTrackInterface> de::stream_webrtc::CUserMedia::CreateVideoTrackInterface (const std::string& trackLabel, 
+webrtc::scoped_refptr<webrtc::VideoTrackInterface> de::stream_webrtc::CUserMedia::CreateVideoTrackInterface (const std::string& trackLabel, 
             webrtc::VideoTrackSourceInterface* videoTrackSourceInterface
         )
 {
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> videoTrackInterface (m_peerConnectionFactory.get()->CreateVideoTrack(trackLabel, videoTrackSourceInterface));
+  #ifdef DDEBUG
+  std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  #endif
+  
+  webrtc::scoped_refptr<webrtc::VideoTrackInterface> videoTrackInterface (m_peerConnectionFactory.get()->CreateVideoTrack(trackLabel, videoTrackSourceInterface));
   if ((videoTrackInterface == nullptr) || (!videoTrackInterface.get()))
   {
     std::cout << __FULL_DEBUG__   << _ERROR_CONSOLE_BOLD_TEXT_ << "could not create CreateVideoTrack"  << trackLabel << _NORMAL_CONSOLE_TEXT_ << std::endl;
     return nullptr;
   }
 
-  m_videoTracks.insert(std::make_pair(trackLabel,videoTrackInterface));
+  // TODO:  change m_videoTracks type to accept : m_videoTracks.insert(std::make_pair(trackLabel,videoTrackInterface));
+  m_videoTracks.insert(std::make_pair(trackLabel, videoTrackInterface.get()));
+
 
   std::cout << __FULL_DEBUG__   <<  _LOG_CONSOLE_BOLD_TEXT << "DEBUG: CreateVideoTrackInterface " << _NORMAL_CONSOLE_TEXT_ << std::endl;
 
+  #ifdef DDEBUG
+  std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+  #endif
+  
   return videoTrackInterface;
 }
 
-bool de::stream_webrtc::CUserMedia::AddVideoTrack (webrtc::VideoTrackInterface * videoTrackInterface)
-{
-        
-  std::cout << __FULL_DEBUG__   <<  "\033[0;32m" << "AddVideoTrack "  << _NORMAL_CONSOLE_TEXT_ << std::endl;
-  
-  videoTrackInterface->set_enabled(true);
 
-  if (!m_stream.get()->AddTrack(videoTrackInterface))
-  {
 
-    std::cout << __FULL_DEBUG__  << _ERROR_CONSOLE_BOLD_TEXT_ << "could NOT AddTrack"  << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    return false;
-  }
-
-  return true;  
-
-}
-
-rtc::scoped_refptr<webrtc::MediaStreamInterface> de::stream_webrtc::CUserMedia::GetMediaStream ()
-{
-  return m_stream;
-}
-
-rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> de::stream_webrtc::CUserMedia::GetPeerConnectionFactory ()
-{
-  return m_peerConnectionFactory;
-}
 
 
 

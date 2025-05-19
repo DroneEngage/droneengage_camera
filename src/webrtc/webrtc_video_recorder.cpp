@@ -23,7 +23,6 @@ using namespace de;
 using namespace de::stream_webrtc;
 
 const int BYTES_PER_PIXEL_RGB24 = 3; /// red, green, & blue
-const int BYTES_PER_PIXEL_RGBA = 4; /// red, green, & blue
 const int FILE_HEADER_SIZE = 14;
 const int INFO_HEADER_SIZE = 40;
 
@@ -47,7 +46,7 @@ const std::string de::stream_webrtc::CVideoRecording::getMediaFolderPath() const
  * @return true 
  * @return false 
  */
-const bool de::stream_webrtc::CVideoRecording::saveImageinPNG() const
+bool de::stream_webrtc::CVideoRecording::saveImageinPNG() const
 {
     Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
     if (jsonConfig.contains("media_image_png") == false) 
@@ -66,7 +65,7 @@ const bool de::stream_webrtc::CVideoRecording::saveImageinPNG() const
  * @return true 
  * @return false 
  */
-const bool de::stream_webrtc::CVideoRecording::sendImageToGCS() const
+bool de::stream_webrtc::CVideoRecording::sendImageToGCS() const
 {
     Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
     if (jsonConfig.contains("send_image_gcs") == false) 
@@ -89,8 +88,6 @@ bool de::stream_webrtc::CVideoRecording::startRecording()
 
     webrtc::MutexLock lock(&m_lock_video); // should be after stop recording as stoprecording uses same lock.
 
-    std::time_t time_stamp;
-    time_stamp = std::time(nullptr);
     m_video_file_name = getMediaFolderPath() + "v_" + de::util::CHelper::getFileTimeStamp() + ".y4m";
     m_video_handler = fopen(m_video_file_name.c_str(), "wb");
     
@@ -283,7 +280,7 @@ int de::stream_webrtc::CVideoRecording::saveFrameAsPNG(webrtc::VideoFrame& frame
     m_image_count--;
 
     // convert to RGB
-    size_t file_size = frame.width() * frame.height() * 3; //BYTES_PER_PIXEL_RGBA;
+    size_t file_size = frame.width() * frame.height() * BYTES_PER_PIXEL_RGB24; 
     std::unique_ptr<uint8_t[]> res_rgb_buffer(new uint8_t[file_size]);
     webrtc::ConvertFromI420(frame, webrtc::VideoType::kRGB24, 0,
                                     res_rgb_buffer.get()); 
@@ -341,117 +338,118 @@ int de::stream_webrtc::CVideoRecording::saveFrameAsPNG(webrtc::VideoFrame& frame
 
 int de::stream_webrtc::CVideoRecording::saveFrameAsJPG(webrtc::VideoFrame& frame)
 {
-    webrtc::MutexLock lock(&m_lock_image);
+    // ERROR IN THE NEW VERSION....
+    // webrtc::MutexLock lock(&m_lock_image);
 
-    if (m_image_count<=0)
-    {
-        return 0;
-    }
+    // if (m_image_count<=0)
+    // {
+    //     return 0;
+    // }
   
-    #ifdef DEBUG
-    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: m_image_count: " << std::to_string(m_image_count) << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    #endif  
+    // #ifdef DEBUG
+    // std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: m_image_count: " << std::to_string(m_image_count) << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    // #endif  
         
-    if ((m_image_duration!=0) && (m_timer_image.elapsed_milli() < m_image_duration))
-    {
-        // too soon. wait more time.
-        return 0;
-    }
-    m_timer_image.reset();
+    // if ((m_image_duration!=0) && (m_timer_image.elapsed_milli() < m_image_duration))
+    // {
+    //     // too soon. wait more time.
+    //     return 0;
+    // }
+    // m_timer_image.reset();
     
-    #ifdef DEBUG
-    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: m_image_duration: " << std::to_string(m_image_duration) <<  _NORMAL_CONSOLE_TEXT_ << std::endl;
-    #endif  
+    // #ifdef DEBUG
+    // std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: m_image_duration: " << std::to_string(m_image_duration) <<  _NORMAL_CONSOLE_TEXT_ << std::endl;
+    // #endif  
     
-    m_image_count--;
+    // m_image_count--;
 
     
-    // Check https://rawpixels.net/
-    size_t file_size = frame.width() * frame.height() * BYTES_PER_PIXEL_RGB24;
-    std::unique_ptr<uint8_t[]> res_rgb_buffer(new uint8_t[file_size]);
+    // // Check https://rawpixels.net/
+    // size_t file_size = frame.width() * frame.height() * BYTES_PER_PIXEL_RGB24;
+    // std::unique_ptr<uint8_t[]> res_rgb_buffer(new uint8_t[file_size]);
     
-    // convert to RGB
-    webrtc::ConvertFromI420(frame, webrtc::VideoType::kRGB24, 0,
-                                    res_rgb_buffer.get());
-    
-
-    std::string location_text = de::CWEBRTC_Plugin::getInstance().getLocationInfoText();
-
-    // choose file name
-    std::string output_file_name =  getMediaFolderPath() + "img_" + de::util::CHelper::getFileTimeStamp() + "_" + std::to_string(m_image_count) + location_text + ".jpg";
-    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    
-    // open file
-    FILE* image_handler = fopen(output_file_name.c_str(), "wb");
-    
-    // Invoking LIBJPEG
-    const int quality = 90;
-    const int kColorPlanes = 3;  // R, G and B.
-
-    struct jpeg_compress_struct cinfo;
-    struct jpeg_error_mgr jerr;
-    JSAMPROW row_pointer[1];
-    #ifdef DEBUG
-    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-01" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    #endif
-    cinfo.err = jpeg_std_error(&jerr);
-    #ifdef DEBUG
-    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-001:" << cinfo.err << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    #endif
-    jpeg_create_compress(&cinfo);
-    #ifdef DEBUG
-    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-1" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    #endif
-    
-    jpeg_stdio_dest(&cinfo, image_handler);
-    #ifdef DEBUG
-    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-2" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    #endif
-    
-    cinfo.image_width = frame.width();
-    cinfo.image_height = frame.height();
-    cinfo.input_components = kColorPlanes;
-    cinfo.in_color_space = JCS_RGB;
-    jpeg_set_defaults(&cinfo);
-    jpeg_set_quality(&cinfo, quality, TRUE);
-    #ifdef DEBUG
-    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-3" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    #endif
-
-    jpeg_start_compress(&cinfo, TRUE);
-    int row_stride = frame.width() * kColorPlanes;
-    #ifdef DEBUG
-    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-4" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    #endif
-    
-    while (cinfo.next_scanline < cinfo.image_height) {
-        row_pointer[0] = &res_rgb_buffer.get()[cinfo.next_scanline * row_stride];
-        jpeg_write_scanlines(&cinfo, row_pointer, 1);
-    }
-    #ifdef DEBUG
-    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG2" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    #endif
+    // // convert to RGB
+    // webrtc::ConvertFromI420(frame, webrtc::VideoType::kRGB24, 0,
+    //                                 res_rgb_buffer.get());
     
 
-    jpeg_finish_compress(&cinfo);
-    jpeg_destroy_compress(&cinfo);
-    fclose(image_handler);
+    // std::string location_text = de::CWEBRTC_Plugin::getInstance().getLocationInfoText();
 
-    std::thread t =std::thread {[&, output_file_name](){ 
-        std::string file_name = output_file_name;
-        if (m_recorder_events!= nullptr)
-        {
-            m_recorder_events->onImageRecorded(file_name, sendImageToGCS());
-            return 0;
-        }
-        return 0;
-    }};
+    // // choose file name
+    // std::string output_file_name =  getMediaFolderPath() + "img_" + de::util::CHelper::getFileTimeStamp() + "_" + std::to_string(m_image_count) + location_text + ".jpg";
+    // std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    
+    // // open file
+    // FILE* image_handler = fopen(output_file_name.c_str(), "wb");
+    
+    // // Invoking LIBJPEG
+    // const int quality = 90;
+    // const int kColorPlanes = 3;  // R, G and B.
+
+    // struct jpeg_compress_struct cinfo;
+    // struct jpeg_error_mgr jerr;
+    // JSAMPROW row_pointer[1];
+    // #ifdef DEBUG
+    // std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-01" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    // #endif
+    // cinfo.err = jpeg_std_error(&jerr);
+    // #ifdef DEBUG
+    // std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-001:" << cinfo.err << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    // #endif
+    // jpeg_create_compress(&cinfo);
+    // #ifdef DEBUG
+    // std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-1" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    // #endif
+    
+    // jpeg_stdio_dest(&cinfo, image_handler);
+    // #ifdef DEBUG
+    // std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-2" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    // #endif
+    
+    // cinfo.image_width = frame.width();
+    // cinfo.image_height = frame.height();
+    // cinfo.input_components = kColorPlanes;
+    // cinfo.in_color_space = JCS_RGB;
+    // jpeg_set_defaults(&cinfo);
+    // jpeg_set_quality(&cinfo, quality, TRUE);
+    // #ifdef DEBUG
+    // std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-3" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    // #endif
+
+    // jpeg_start_compress(&cinfo, TRUE);
+    // int row_stride = frame.width() * kColorPlanes;
+    // #ifdef DEBUG
+    // std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG-4" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    // #endif
+    
+    // while (cinfo.next_scanline < cinfo.image_height) {
+    //     row_pointer[0] = &res_rgb_buffer.get()[cinfo.next_scanline * row_stride];
+    //     jpeg_write_scanlines(&cinfo, row_pointer, 1);
+    // }
+    // #ifdef DEBUG
+    // std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG2" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    // #endif
+    
+
+    // jpeg_finish_compress(&cinfo);
+    // jpeg_destroy_compress(&cinfo);
+    // fclose(image_handler);
+
+    // std::thread t =std::thread {[&, output_file_name](){ 
+    //     std::string file_name = output_file_name;
+    //     if (m_recorder_events!= nullptr)
+    //     {
+    //         m_recorder_events->onImageRecorded(file_name, sendImageToGCS());
+    //         return 0;
+    //     }
+    //     return 0;
+    // }};
 
 
-    t.detach();
-    #ifdef DEBUG
-    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG3" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    #endif
+    // t.detach();
+    // #ifdef DEBUG
+    // std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "JPG3" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    // #endif
     return 0;
 }
 

@@ -1,6 +1,8 @@
 
 #ifndef VIDEOCAPTURER_H
 #define VIDEOCAPTURER_H
+
+
 #include "webrtc_video_recorder.hpp"
 
 
@@ -9,11 +11,11 @@ namespace de
 namespace stream_webrtc
 {
     
-// This class implements rtc::VideoSourceInterface and rtc::VideoSinkInterface
-// rtc::VideoSinkInterface recieves onFrame call while rtc::VideoSinkInterface
-// is used to borad cast frame data using rtc::VideoBroadcaster.
-class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::VideoFrame> 
-                                , public rtc::VideoSinkInterface  <webrtc::VideoFrame>
+// This class implements webrtc::VideoSourceInterface and webrtc::VideoSinkInterface
+// webrtc::VideoSinkInterface recieves onFrame call while webrtc::VideoSinkInterface
+// is used to borad cast frame data using webrtc::VideoBroadcaster.
+class VideoDevCapturerComposite : public webrtc::VideoSourceInterface<webrtc::VideoFrame> 
+                                , public webrtc::VideoSinkInterface  <webrtc::VideoFrame>
                                 , public de::stream_webrtc::CVideoRecording
 {
     public:
@@ -42,8 +44,21 @@ class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::Video
         bool StartCapture();
         bool StopCapture();
         bool isCapturing() { 
-            if (m_Capturer== nullptr) return false;
-            return m_Capturer->CaptureStarted();}    
+            if (m_Capturer== nullptr) 
+            {
+                #ifdef DDEBUG
+                std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                #endif
+                return false;
+            }
+            // #ifdef DDEBUG
+            //     std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            //     std::cout << "Capture started" << m_Capturer->CaptureStarted() << std::endl;
+            // #endif
+            // return m_Capturer->CaptureStarted();
+
+            return m_active;
+        }
     
     public:
 
@@ -54,10 +69,10 @@ class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::Video
 
 
     public:
-        // rtc::VideoSourceInterface
-        void AddOrUpdateSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
-                       const rtc::VideoSinkWants& wants) override;
-        void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
+        // webrtc::VideoSourceInterface
+        void AddOrUpdateSink(webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
+                       const webrtc::VideoSinkWants& wants) override;
+        void RemoveSink(webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
         
         // take instance of FrameProcessor used to process video frame.
         void SetFramePreprocessor(std::unique_ptr<FramePreprocessorBase> preprocessor) {
@@ -67,11 +82,11 @@ class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::Video
         
     
     protected:
-        rtc::VideoSinkWants GetSinkWants();
+        webrtc::VideoSinkWants GetSinkWants();
 
 
     protected:
-        // rtc::VideoSinkInterface
+        // webrtc::VideoSinkInterface
         void OnFrame(const webrtc::VideoFrame& frame) override;
         //void OnDiscardedFrame() override;
     
@@ -85,10 +100,10 @@ class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::Video
         
         // VideoBroadcaster broadcast video frames to sinks and combines VideoSinkWants
         // from its sinks.
-        rtc::VideoBroadcaster m_broadCaster;
+        webrtc::VideoBroadcaster m_broadCaster;
         
-        cricket::VideoAdapter m_videoAdapter;
-        rtc::scoped_refptr<webrtc::VideoCaptureModule> m_Capturer;
+        webrtc::VideoAdapter m_videoAdapter;
+        webrtc::scoped_refptr<webrtc::VideoCaptureModule> m_Capturer;
         webrtc::VideoCaptureCapability m_cabability;
         
         // private constructor
@@ -101,8 +116,9 @@ class VideoDevCapturerComposite : public rtc::VideoSourceInterface<webrtc::Video
         bool m_once = false;
 
         webrtc::VideoRotation m_rotation;
-        int8_t counter = 0;
-        FILE* m_output_file;
+        
+
+        bool m_active = false;
 };
 
 }
