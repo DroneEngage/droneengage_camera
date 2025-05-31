@@ -94,14 +94,8 @@ bool de::stream_webrtc::CPeerConnectionManager::CreatePeerConnection(const std::
     
     
     
-    de::CNetworkManager * fnm = new de::CNetworkManager();
-    
-    // webrtc::BasicPortAllocator* bpa = new webrtc::BasicPortAllocator(fnm);
-    // std::unique_ptr<webrtc::PortAllocator> port_allocator(bpa);
-
     auto pcf_deps = CreateSomePcfDeps();
     auto peer_connection_deps = webrtc::PeerConnectionDependencies(this);
-    //auto dependencies = std::make_unique<webrtc::PeerConnectionDependencies>(this);
     auto peer_connection_or_error =
         de::stream_webrtc::CUserMedia::GetPeerConnectionFactory().get()->CreatePeerConnectionOrError(
                 m_config, std::move(peer_connection_deps)); 
