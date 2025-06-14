@@ -311,7 +311,10 @@ void onReceive (const char * message, int len, Json_de jMsg)
             
         }
 
+        #ifdef DEBUG
         std::cout << "messageType: " << messageType << std::endl;
+        #endif 
+        
         switch (messageType)
         {
             case TYPE_AndruavModule_Location_Info:

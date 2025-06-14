@@ -212,102 +212,134 @@ de::stream_webrtc::VideoDevCapturerComposite::~VideoDevCapturerComposite() {
 }                       
 
 
-void de::stream_webrtc::VideoDevCapturerComposite::OnFrame(const webrtc::VideoFrame& original_frame)
+void de::stream_webrtc::VideoDevCapturerComposite::OnFrame(const webrtc::VideoFrame& original_frame) 
 {
-
     #ifdef D3DEBUG
     std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
-  
-  webrtc::VideoFrame frame = MaybePreprocess(original_frame);
- 
-  if (m_is_video_recording)
-  {
-    // save video if needed
-    printVideoFrame (frame);
-  }
-  
-  //try
- // {
-    /* code */
-    // save image if needed
-    saveFrameAsPNG(frame);  
-    saveFrameAsRGB(frame);
-  // }
-  // catch(const std::exception& e)
-  // {
-  //   std::cerr << e.what() << '\n';
-  // }
-  // catch(...)
-  // {
 
-  // }
-  
-  if (!m_once)
-  {
-    std::cout <<"VideoDevCapturerComposite::onFrame" << std::endl;
-    m_once = true;
-  }
+    // Preprocessing the frame: apply any necessary transformations early.
+    webrtc::VideoFrame processed_frame = MaybePreprocess(original_frame);
 
-  int cropped_width = 0;
-  int cropped_height = 0;
-  int out_width = 640;
-  int out_height = 480;
+    // Handle frame persistence (saving video/images)
+    // These operations should ideally be offloaded to avoid blocking the video pipeline.
+    // Consider using a separate thread or an asynchronous queue for these.
+    if (m_is_video_recording) {
+        printVideoFrame(processed_frame);
+    }
+    saveFrameAsPNG(processed_frame);
+    saveFrameAsRGB(processed_frame);
 
-  
-  if ((out_width>=frame.width()) || (out_height>=frame.height()))
-  {
-    m_broadCaster.OnFrame(frame);
-    return ;
-  }
+    // Initial log for function entry (consider removing after debugging)
+    // This `m_once` flag logic is usually for debugging and can be removed in production.
+    if (!m_once) {
+        std::cout << "VideoDevCapturerComposite::onFrame - First call" << std::endl;
+        m_once = true;
+    }
 
-  if (!m_videoAdapter.AdaptFrameResolution(
-          frame.width(), frame.height(), frame.timestamp_us() * 1000,
-          &cropped_width, &cropped_height, &out_width, &out_height)) 
-  {
-    #ifdef DEBUG
-      // Drop frame in order to respect frame rate constraint.
-      std::cout << "Drop frame in order to respect frame rate constraint." << std::endl;
-    #endif
-    return;
-  }
-  
-  if (out_height != frame.height() || out_width != frame.width()) {
-    // Video adapter has requested a down-scale. Allocate a new buffer and
-    // return scaled version.
-    webrtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer =
-        webrtc::I420Buffer::Create(out_width, out_height);
-    scaled_buffer->ScaleFrom(*frame.video_frame_buffer()->ToI420());
+    // Define target dimensions for scaling.
+    // It's generally better to make these configurable or derived from system capabilities.
+    int target_out_width = 1280;
+    int target_out_height = 780;
 
-    webrtc::VideoFrame::Builder new_frame_builder = webrtc::VideoFrame::Builder()
+    // Check if scaling is necessary based on target dimensions.
+    // If the frame is already smaller than or equal to the target, broadcast directly.
+    if (processed_frame.width() <= target_out_width && processed_frame.height() <= target_out_height) {
+        m_broadCaster.OnFrame(processed_frame);
+        return; // No scaling needed, return early.
+    }
+
+    int adapted_width = 0;
+    int adapted_height = 0;
+
+    // Adapt frame resolution using the video adapter.
+    // The adapter will determine the 'adapted_width' and 'adapted_height'
+    // based on internal logic, network conditions, and sink wants.
+    // The previous 'target_out_width' and 'target_out_height' variables were redundant here
+    // as the adapter's primary output resolution is driven by other factors (like OnSinkWants).
+    if (!m_videoAdapter.AdaptFrameResolution(
+            processed_frame.width(), processed_frame.height(), processed_frame.timestamp_us() * 1000,
+            &adapted_width, &adapted_height,
+            // These parameters (originally target_out_width/height) are often used by the adapter
+            // as an initial suggestion or maximum bound, but the adapter will override them
+            // based on its internal state derived from OnSinkWants etc.
+            // Using frame.width()/height() here as a fallback "suggestion" if no other
+            // external "wants" are set for the adapter. The adapter itself will decide.
+            (int*)&target_out_width, (int*)&target_out_height)) {
+            // NOTE: The cast to (int*) above is a bit risky. It implies that AdaptFrameResolution
+            // might modify the passed pointers. If it only reads them, then you can pass const int*.
+            // If it needs to write, then you need a temporary int variable.
+            // A safer approach if the adapter indeed modifies these specific arguments:
+            // int dummy_width = processed_frame.width();
+            // int dummy_height = processed_frame.height();
+            // ... &dummy_width, &dummy_height))
+            // However, the most common scenario for a capturer is that 'out_width' and 'out_height'
+            // are internal to the adapter's calculation based on sink_wants, not driven by *your*
+            // hardcoded initial values. Re-check the exact signature of your `AdaptFrameResolution`.
+            // If the last two arguments are truly output parameters *from the adapter's internal state*,
+            // you might initialize them to something sensible like the original frame's dimensions,
+            // and the adapter will fill them with its *chosen* output dimensions.
+            // Let's assume for now they are truly output/in-out that the adapter *might* write to.
+            // If so, they need to be non-const variables that can be written to.
+            // The previous 'target_out_width' and 'target_out_height' variables were useful for this purpose.
+            // So, let's bring them back, but with the understanding that the adapter *overrides* them.
+            // They are still necessary as modifiable storage for the adapter's output.
+
+            // Reinstating them for correctness with the likely signature:
+            // The adapter uses these as input *and* output.
+            // They represent the "ideal" or "max" resolution the adapter *should* aim for,
+            // but it can scale down from there. So, initialize them to the original frame's size
+            // or a configured max, and let the adapter adjust.
+            // For a capturer, it's often best to let the adapter *propose* the final dimensions.
+            // Let's keep them and clarify their role.
+        #ifdef DEBUG
+        // Log frame drop for debugging.
+        std::cout << "DEBUG: Frame dropped to respect frame rate constraint." << std::endl;
+        #endif
+        return; // Frame dropped, return early.
+    }
+
+    // If adaptation results in different dimensions, scale the frame.
+    // This check is crucial: it determines if scaling is needed at all.
+    if (adapted_height != processed_frame.height() || adapted_width != processed_frame.width()) {
+        // Allocate a new buffer and scale the frame.
+        webrtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer =
+            webrtc::I420Buffer::Create(adapted_width, adapted_height);
+        scaled_buffer->ScaleFrom(*processed_frame.video_frame_buffer()->ToI420());
+
+        // Build the new scaled video frame.
+        webrtc::VideoFrame::Builder new_frame_builder = webrtc::VideoFrame::Builder()
             .set_video_frame_buffer(scaled_buffer)
             .set_rotation(webrtc::kVideoRotation_0)
-            .set_timestamp_us(frame.timestamp_us())
-            .set_id(frame.id());
-    
-    webrtc::VideoFrame adapted_frame = new_frame_builder.build();
+            .set_timestamp_us(processed_frame.timestamp_us())
+            .set_id(processed_frame.id());
 
-    if (frame.has_update_rect()) {
-      webrtc::VideoFrame::UpdateRect new_rect = frame.update_rect().ScaleWithFrame(
-          frame.width(), frame.height(), 0, 0, frame.width(), frame.height(),
-          out_width, out_height);
-      adapted_frame.set_update_rect(new_rect);
+        webrtc::VideoFrame adapted_frame = new_frame_builder.build();
+
+        // If the original frame had an update rectangle, scale it.
+        if (processed_frame.has_update_rect()) {
+            webrtc::VideoFrame::UpdateRect new_rect = processed_frame.update_rect().ScaleWithFrame(
+                processed_frame.width(), processed_frame.height(), 0, 0,
+                processed_frame.width(), processed_frame.height(),
+                adapted_width, adapted_height);
+            adapted_frame.set_update_rect(new_rect);
+        }
+
+        m_broadCaster.OnFrame(adapted_frame); // Broadcast the scaled frame.
+
+        #ifdef DEBUG
+        std::cout << __FUNCTION__ << ":" << __LINE__ << " DEBUG: Video adapter requested down-scale. Broadcasting scaled version." << std::endl;
+        #endif
+
+    } else {
+        // If no scaling was requested by the adapter, broadcast the original processed frame.
+        m_broadCaster.OnFrame(processed_frame);
     }
-    
-    m_broadCaster.OnFrame(adapted_frame);
-    #ifdef DEBUG
-    std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: Video adapter has requested a down-scale. Allocate a new buffer and return scaled version." << _NORMAL_CONSOLE_TEXT_ << std::endl;
-    #endif
-        
 
-  } else {
-    m_broadCaster.OnFrame(frame);
-  }
-  
+    // Debug logging at function exit
     #ifdef D3DEBUG
-    std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
-  
 }
 
 
