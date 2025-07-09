@@ -45,7 +45,6 @@ class CPeerConnectionManager : public webrtc::CreateSessionDescriptionObserver
     public:
         // CreateSessionDescriptionObserver
         // This callback transfers the ownership of the |desc|.
-        // TODO(deadbeef): Make this take an std::unique_ptr<> to avoid confusion
         // around ownership.
         void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
         // The OnFailure callback takes an RTCError, which consists of an

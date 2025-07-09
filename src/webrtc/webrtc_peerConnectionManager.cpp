@@ -20,6 +20,15 @@ de::stream_webrtc::CPeerConnectionManager::~CPeerConnectionManager()
     #ifdef DDEBUG
     std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " "  << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
+
+    // IMPORTANT: Explicitly close the PeerConnection and nullify the smart pointer.
+    // This ensures graceful shutdown of WebRTC's internal state and callbacks,
+    // preventing use-after-move or use-after-free issues.
+    if (m_peerConnection) {
+        std::cout << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: Calling m_peerConnection->Close()" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        m_peerConnection->Close();
+        m_peerConnection = nullptr; // Explicitly release the reference
+    }
 }
 
 void de::stream_webrtc::CPeerConnectionManager::CreateSomeMediaDeps(webrtc::PeerConnectionFactoryDependencies& media_deps) {
@@ -274,15 +283,16 @@ bool de::stream_webrtc::CPeerConnectionManager::AddIceCandidate (const Json_de& 
             webrtc::CreateIceCandidate(SdpMidName, std::atoi(SdpMlineIndexName.c_str()), SdpName,  &error));
     
     if (!candidate.get()) {
-      RTC_LOG(LS_WARNING) << "Can't parse received candidate message. "
+        RTC_LOG(LS_WARNING) << "Can't parse received candidate message. "
                        << "SdpParseError was: " << error.description;
-      return false;
+        return false;
     }
 
     if (!m_peerConnection.get()->AddIceCandidate (candidate.get()))
     {
         RTC_LOG(LS_WARNING) << "Failed in AddIceCandidate";
-      
+    
+        return false;
     }
 
     #ifdef DDEBUG
@@ -302,8 +312,6 @@ void de::stream_webrtc::CPeerConnectionManager::OnSuccess(webrtc::SessionDescrip
 	
     std::string sdp;
     desc->ToString(&sdp);
-    // m_test_sdb = sdp.c_str();
-    // m_test_type = webrtc::SdpTypeToString(desc->GetType()); //.c_str();
 
     RTC_LOG(LS_INFO) << "PeerConnectionTestWrapper " <<  ": "
                      << webrtc::SdpTypeToString(desc->GetType())
