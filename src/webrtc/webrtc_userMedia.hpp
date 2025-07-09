@@ -37,8 +37,6 @@ class CUserMedia  : public webrtc::RefCountInterface
         int m_peerCount;
         webrtc::scoped_refptr<webrtc::MediaStreamInterface> m_stream;
         static webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> m_peerConnectionFactory;
-        //TODO: change to std::map<std::string, webrtc::scoped_refptr<webrtc::VideoTrackInterface>> m_videoTracks;
-        std::map<std::string, webrtc::VideoTrackInterface*> m_videoTracks;
         std::map<std::string, webrtc::AudioTrackInterface*> m_audioTracks;
     public:         
         static std::unique_ptr<webrtc::Thread> g_worker_thread;

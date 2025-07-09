@@ -24,6 +24,8 @@ de::stream_webrtc::CUserMedia::~CUserMedia()
 
   DeletePeerConnection();
 
+
+
   #ifdef DDEBUG
     std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
   #endif
@@ -37,7 +39,43 @@ void de::stream_webrtc::CUserMedia::DeletePeerConnection ()
     std::cout << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
   #endif
 
+  // 1. Release the PeerConnectionFactory.
+  // This will decrement its reference count. If no other scoped_refptr
+  // holds a reference, the factory object will be destroyed.
   de::stream_webrtc::CUserMedia::m_peerConnectionFactory = nullptr;
+
+  // 2. Stop and reset the WebRTC threads.
+  // It's crucial to stop them gracefully before resetting the unique_ptr,
+  // as stopping might involve waiting for pending tasks to complete on those threads.
+  // The order of stopping (networking, worker, signaling) is generally recommended
+  // as networking thread often relies on worker/signaling for callbacks.
+  if (de::stream_webrtc::CUserMedia::g_networking_thread) {
+    #ifdef DDEBUG
+      std::cout << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " Stopping networking thread." << std::endl;
+    #endif
+    de::stream_webrtc::CUserMedia::g_networking_thread->Stop();
+    de::stream_webrtc::CUserMedia::g_networking_thread.reset(); // Release unique_ptr ownership
+  }
+
+  if (de::stream_webrtc::CUserMedia::g_worker_thread) {
+    #ifdef DDEBUG
+      std::cout << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " Stopping worker thread." << std::endl;
+    #endif
+    de::stream_webrtc::CUserMedia::g_worker_thread->Stop();
+    de::stream_webrtc::CUserMedia::g_worker_thread.reset(); // Release unique_ptr ownership
+  }
+
+  if (de::stream_webrtc::CUserMedia::g_signaling_thread) {
+    #ifdef DDEBUG
+      std::cout << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " Stopping signaling thread." << std::endl;
+    #endif
+    de::stream_webrtc::CUserMedia::g_signaling_thread->Stop();
+    de::stream_webrtc::CUserMedia::g_signaling_thread.reset(); // Release unique_ptr ownership
+  }
+
+
+
+
 
   #ifdef DDEBUG
     std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -52,33 +90,46 @@ bool de::stream_webrtc::CUserMedia::InitializePeerConnection() {
     std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
   #endif
 
-  std::cout << "CreateLocalMediaStream Call" << std::endl;
+  std::cout << "Attempting to initialize PeerConnectionFactory..." << std::endl;
+  
+  // Only create the PeerConnectionFactory and threads if they are not already initialized.
   if (de::stream_webrtc::CUserMedia::m_peerConnectionFactory.get() == nullptr)
   {
     //https://groups.google.com/forum/#!topic/discuss-webrtc/oWYy9JwK56M
     // without creating threads and starting the signal thread messaging will not work
     // and OnSuccess is not called when creating an offer.
-    //webrtc::Thread::Current()->Start();
+    
+    // Before creating new threads, ensure no old threads are lingering.
+    // This check is important if InitializePeerConnection might be called
+    // without a prior, complete DeletePeerConnection.
+    if (de::stream_webrtc::CUserMedia::g_networking_thread ||
+        de::stream_webrtc::CUserMedia::g_worker_thread ||
+        de::stream_webrtc::CUserMedia::g_signaling_thread)
+    {
+        std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "Warning: WebRTC threads are already active but PeerConnectionFactory is null. Attempting full cleanup before re-initialization." << _NORMAL_CONSOLE_TEXT_ << std::endl;
+        DeletePeerConnection(); // Perform a full cleanup if threads are unexpectedly active
+    }
+
+    // Create and start the WebRTC threads.
+    // These threads are essential for WebRTC's internal operations.
     de::stream_webrtc::CUserMedia::g_worker_thread = webrtc::Thread::Create();
     de::stream_webrtc::CUserMedia::g_worker_thread->SetName("webrtc_worker", nullptr);
     de::stream_webrtc::CUserMedia::g_worker_thread->Start();
+
     de::stream_webrtc::CUserMedia::g_signaling_thread = webrtc::Thread::Create();
     de::stream_webrtc::CUserMedia::g_signaling_thread->SetName("webrtc_signaling", nullptr);
     de::stream_webrtc::CUserMedia::g_signaling_thread->Start();
+
     de::stream_webrtc::CUserMedia::g_networking_thread = webrtc::Thread::CreateWithSocketServer();
     de::stream_webrtc::CUserMedia::g_networking_thread->SetName("webrtc_networking", nullptr);
     de::stream_webrtc::CUserMedia::g_networking_thread->Start();
 
-    
+    // Create the video encoder factory.
+    std::unique_ptr< webrtc::VideoEncoderFactory> videoEncoderFactory = std::make_unique<de::stream_webrtc::CBuiltinVideoEncoderFactory>();
 
-
-    
-
-  std::unique_ptr< webrtc::VideoEncoderFactory> factory = std::make_unique<de::stream_webrtc::CBuiltinVideoEncoderFactory>();  
-  
   //!TODO IMPPORTANT REVIEW CreatePeerConnectionFactory FUNCTION in webrtc/src/pc/test/peer_connection_test_wrapper.cc
   
-  de::stream_webrtc::CUserMedia::m_peerConnectionFactory = 
+    de::stream_webrtc::CUserMedia::m_peerConnectionFactory = 
             webrtc::CreatePeerConnectionFactory(
                 de::stream_webrtc::CUserMedia::g_networking_thread.get(), 
                 de::stream_webrtc::CUserMedia::g_worker_thread.get(),
@@ -87,7 +138,7 @@ bool de::stream_webrtc::CUserMedia::InitializePeerConnection() {
                 webrtc::scoped_refptr<webrtc::AudioDeviceModule>(CFakeAudioCaptureModule::Create()),
                 webrtc::CreateBuiltinAudioEncoderFactory(),
                 webrtc::CreateBuiltinAudioDecoderFactory(),
-                std::move (factory),
+                std::move (videoEncoderFactory),
                 std::make_unique<webrtc::VideoDecoderFactoryTemplate<
                       webrtc::LibvpxVp8DecoderTemplateAdapter,
                       webrtc::LibvpxVp9DecoderTemplateAdapter,
@@ -204,9 +255,6 @@ webrtc::scoped_refptr<webrtc::VideoTrackInterface> de::stream_webrtc::CUserMedia
     std::cout << __FULL_DEBUG__   << _ERROR_CONSOLE_BOLD_TEXT_ << "could not create CreateVideoTrack"  << trackLabel << _NORMAL_CONSOLE_TEXT_ << std::endl;
     return nullptr;
   }
-
-  // TODO:  change m_videoTracks type to accept : m_videoTracks.insert(std::make_pair(trackLabel,videoTrackInterface));
-  m_videoTracks.insert(std::make_pair(trackLabel, videoTrackInterface.get()));
 
 
   std::cout << __FULL_DEBUG__   <<  _LOG_CONSOLE_BOLD_TEXT << "DEBUG: CreateVideoTrackInterface " << _NORMAL_CONSOLE_TEXT_ << std::endl;
