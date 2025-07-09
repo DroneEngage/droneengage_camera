@@ -25,7 +25,7 @@ typedef struct STRUCT_SESSION_INFO_TAG{
     int peerObject;
     std::string channelName;   // equivelant to partyID
     std::string channelNumber; // unique camera name --> deviceID
-    webrtc::scoped_refptr<de::stream_webrtc::CPeerConnectionManager>  peerConnectionManager;
+    webrtc::scoped_refptr<de::stream_webrtc::CPeerConnectionManager>  peerConnectionManager = nullptr;
     
 } STRUCT_SESSION_INFO;
 

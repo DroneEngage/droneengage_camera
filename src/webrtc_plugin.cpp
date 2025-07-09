@@ -228,8 +228,11 @@ void de::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const web
 void de::CWEBRTC_Plugin::OnIceConnectionDisconnected (const std::string& sessionID)
 {
     
-
+    #ifdef DDEBUG
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    #endif
     deleteMe.push_back(sessionID);
+    eraseSessionInfoBySessionID(sessionID.c_str());
 }
 
 bool de::CWEBRTC_Plugin::IsCorrectCameraIndex (const int cameraIndex)
@@ -331,8 +334,15 @@ void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std:
             }
         }
 
-        sessionInfoNew.peerConnectionManager = new webrtc::RefCountedObject<de::stream_webrtc::CPeerConnectionManager>(this);
-        sessionInfoNew.peerConnectionManager->CreatePeerConnection(sessionID, senderPartyID, channelName, channelNumber);
+        if (sessionInfoNew.peerConnectionManager == nullptr)
+        {
+            #ifdef DDEBUG
+            std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            #endif
+
+            sessionInfoNew.peerConnectionManager = new webrtc::RefCountedObject<de::stream_webrtc::CPeerConnectionManager>(this);
+            sessionInfoNew.peerConnectionManager->CreatePeerConnection(sessionID, senderPartyID, channelName, channelNumber);
+        }
         
         webrtc::scoped_refptr<de::stream_webrtc::CapturerTrackSource> capturerTrackSource = webrtc::make_ref_counted<de::stream_webrtc::CapturerTrackSource>(device_info.capturer);
         webrtc::scoped_refptr<webrtc::VideoTrackInterface> videoTrackInterface = m_connection->CreateVideoTrackInterface(device_info.unique_name, capturerTrackSource.get());
@@ -671,29 +681,6 @@ void de::CWEBRTC_Plugin::rotateCameraFrame (const Json_de &jMsg)
     
 }
 
-// void de::CWEBRTC_Plugin::processVideoRecording (const Json_de &jMsg)
-// {
-//     // extract command
-    
-//     const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-//     const int subCommand = cmd["C"].get<int>();
-    
-//     // double check cmd.
-//     if (subCommand != RemoteCommand_RECORDVIDEO) return ;
-    
-//     bool startIfTrue = cmd["Act"].get<bool>();
-//     std::string channelName = cmd["T"].get<std::string>();
-    
-//     if (startIfTrue == true)
-//     {
-//         startVideoRecording (jMsg);
-//     }
-//     else
-//     {
-//         stopVideoRecording (jMsg);
-//     }
-    
-// }
 
 void de::CWEBRTC_Plugin::stopVideoRecording (const Json_de &jMsg)
 {
