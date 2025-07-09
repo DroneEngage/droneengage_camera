@@ -213,8 +213,7 @@ void init (int argc, char *argv[])
     
     // INIT WEBRTC
     
-    const bool singleCameraMode = jsonConfig.contains("one_session_per_camera")?jsonConfig["one_session_per_camera"].get<bool>():true;
-    cWEBRTC_Plugin.initCameras(singleCameraMode);
+    cWEBRTC_Plugin.initCameras(true);
     if (jsonConfig.contains("camera_list"))
     {
         Json_de jsonCameraList= jsonConfig["camera_list"];
