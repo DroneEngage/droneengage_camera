@@ -310,7 +310,7 @@ void onReceive (const char * message, int len, Json_de jMsg)
             
         }
 
-        #ifdef DEBUG
+        #ifdef DDEBUG
         std::cout << "messageType: " << messageType << std::endl;
         #endif 
         
