@@ -119,6 +119,13 @@ class VideoDevCapturerComposite : public webrtc::VideoSourceInterface<webrtc::Vi
         
 
         bool m_active = false;
+
+    private:
+        std::chrono::high_resolution_clock::time_point m_last_frame_rate_check_time;
+        int m_frame_count_for_fps;
+        double m_current_frame_rate; // To store the calculated FPS
+        const int m_fps_interval_ms = 10000; // Interval to calculate FPS (e.g., 1000ms = 1 second)
+
 };
 
 }
