@@ -257,7 +257,9 @@ void de::stream_webrtc::VideoDevCapturerComposite::OnFrame(const webrtc::VideoFr
     // Initial log for function entry (consider removing after debugging)
     // This `m_once` flag logic is usually for debugging and can be removed in production.
     if (!m_once) {
+      #ifdef DEBUG
         std::cout << "VideoDevCapturerComposite::onFrame - First call" << std::endl;
+      #endif 
         m_once = true;
     }
 
