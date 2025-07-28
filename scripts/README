@@ -1,0 +1,12 @@
+1-  python build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
+
+gn gen out/rpi-5 --args='is_debug=true use_system_libjpeg=true treat_warnings_as_errors=false  rtc_include_tests=false rtc_use_h264=true  rtc_build_examples=true rtc_build_tools=true rtc_exclude_audio_processing_module=true rtc_use_dummy_audio_file_devices=true target_cpu="arm64" is_clang=true  '
+
+SAME CODE WORKS WELL FOR RPI-4 & RPI-Z2
+
+
+
+2-  python build/linux/sysroot_scripts/install-sysroot.py --arch=amd64
+
+gn gen out/m137_x86_d --args='is_debug=true use_system_libjpeg=false treat_warnings_as_errors=false  rtc_include_tests=false rtc_use_h264=true  rtc_build_examples=true rtc_build_tools=true rtc_exclude_audio_processing_module=true rtc_use_dummy_audio_file_devices=true target_cpu="x64" is_clang=true  '
+gn gen out/m137_x86_r --args='is_debug=false use_system_libjpeg=false treat_warnings_as_errors=false  rtc_include_tests=false rtc_use_h264=true  rtc_build_examples=true rtc_build_tools=true rtc_exclude_audio_processing_module=true rtc_use_dummy_audio_file_devices=true target_cpu="x64" is_clang=true  '
