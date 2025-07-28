@@ -213,7 +213,7 @@ void init (int argc, char *argv[])
     
     // INIT WEBRTC
     
-    cWEBRTC_Plugin.initCameras(true);
+    cWEBRTC_Plugin.initCameras();
     if (jsonConfig.contains("camera_list"))
     {
         Json_de jsonCameraList= jsonConfig["camera_list"];
@@ -421,12 +421,7 @@ void onReceive (const char * message, int len, Json_de jMsg)
             }
             break;
         } 
-        
-    // }
-    // catch(const std::exception& e)
-    // {
-    //     std::cerr << e.what() << '\n';
-    // }
+            
 }
 
 int main(int argc, char *argv[])
@@ -441,8 +436,5 @@ int main(int argc, char *argv[])
             break ;
         }
         sleep (1);
-        //sleep (1000);
     }
-
-    //uninit();
 }

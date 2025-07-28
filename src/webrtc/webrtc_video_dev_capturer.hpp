@@ -85,7 +85,7 @@ class VideoDevCapturerComposite : public webrtc::VideoSourceInterface<webrtc::Vi
 
         const int getActualFPS() const
         {
-            return m_current_frame_rate;
+            return static_cast<int>(m_current_frame_rate);
         }
         
     

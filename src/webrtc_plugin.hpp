@@ -80,7 +80,7 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
 
     public:
         ~CWEBRTC_Plugin ();
-        void initCameras(const bool singleCameraMode);
+        void initCameras();
         bool addCameraByID (std::string cameraVideoName, int cameraVideoIndex);
         void addCameraByRange (int startVideoIndex, int endVideoIndex);
         void InitializePeerConnection();
@@ -138,7 +138,6 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         
     protected:
         
-        bool m_singleCameraMode=true;
         int m_singleCameraModeCameraIndex = -1;
         int m_actualVideoSourcesCount = 0;
         int m_actualAudioSourcesCount = 0;

@@ -16,12 +16,10 @@ de::CWEBRTC_Plugin::~CWEBRTC_Plugin ()
 }
 
 
-void de::CWEBRTC_Plugin::initCameras(const bool singleCameraMode)
+void de::CWEBRTC_Plugin::initCameras()
 {
     filled = false;
         
-    m_singleCameraMode = singleCameraMode;
-
     // get available video devices count
     m_actualVideoSourcesCount = de::stream_webrtc::CSource::GetVideoSourcesCount();
 
@@ -283,10 +281,6 @@ void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std:
     }
 
 
-    if (m_singleCameraMode)
-    {
-        std::cout << "Key " << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: m_singleCameraMode" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-        
         const STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
         if ( sessionInfo != NULL)
         {
@@ -359,7 +353,6 @@ void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std:
        
 
         
-    }
     
     #ifdef DDEBUG
     std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -868,7 +861,7 @@ Json_de de::CWEBRTC_Plugin::getDeviceListAsJSON ()
         
         jsonVideoSource["p"]        = EXTERNAL_CAMERA_TYPE_RTCWEBCAM;
         jsonVideoSource["s"]        = EXTERNAL_CAMERA_SUPPORT_ROTATION  | EXTERNAL_CAMERA_SUPPORT_RECORDING | EXTERNAL_CAMERA_SUPPORT_PHOTO;
-        
+        jsonVideoSource["a"]        = deviceInfo.capturer->getActualFPS();
         //ANDRUAV ONLY
         //jsonVideoSource[CAMERA_TYPE "f"]                    = ANDROID_DUAL_CAM; facing/rearing (true,false)
         //jsonVideoSource[CAMERA_TYPE "z"]					  = Support Zooming
