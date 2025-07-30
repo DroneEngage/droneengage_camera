@@ -332,7 +332,9 @@ void onReceive (const char * message, int len, Json_de jMsg)
             case TYPE_AndruavMessage_RemoteExecute:
             {
                 const int remoteCommand = cmd["C"].get<int>();
+                #ifdef DEBUG
                 std::cout << "cmd: " << remoteCommand << std::endl;
+                #endif
                 switch (remoteCommand)
                 {
                     case RemoteCommand_RECORDVIDEO:
