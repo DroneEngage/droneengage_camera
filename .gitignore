@@ -5,3 +5,5 @@ WEBRTC_EXAMPLES
 compiled_bin/
 *.local
 TODOHEFNY.txt
+*.png
+.vscode
