@@ -229,10 +229,29 @@ void init (int argc, char *argv[])
         for (auto cameraItem : jsonCameraList)
         {
             if (cameraItem["name"].get<std::string>().empty()) continue; // most propably it is an extra comma after last field.
-            std::cout << _LOG_CONSOLE_BOLD_TEXT << "Trying to init: " << _INFO_CONSOLE_TEXT << cameraItem["name"].get<std::string>() << _LOG_CONSOLE_BOLD_TEXT << " \\dev\\video" << _INFO_CONSOLE_TEXT << cameraItem["device_num"].get<int>() << _NORMAL_CONSOLE_TEXT_ << std::endl;
-            if (! cWEBRTC_Plugin.addCameraByID(cameraItem["name"].get<std::string>(), cameraItem["device_num"].get<int>()))
+            
+            if (cameraItem.contains("device_num"))
             {
-                std::cout << _ERROR_CONSOLE_TEXT_ << "failed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                std::cout << _LOG_CONSOLE_BOLD_TEXT << "Trying to init: " << _INFO_CONSOLE_TEXT << cameraItem["name"].get<std::string>() << _LOG_CONSOLE_BOLD_TEXT << " \\dev\\video " << _INFO_CONSOLE_TEXT << cameraItem["device_num"].get<int>() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            
+                if (! cWEBRTC_Plugin.addCameraByID(cameraItem["name"].get<std::string>(), cameraItem["device_num"].get<int>()))
+                {
+                    std::cout << _ERROR_CONSOLE_TEXT_ << "failed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                }
+
+                continue;
+            }
+
+            if (cameraItem.contains("device_name"))
+            {
+                std::cout << _LOG_CONSOLE_BOLD_TEXT << "Trying to init: " << _INFO_CONSOLE_TEXT << cameraItem["name"].get<std::string>() << _LOG_CONSOLE_BOLD_TEXT << "  " << _INFO_CONSOLE_TEXT << cameraItem["device_name"].get<std::string>() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            
+                if (! cWEBRTC_Plugin.addCameraByDeviceName(cameraItem["name"].get<std::string>(), cameraItem["device_name"].get<std::string>()))
+                {
+                    std::cout << _ERROR_CONSOLE_TEXT_ << "failed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                }
+
+                continue;
             }
         }
 	}

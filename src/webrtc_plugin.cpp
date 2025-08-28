@@ -102,6 +102,35 @@ bool de::CWEBRTC_Plugin::addCameraByID (std::string cameraVideoName, int cameraV
     return false;
 }
 
+
+bool de::CWEBRTC_Plugin::addCameraByDeviceName (std::string cameraVideoName, std::string cameraDeviceName)
+{
+    
+    
+    //if (cameraVideoIndex > m_actualVideoSourcesCount) return false; // out of range
+    for (int i=0; i<=m_actualVideoSourcesCount; ++i)
+    {
+        if (m_videoDeviceInfoList[i].device_name == cameraDeviceName)
+        {
+            m_videoDeviceInfoList[i].selected = true;
+            m_videoDeviceInfoList[i].active = 0;
+            m_videoDeviceInfoList[i].local_name = cameraVideoName;
+    
+            std::cout << _SUCCESS_CONSOLE_TEXT_ << "Camera: " << _SUCCESS_CONSOLE_BOLD_TEXT_ << cameraVideoName << _SUCCESS_CONSOLE_TEXT_ << " \\dev\\video"  << _INFO_CONSOLE_TEXT << m_videoDeviceInfoList[i].dev_linux_number << "   ----    " << _INFO_CONSOLE_TEXT << cameraDeviceName << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            filled = true;
+
+            // Start Capture ... Should be solved Later and Start Capture only when Start Streaming/
+            m_videoDeviceInfoList[i].capturer->StartCapture();
+            m_videoDeviceInfoList[i].active += 1;
+                
+            return true;
+        }
+    }
+    
+    
+    return false;
+}
+
 void de::CWEBRTC_Plugin::addCameraByRange(int startVideoIndex, int endVideoIndex)
 {
     

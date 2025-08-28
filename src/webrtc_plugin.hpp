@@ -82,7 +82,9 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         ~CWEBRTC_Plugin ();
         void initCameras();
         bool addCameraByID (std::string cameraVideoName, int cameraVideoIndex);
+        bool addCameraByDeviceName (std::string cameraVideoName, std::string cameraDeviceName);
         void addCameraByRange (int startVideoIndex, int endVideoIndex);
+        
         void InitializePeerConnection();
         
         Json_de getDeviceListAsJSON ();
