@@ -204,6 +204,9 @@
 #define TYPE_AndruavMessage_P2P_ACTION                  6505
 #define TYPE_AndruavMessage_P2P_STATUS                  6506
 
+#define TYPE_AndruavMessage_CONFIG_ACTION                      6525
+#define TYPE_AndruavMessage_CONFIG_STATUS                      6526
+#define TYPE_AndruavMessage_CONFIG_REMOTE_EXECUTE              6527
 
 #define TYPE_AndruavMessage_DUMMY                       9999
 
@@ -368,3 +371,8 @@
 // DistinationLocation Types
 #define DESTINATION_GUIDED_POINT            0
 #define DESTINATION_SWARM_MY_LOCATION       1
+
+
+// TYPE_AndruavMessage_CONFIG_ACTION
+#define CONFIG_ACTION_Restart                               0
+#define CONFIG_ACTION_APPLY_CONFIG                          1  
