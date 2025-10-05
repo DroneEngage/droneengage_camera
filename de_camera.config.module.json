@@ -1,5 +1,5 @@
 {
-    "module_id"                 : "HorusEyeLAB2",
+    "module_id"                 : "HorusEye",
     /* DroneEngage Communication Server */
     "s2s_udp_target_ip"           : "127.0.0.1", //"192.168.1.144",
     "s2s_udp_target_port"         : "60000", 
@@ -17,7 +17,7 @@
         // ],
     
     //optional entry used to store video and images.
-    "media_folder": ".",
+    "media_folder": "./img",
     // default: true
     "media_image_png": true,
     // default: true
