@@ -6,7 +6,7 @@
 
 #define VERSION_MAJOR 3
 #define VERSION_MINOR 6
-#define REVISION 0
+#define REVISION 1
 #define STRINGIFY(x) #x
 #define VERSION_STR(A,B,C) STRINGIFY(A) "." STRINGIFY(B) "."  STRINGIFY(C)
 
