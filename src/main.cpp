@@ -332,6 +332,7 @@ void onReceive(const char *message, int len, Json_de jMsg)
 
     switch (messageType)
     {
+
     case TYPE_AndruavMessage_CONFIG_ACTION:
     {
 
@@ -357,7 +358,13 @@ void onReceive(const char *message, int len, Json_de jMsg)
             break;
 
         case CONFIG_ACTION_APPLY_CONFIG:
-            break;
+        {
+            Json_de config = cmd["c"];
+            std::cout << config << std::endl;
+            de::CConfigFile &cConfigFile = CConfigFile::getInstance();
+            cConfigFile.updateJSON(config.dump());
+        }
+        break;
         default:
             break;
         }
