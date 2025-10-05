@@ -9,4 +9,10 @@ TODOHEFNY.txt
 .vscode
 checks.json
 buildme.sh
+
+sh_copy_binaries.sh
+sh_buildme.sh
 sh_update_code.sh
+
+compiled_bin
+compiled_rpi_bin

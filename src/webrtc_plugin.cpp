@@ -1,11 +1,11 @@
 
 #include "common.h"
 #include <fstream>
-#include "helpers/helpers.hpp"
+#include "./de_common/helpers/helpers.hpp"
 
-#include "webrtc/webrtc_video_dev_capturer.hpp"
-#include "webrtc/webrtc_source.hpp"
-#include "webrtc_plugin.hpp"
+#include "./webrtc/webrtc_video_dev_capturer.hpp"
+#include "./webrtc/webrtc_source.hpp"
+#include "./webrtc_plugin.hpp"
 
 extern std::string PartyID;
 

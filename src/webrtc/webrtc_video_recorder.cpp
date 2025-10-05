@@ -5,7 +5,7 @@
 #include <thread>         // std::thread
 
 #include "../webrtc_plugin.hpp"
-#include "../helpers/json_nlohmann.hpp"
+#include "../de_common/helpers/json_nlohmann.hpp"
 using Json_de = nlohmann::json;
 
 extern "C" {

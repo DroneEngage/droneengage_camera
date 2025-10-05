@@ -3,13 +3,13 @@
 #include <getopt.h>
 #include "common.h"
 #include "webrtc_plugin.hpp"
-#include "./de_common/de_module.hpp"
-#include "./helpers/util_rpi.hpp"
-#include "./de_common/configFile.hpp"
-#include "./de_common/localConfigFile.hpp"
+#include "./de_common/de_databus/de_module.hpp"
+#include "./de_common/helpers/util_rpi.hpp"
+#include "./de_common/de_databus/configFile.hpp"
+#include "./de_common/de_databus/localConfigFile.hpp"
 using Json_de = nlohmann::json;
 
-#include "./helpers/getopt_cpp.hpp"
+#include "./de_common/helpers/getopt_cpp.hpp"
 
 #include "version.h"
 

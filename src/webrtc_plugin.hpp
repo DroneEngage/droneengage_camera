@@ -7,10 +7,10 @@
 
 #include "common.h"
 
-#include "./helpers/json_nlohmann.hpp"
+#include "./de_common/helpers/json_nlohmann.hpp"
 using Json_de = nlohmann::json;
 
-#include "./de_common/de_module.hpp"
+#include "./de_common/de_databus/de_module.hpp"
 
 #include "webrtc_callback.hpp"
 #include "webrtc/webrtc_source.hpp"

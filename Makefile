@@ -27,14 +27,14 @@ OBJS = $(BUILD)/main.o \
 	   
 
 SRCS = ../$(SRC)/main.cpp \
-       ../$(SRC)/de_common/configFile.cpp \
-	   ../$(SRC)/de_common/localConfigFile.cpp \
-	   ../$(SRC)/helpers/helpers.cpp \
-       ../$(SRC)/helpers/util_rpi.cpp \
-	   ../$(SRC)/de_common/udpClient.cpp \
-	   ../$(SRC)/de_common/de_module.cpp \
+       ../$(SRC)/de_common/de_databus/configFile.cpp \
+	   ../$(SRC)/de_common/de_databus/localConfigFile.cpp \
+	   ../$(SRC)/de_common/helpers/helpers.cpp \
+       ../$(SRC)/de_common/helpers/util_rpi.cpp \
+	   ../$(SRC)/de_common/de_databus/udpClient.cpp \
+	   ../$(SRC)/de_common/de_databus/de_module.cpp \
 	   ../$(SRC)/webrtc_plugin.cpp \
-	   ../$(SRC)/helpers/getopt_cpp.cpp \
+	   ../$(SRC)/de_common/helpers/getopt_cpp.cpp \
 	   ../$(SRC)/3rdparty/LodePNG/lodepng.cpp \
 	   ../$(SRC)/webrtc/webrtc_source.cpp \
 	   ../$(SRC)/webrtc/webrtc_video_dev_capturer.cpp \
