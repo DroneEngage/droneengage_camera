@@ -7,3 +7,6 @@ compiled_bin/
 TODOHEFNY.txt
 *.png
 .vscode
+checks.json
+buildme.sh
+sh_update_code.sh
