@@ -8,14 +8,16 @@
     "s2s_udp_packet_size"         : "8192",
 
 
+    "camera":
+    {
     // Camera Devices Configuration
      "camera_start_index"        :0, 
-     "camera_end_index"          :10, 
+     "camera_end_index"          :11
         // "camera_list": [
-        //   {"name": "AI1", "device_num": 1} // name should be unique across all cameras.
-        //   ,{"name": "AI2", "device_name": "DE-CAM2"}
-        // ],
-    
+        //    {"name": "AI1", "device_num": 0} // name should be unique across all cameras.
+        //    ,{"name": "AI2", "device_name": "DE-CAM1"}
+        //  ]
+    },
     //optional entry used to store video and images.
     "media_folder": "./img",
     // default: true

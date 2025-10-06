@@ -44,7 +44,9 @@ CWEBRTC_Plugin &cWEBRTC_Plugin = CWEBRTC_Plugin::getInstance();
  *
  */
 static std::string hardware_serial;
-static bool m_exit = false;
+static std::mutex exit_mutex;
+static std::condition_variable exit_cv;
+static std::atomic<bool> m_exit{false};
 
 // void quit_handler( int sig );
 
@@ -213,53 +215,79 @@ void init(int argc, char *argv[])
     // INIT WEBRTC
 
     cWEBRTC_Plugin.initCameras();
-    if (jsonConfig.contains("camera_list"))
+    if (!jsonConfig.contains("camera"))
     {
-        Json_de jsonCameraList = jsonConfig["camera_list"];
-
-        size_t numItems = jsonCameraList.size();
-
-        if (numItems == 0)
+        // if no camera record or old style data then assume from (0 to 999)
+        if (!jsonConfig.contains("camera"))
         {
-            std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "ERROR in Config File" << _INFO_BOLD_CONSOLE_TEXT << " camera_list" << _ERROR_CONSOLE_BOLD_TEXT_ << " field contains no entries." << _NORMAL_CONSOLE_TEXT_ << std::endl;
-            std::cout << _NORMAL_CONSOLE_TEXT_ << "Suggest:" << _TEXT_BOLD_HIGHTLITED_ << "Please define at least one camera." << _NORMAL_CONSOLE_TEXT_ << std::endl;
-        }
+            // TODO: REMOVE THIS IN LATER VERSIONS.
+            //  backward compatibility - will be removed soon.
+            const int minCameraIndex = jsonConfig.contains("camera_start_index") ? jsonConfig["camera_start_index"].get<int>() : 0;
+            const int maxCameraIndex = jsonConfig.contains("camera_end_index") ? jsonConfig["camera_end_index"].get<int>() : 999;
 
-        for (auto cameraItem : jsonCameraList)
-        {
-            if (cameraItem["name"].get<std::string>().empty())
-                continue; // most propably it is an extra comma after last field.
-
-            if (cameraItem.contains("device_num"))
-            {
-                std::cout << _LOG_CONSOLE_BOLD_TEXT << "Trying to init: " << _INFO_CONSOLE_TEXT << cameraItem["name"].get<std::string>() << _LOG_CONSOLE_BOLD_TEXT << " \\dev\\video " << _INFO_CONSOLE_TEXT << cameraItem["device_num"].get<int>() << _NORMAL_CONSOLE_TEXT_ << std::endl;
-
-                if (!cWEBRTC_Plugin.addCameraByID(cameraItem["name"].get<std::string>(), cameraItem["device_num"].get<int>()))
-                {
-                    std::cout << _ERROR_CONSOLE_TEXT_ << "failed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-                }
-
-                continue;
-            }
-
-            if (cameraItem.contains("device_name"))
-            {
-                std::cout << _LOG_CONSOLE_BOLD_TEXT << "Trying to init: " << _INFO_CONSOLE_TEXT << cameraItem["name"].get<std::string>() << _LOG_CONSOLE_BOLD_TEXT << "  " << _INFO_CONSOLE_TEXT << cameraItem["device_name"].get<std::string>() << _NORMAL_CONSOLE_TEXT_ << std::endl;
-
-                if (!cWEBRTC_Plugin.addCameraByDeviceName(cameraItem["name"].get<std::string>(), cameraItem["device_name"].get<std::string>()))
-                {
-                    std::cout << _ERROR_CONSOLE_TEXT_ << "failed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-                }
-
-                continue;
-            }
+            // Keep this from 0 to 999
+            cWEBRTC_Plugin.addCameraByRange(minCameraIndex, maxCameraIndex);
         }
     }
     else
     {
-        const int minCameraIndex = jsonConfig.contains("camera_start_index") ? jsonConfig["camera_start_index"].get<int>() : 0;
-        const int maxCameraIndex = jsonConfig.contains("camera_end_index") ? jsonConfig["camera_end_index"].get<int>() : 999;
-        cWEBRTC_Plugin.addCameraByRange(minCameraIndex, maxCameraIndex);
+        // the logic:
+        // camera entry should exists.
+        // it should contains wither camera_list
+        // or camera_start_index / camera_end_index
+        
+        Json_de camera = jsonConfig["camera"];
+        
+        if (camera.contains("camera_list"))
+        {
+            Json_de jsonCameraList = camera["camera_list"];
+
+            size_t numItems = jsonCameraList.size();
+
+            if (numItems == 0)
+            {
+                std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "ERROR in Config File" << _INFO_BOLD_CONSOLE_TEXT << " camera_list" << _ERROR_CONSOLE_BOLD_TEXT_ << " field contains no entries." << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                std::cout << _NORMAL_CONSOLE_TEXT_ << "Suggest:" << _TEXT_BOLD_HIGHTLITED_ << "Please define at least one camera." << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            }
+
+            for (auto cameraItem : jsonCameraList)
+            {
+                if (cameraItem["name"].get<std::string>().empty())
+                    continue; // most propably it is an extra comma after last field.
+
+                if (cameraItem.contains("device_num"))
+                {
+                    std::cout << _LOG_CONSOLE_BOLD_TEXT << "Trying to init: " << _INFO_CONSOLE_TEXT << cameraItem["name"].get<std::string>() << _LOG_CONSOLE_BOLD_TEXT << " \\dev\\video " << _INFO_CONSOLE_TEXT << cameraItem["device_num"].get<int>() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+
+                    if (!cWEBRTC_Plugin.addCameraByID(cameraItem["name"].get<std::string>(), cameraItem["device_num"].get<int>()))
+                    {
+                        std::cout << _ERROR_CONSOLE_TEXT_ << "failed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                    }
+
+                    continue;
+                }
+
+                if (cameraItem.contains("device_name"))
+                {
+                    std::cout << _LOG_CONSOLE_BOLD_TEXT << "Trying to init: " << _INFO_CONSOLE_TEXT << cameraItem["name"].get<std::string>() << _LOG_CONSOLE_BOLD_TEXT << "  " << _INFO_CONSOLE_TEXT << cameraItem["device_name"].get<std::string>() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+
+                    if (!cWEBRTC_Plugin.addCameraByDeviceName(cameraItem["name"].get<std::string>(), cameraItem["device_name"].get<std::string>()))
+                    {
+                        std::cout << _ERROR_CONSOLE_TEXT_ << "failed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                    }
+                    continue;
+                }
+            }
+        }
+        else
+        {
+            const int minCameraIndex = camera.contains("camera_start_index") ? camera["camera_start_index"].get<int>() : 0;
+            const int maxCameraIndex = camera.contains("camera_end_index") ? camera["camera_end_index"].get<int>() : 999;
+
+            std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << "Camera Scan from /dev/video" <<   _INFO_CONSOLE_TEXT << minCameraIndex << _SUCCESS_CONSOLE_BOLD_TEXT_ << " to /dev/video"  << _INFO_CONSOLE_TEXT << maxCameraIndex << _NORMAL_CONSOLE_TEXT_ <<  std::endl;
+                    
+            cWEBRTC_Plugin.addCameraByRange(minCameraIndex, maxCameraIndex);
+        }
     }
 
     // BUG: for unknown reason calling "InitializePeerConnection" with the "cWEBRTC_Plugin.init" generates strange error.type
@@ -271,32 +299,8 @@ void init(int argc, char *argv[])
 
 void uninit()
 {
-    m_exit = true;
-    // cWEBRTC_Plugin.cleaning();
+    m_exit.store(true);
 }
-
-// ------------------------------------------------------------------------------
-//   Quit Signal Handler
-// ------------------------------------------------------------------------------
-// this function is called when you press Ctrl-C
-// void quit_handler( int sig )
-// {
-// 	std::cout << _INFO_CONSOLE_TEXT << std::endl << "TERMINATING AT USER REQUEST" <<  _NORMAL_CONSOLE_TEXT_ << std::endl;
-
-// 	try
-//     {
-//         uninit();
-// 	}
-// 	catch (int error)
-//     {
-//         #ifdef DEBUG
-//             std::cout <<__PRETTY_FUNCTION__ << " line:" << __LINE__ << "  "  << _LOG_CONSOLE_TEXT << "DEBUG: quit_handler" << std::to_string(error)<< _NORMAL_CONSOLE_TEXT_ << std::endl;
-//         #endif
-
-//     }
-
-//     exit(0);
-// }
 
 /*
     Process received messages from UDP client.
@@ -305,9 +309,6 @@ void uninit()
 void onReceive(const char *message, int len, Json_de jMsg)
 {
 
-    // try
-    // {
-    /* code */
     if (!jMsg.contains(ANDRUAV_PROTOCOL_MESSAGE_CMD))
         return;
 
@@ -484,13 +485,12 @@ int main(int argc, char *argv[])
 {
     init(argc, argv);
 
-    while (1)
+    // Wait for exit signal
     {
-        if (m_exit)
-        {
-            cWEBRTC_Plugin.cleaning();
-            break;
-        }
-        sleep(1);
+        std::unique_lock<std::mutex> lock(exit_mutex);
+        exit_cv.wait(lock, []
+                     { return m_exit.load(); });
     }
+
+    cWEBRTC_Plugin.cleaning();
 }
