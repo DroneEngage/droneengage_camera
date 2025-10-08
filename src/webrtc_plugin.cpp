@@ -6,6 +6,7 @@
 #include "./webrtc/webrtc_video_dev_capturer.hpp"
 #include "./webrtc/webrtc_source.hpp"
 #include "./webrtc_plugin.hpp"
+#include "./webrtc/webrtc_facade.hpp"
 
 extern std::string PartyID;
 
@@ -220,34 +221,9 @@ void de::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const web
     std::cout << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnIceCandidate:" <<_NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
     
-    
-    std::string sdp;
-    std::string sdp_mid;
-    int sdp_mline_index  = 0;
-    
-    Json_de packet;
     de::STRUCT_SESSION_INFO sessionInfo = m_SessionMap[sessionID];
-    packet["packet"]  = Json_de();
-    
-    
-    if (candidate != nullptr)
-    {
-        candidate->ToString(&sdp);
-        sdp_mid = candidate->sdp_mid();
-        sdp_mline_index = candidate->sdp_mline_index();
-        packet["packet"][de::stream_webrtc::kCandidateSdpName] = sdp;
-    
-    }
-    
-    
-    packet["packet"][de::stream_webrtc::kCandidateSdpMidName] = sdp_mid;
-    packet["packet"][de::stream_webrtc::kCandidateSdpMlineIndexName] = sdp_mline_index;
-    packet["number"]  = PartyID; 
-    packet["channel"] = sessionInfo.channelName;
-    
-    Json_de w;
-    w["w"] = packet;
-    m_module.sendJMSG (sessionInfo.senderPartyID, w, TYPE_AndruavMessage_Signaling, false);
+
+    de::fcb::CFCBFacade::getInstance().OnIceCandidate(sessionInfo, PartyID, candidate);
     
 }
 
@@ -513,16 +489,7 @@ void de::CWEBRTC_Plugin::Hangup (const std::string& senderPartyID, const std::st
     eraseSessionInfoBySessionID(sessionID.c_str());
     
     
-    Json_de packet;
-    packet["packet"]  = Json_de();
-    packet["packet"]["hangup"] = true;
-    packet["number"]  = PartyID; 
-    packet["channel"] = channel;
-    Json_de w;
-    w["w"] = packet;
-    
-    m_module.sendJMSG(senderPartyID, w, TYPE_AndruavMessage_Signaling, false);
-
+    de::fcb::CFCBFacade::getInstance().Hangup(senderPartyID, PartyID, channel);
     #ifdef DDEBUG
     std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif

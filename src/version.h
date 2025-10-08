@@ -5,8 +5,8 @@
 #include <stdio.h>
 
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 7
-#define REVISION 0
+#define VERSION_MINOR 8
+#define REVISION 1
 #define STRINGIFY(x) #x
 #define VERSION_STR(A,B,C) STRINGIFY(A) "." STRINGIFY(B) "."  STRINGIFY(C)
 

@@ -7,6 +7,8 @@
 #include "./de_common/helpers/util_rpi.hpp"
 #include "./de_common/de_databus/configFile.hpp"
 #include "./de_common/de_databus/localConfigFile.hpp"
+#include "./webrtc/webrtc_facade.hpp"
+
 using Json_de = nlohmann::json;
 
 #include "./de_common/helpers/getopt_cpp.hpp"
@@ -20,7 +22,6 @@ using namespace de;
                         TYPE_AndruavMessage_Ctrl_Cameras,          \
                         TYPE_AndruavModule_Location_Info,          \
                         TYPE_AndruavMessage_CONFIG_ACTION,         \
-                        TYPE_AndruavMessage_CONFIG_REMOTE_EXECUTE, \
                         TYPE_AndruavMessage_DUMMY}
 
 static webrtc::Thread *the_default_thread = webrtc::Thread::Current();
@@ -344,12 +345,12 @@ void onReceive(const char *message, int len, Json_de jMsg)
 
         if (validateField(cmd, "b", Json_de::value_t::string))
         {
-            std::string module_key = de::comm::CModule::getInstance().getModuleKey();
+            module_key = de::comm::CModule::getInstance().getModuleKey();
 
             if (module_key != cmd["b"].get<std::string>())
                 return;
         }
-
+        
         int action = cmd["a"].get<int>();
         switch (action)
         {
@@ -364,6 +365,29 @@ void onReceive(const char *message, int len, Json_de jMsg)
             std::cout << config << std::endl;
             de::CConfigFile &cConfigFile = CConfigFile::getInstance();
             cConfigFile.updateJSON(config.dump());
+        }
+        break;
+
+        case CONFIG_REQUEST_FETCH_CONFIG_TEMPLATE:
+        {
+            if (!jMsg.contains(ANDRUAV_PROTOCOL_SENDER)) return;
+            std::string sender = jMsg[ANDRUAV_PROTOCOL_SENDER].get<std::string>();
+#ifdef DEBUG
+            std::cout << std::endl << _INFO_CONSOLE_TEXT << "CONFIG_REQUEST_FETCH_CONFIG_TEMPLATE" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+#endif
+            std::ifstream file("template.json");
+            if (!file.is_open()) {
+                std::cout << std::endl << _ERROR_CONSOLE_BOLD_TEXT_ << "cannot read template.json" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                //CFCBFacade::getInstance().sendErrorMessage(std::string(), 0, ERROR_3DR, NOTIFICATION_TYPE_ERROR, "cannot read template.json");
+                Json_de empty_file_content_json = {};
+                de::fcb::CFCBFacade::getInstance().API_sendConfigTemplate(sender, module_key, empty_file_content_json, true);
+                return;
+            }
+
+            std::string file_content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+            file.close();
+            Json_de file_content_json = Json_de::parse(file_content);
+            de::fcb::CFCBFacade::getInstance().API_sendConfigTemplate(sender, module_key, file_content_json, true);
         }
         break;
         default:
