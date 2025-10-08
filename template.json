@@ -7,10 +7,12 @@
                 "type": "object",
                 "fields": {
                     "camera_start_index": {
+                        "order":1,
                         "type": "number",
                         "defaultvalue": "0"
                     },
                     "camera_end_index": {
+                        "order":2,
                         "type": "number",
                         "defaultvalue": "60"
                     }
@@ -32,17 +34,20 @@
                         "type": "array",
                         "array_template": {
                             "name": {
+                                "order":1,
                                 "type": "text",
                                 "defaultvalue": "CAM1",
                                 "desc": "name appears on webclient"
                             },
                             "device_num": {
+                                "order":2,
                                 "type": "number",
                                 "optional": true,
                                 "defaultvalue": "1",
                                 "desc": "/dev/videoX"
                             },
                             "device_name": {
+                                "order":3,
                                 "type": "text",
                                 "optional": true,
                                 "defaultvalue": "DE-CAM1",
