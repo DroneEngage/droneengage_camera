@@ -5,16 +5,17 @@
 #include "../de_common/helpers/json_nlohmann.hpp"
 using Json_de = nlohmann::json;
 
-
+// Class for managing WebRTC peer connections, including creation, signaling, and media handling.
 de::stream_webrtc::CPeerConnectionManager::CPeerConnectionManager ():m_callbacks(NULL)
 {
 }
 
+// Constructor with callback initialization for event handling.
 de::stream_webrtc::CPeerConnectionManager::CPeerConnectionManager (CCallbacks *callbacks):m_callbacks(callbacks)
 {
 }
 
-
+// Destructor ensures proper cleanup of peer connection resources.
 de::stream_webrtc::CPeerConnectionManager::~CPeerConnectionManager()
 {
     #ifdef DDEBUG
@@ -31,6 +32,7 @@ de::stream_webrtc::CPeerConnectionManager::~CPeerConnectionManager()
     }
 }
 
+// Creates media dependencies for peer connection factory setup.
 void de::stream_webrtc::CPeerConnectionManager::CreateSomeMediaDeps(webrtc::PeerConnectionFactoryDependencies& media_deps) {
 // CHECK /home/mhefny/TDisk_6T/Work/webrtc_2025/webrtc/src/webrtc_lib_link_test.cc
 //   media_deps.adm =
@@ -51,6 +53,7 @@ void de::stream_webrtc::CPeerConnectionManager::CreateSomeMediaDeps(webrtc::Peer
 //       std::make_unique<BuiltinAudioProcessingBuilder>();
 }
 
+// Configures peer connection factory dependencies with necessary threads and settings.
 webrtc::PeerConnectionFactoryDependencies de::stream_webrtc::CPeerConnectionManager::CreateSomePcfDeps() {
   webrtc::PeerConnectionFactoryDependencies pcf_deps;
   pcf_deps.signaling_thread = webrtc::Thread::Current();
@@ -62,6 +65,7 @@ webrtc::PeerConnectionFactoryDependencies de::stream_webrtc::CPeerConnectionMana
   return pcf_deps;
 }
 
+// Creates a peer connection with specified session and channel details.
 bool de::stream_webrtc::CPeerConnectionManager::CreatePeerConnection(const std::string &sessionID, const std::string &peerID, const std::string &channelNumber, const std::string &channelName) 
 {
 	
@@ -131,6 +135,7 @@ bool de::stream_webrtc::CPeerConnectionManager::CreatePeerConnection(const std::
 	return m_peerConnection.get() != nullptr;;
 }	
 
+// Adds a transceiver for a media track to the peer connection.
 webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>> de::stream_webrtc::CPeerConnectionManager::AddTransceiver(
     webrtc::scoped_refptr<webrtc::MediaStreamTrackInterface> track)
 {
@@ -147,6 +152,8 @@ webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>> de::s
 
 	return result;
 }
+
+// Adds a media stream to the peer connection.
 bool de::stream_webrtc::CPeerConnectionManager::AddStream(webrtc::MediaStreamInterface *stream) {
     #ifdef DDEBUG
     std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -164,7 +171,7 @@ bool de::stream_webrtc::CPeerConnectionManager::AddStream(webrtc::MediaStreamInt
 
 }
 
-
+// Adds a track to the peer connection with specified stream IDs.
 void de::stream_webrtc::CPeerConnectionManager::AddTrack(webrtc::scoped_refptr<webrtc::MediaStreamTrackInterface> track,
     const std::vector<std::string>& stream_ids) {
    
@@ -182,6 +189,7 @@ void de::stream_webrtc::CPeerConnectionManager::AddTrack(webrtc::scoped_refptr<w
     #endif
 }
 
+// Initiates creation of an offer for peer connection negotiation.
 bool de::stream_webrtc::CPeerConnectionManager::CreateOffer() {
     #ifdef DDEBUG
     std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -232,7 +240,7 @@ bool de::stream_webrtc::CPeerConnectionManager::CreateAnswer() {
     return true;
 }
 
-
+// Sets remote session description for peer connection.
 void de::stream_webrtc::CPeerConnectionManager::SetRemoteDescription(const std::string& type, const std::string& sdp)
 {
 
@@ -251,7 +259,7 @@ void de::stream_webrtc::CPeerConnectionManager::SetRemoteDescription(const std::
     #endif
 }
 
-  
+// Adds an ICE candidate received from signaling to the peer connection.
 bool de::stream_webrtc::CPeerConnectionManager::AddIceCandidate (const Json_de& packet)
 {
     #ifdef DDEBUG
@@ -303,6 +311,7 @@ bool de::stream_webrtc::CPeerConnectionManager::AddIceCandidate (const Json_de& 
     return true;
 }
 
+// Callback for successful session description creation.
 void de::stream_webrtc::CPeerConnectionManager::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
     
     #ifdef DDEBUG
@@ -407,7 +416,7 @@ void de::stream_webrtc::CPeerConnectionManager::Close() {
 
 }
 
-// Triggered when the SignalingState changed.
+// Handles changes in signaling state of the peer connection.
 void de::stream_webrtc::CPeerConnectionManager::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state)
 {
     #ifdef DDEBUG
@@ -538,7 +547,7 @@ void de::stream_webrtc::CPeerConnectionManager::OnIceConnectionChange(webrtc::Pe
     #endif
 }
 
-// Called any time the PeerConnectionState changes.
+// Handles overall connection state changes of the peer connection.
 void de::stream_webrtc::CPeerConnectionManager::OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState new_state)
 {   
     #ifdef DDEBUG
@@ -579,8 +588,7 @@ void de::stream_webrtc::CPeerConnectionManager::OnConnectionChange(webrtc::PeerC
     #endif
 }
 
-
-// Called any time the IceGatheringState changes.
+// Handles ICE gathering state changes during candidate collection.
 void de::stream_webrtc::CPeerConnectionManager::OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state)
 { 
     #ifdef DDEBUG
@@ -614,8 +622,7 @@ void de::stream_webrtc::CPeerConnectionManager::OnIceGatheringChange(webrtc::Pee
     #endif
 }
 
-
-// A new ICE candidate has been gathered.
+// Callback for when a new ICE candidate is gathered.
 void de::stream_webrtc::CPeerConnectionManager::OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
 { 
     #ifdef DDEBUG
@@ -649,7 +656,7 @@ void de::stream_webrtc::CPeerConnectionManager::OnIceCandidatesRemoved(const std
 void de::stream_webrtc::CPeerConnectionManager::OnIceConnectionReceivingChange(bool receiving)
 { 
     #ifdef DDEBUG
-    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 }
 

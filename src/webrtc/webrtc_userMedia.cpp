@@ -10,12 +10,13 @@ std::unique_ptr<webrtc::Thread> de::stream_webrtc::CUserMedia::g_worker_thread =
 std::unique_ptr<webrtc::Thread> de::stream_webrtc::CUserMedia::g_signaling_thread = nullptr;
 std::unique_ptr<webrtc::Thread> de::stream_webrtc::CUserMedia::g_networking_thread = nullptr;
 
+// Class responsible for managing WebRTC user media operations, including initialization and stream handling.
 de::stream_webrtc::CUserMedia::CUserMedia() 
 {
   m_peerCount =0;
 }
 
-
+// Destructor ensures proper cleanup of WebRTC resources.
 de::stream_webrtc::CUserMedia::~CUserMedia()
 {
   #ifdef DDEBUG
@@ -32,7 +33,7 @@ de::stream_webrtc::CUserMedia::~CUserMedia()
 
 }
 
-
+// Cleans up WebRTC resources by releasing the PeerConnectionFactory and stopping threads.
 void de::stream_webrtc::CUserMedia::DeletePeerConnection ()
 {
   #ifdef DDEBUG
@@ -83,7 +84,7 @@ void de::stream_webrtc::CUserMedia::DeletePeerConnection ()
 
 }
 
-
+// Initializes WebRTC environment by setting up threads and creating PeerConnectionFactory.
 bool de::stream_webrtc::CUserMedia::InitializePeerConnection() {
   
   #ifdef DDEBUG
@@ -172,6 +173,7 @@ bool de::stream_webrtc::CUserMedia::InitializePeerConnection() {
   return true;
 }
 
+// Creates a local media stream with the specified stream ID.
 bool de::stream_webrtc::CUserMedia::CreateLocalMediaStream(const char * streamId) {
   
   #ifdef DDEBUG
@@ -193,7 +195,7 @@ bool de::stream_webrtc::CUserMedia::CreateLocalMediaStream(const char * streamId
   return true;
 }
 
-
+// Removes all video tracks from the current stream.
 bool de::stream_webrtc::CUserMedia::RemoveVideoTracks ()
 {
   #ifdef DDEBUG
@@ -218,6 +220,7 @@ bool de::stream_webrtc::CUserMedia::RemoveVideoTracks ()
     return true;
 }
 
+// Removes all audio tracks from the current stream.
 bool de::stream_webrtc::CUserMedia::RemoveAudioTracks ()
 {
     #ifdef DDEBUG
@@ -240,7 +243,7 @@ bool de::stream_webrtc::CUserMedia::RemoveAudioTracks ()
     return true;
 }
 
-
+// Creates a video track interface with the given label and source.
 webrtc::scoped_refptr<webrtc::VideoTrackInterface> de::stream_webrtc::CUserMedia::CreateVideoTrackInterface (const std::string& trackLabel, 
             webrtc::VideoTrackSourceInterface* videoTrackSourceInterface
         )
@@ -265,9 +268,3 @@ webrtc::scoped_refptr<webrtc::VideoTrackInterface> de::stream_webrtc::CUserMedia
   
   return videoTrackInterface;
 }
-
-
-
-
-
-

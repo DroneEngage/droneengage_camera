@@ -1,10 +1,9 @@
-
 #include "webrtc_facade.hpp"
 
-
-
+// Facade class for handling WebRTC signaling and communication with other modules.
 using namespace de::fcb;
 
+// Handles hangup requests by constructing a JSON packet and sending it via the signaling channel.
 void CFCBFacade::Hangup(const std::string& senderPartyID, const std::string& PartyID, const std::string& channel)
 {
     Json_de packet;
@@ -18,7 +17,7 @@ void CFCBFacade::Hangup(const std::string& senderPartyID, const std::string& Par
     m_module.sendJMSG(senderPartyID, w, TYPE_AndruavMessage_Signaling, false);
 }
 
-
+// Handles ICE candidate events and sends them via the signaling channel.
 void CFCBFacade::OnIceCandidate (const de::STRUCT_SESSION_INFO sessionInfo, const std::string& PartyID,const webrtc::IceCandidateInterface* const candidate)
 {
     std::string sdp;
@@ -28,7 +27,7 @@ void CFCBFacade::OnIceCandidate (const de::STRUCT_SESSION_INFO sessionInfo, cons
     Json_de packet;
     packet["packet"]  = Json_de();
     
-    
+    // Extract ICE candidate information from the WebRTC API.
     if (candidate != nullptr)
     {
         candidate->ToString(&sdp);
@@ -38,7 +37,7 @@ void CFCBFacade::OnIceCandidate (const de::STRUCT_SESSION_INFO sessionInfo, cons
     
     }
     
-    
+    // Construct the JSON packet with ICE candidate information.
     packet["packet"][de::stream_webrtc::kCandidateSdpMidName] = sdp_mid;
     packet["packet"][de::stream_webrtc::kCandidateSdpMlineIndexName] = sdp_mline_index;
     packet["number"]  = PartyID; 
