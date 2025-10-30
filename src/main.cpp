@@ -8,6 +8,7 @@
 #include "./de_common/de_databus/configFile.hpp"
 #include "./de_common/de_databus/localConfigFile.hpp"
 #include "./webrtc/webrtc_facade.hpp"
+#include "./webrtc/webrtc_message_parser.hpp"
 
 using Json_de = nlohmann::json;
 
@@ -35,7 +36,7 @@ std::string ModuleKey;
 
 de::CConfigFile &cConfigFile = CConfigFile::getInstance();
 de::CLocalConfigFile &cLocalConfigFile = de::CLocalConfigFile::getInstance();
-
+de::stream_webrtc::CWebRTCMessageParser &cWebRTCMessageParser = de::stream_webrtc::CWebRTCMessageParser::getInstance();
 de::comm::CModule &cModule = de::comm::CModule::getInstance();
 
 CWEBRTC_Plugin &cWEBRTC_Plugin = CWEBRTC_Plugin::getInstance();
@@ -327,6 +328,8 @@ void onReceive(const char *message, int len, Json_de jMsg)
             return;
         }
     }
+
+    cWebRTCMessageParser.parseMessage(jMsg, message, len);
 
 #ifdef DDEBUG
     std::cout << "messageType: " << messageType << std::endl;
