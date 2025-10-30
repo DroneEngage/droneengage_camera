@@ -92,6 +92,10 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         void ExecuteSignalCommand(const Json_de& cmd);
 
     public:
+        void createJSONID(const bool resend);
+
+
+    public:
         de::stream_webrtc::STRUCT_DEVICE_INFO findDeviceInfoByLocalName (const std::string& localName);
         void updateDeviceInfoByLocalName (const char* localName, const de::stream_webrtc::STRUCT_DEVICE_INFO &deviceInfo);
         void cleaning ();

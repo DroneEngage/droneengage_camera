@@ -61,6 +61,14 @@ void de::CWEBRTC_Plugin::initCameras()
     std::cout << _SUCCESS_CONSOLE_TEXT_ << "========================================================"  << _NORMAL_CONSOLE_TEXT_ << std::endl;
 }
 
+
+void de::CWEBRTC_Plugin::createJSONID(const bool resend)
+{
+    const Json_de cameraList = getDeviceListAsJSON();
+    m_module.appendExtraField("m", cameraList);
+    m_module.createJSONID(resend);
+}
+
 void de::CWEBRTC_Plugin::InitializePeerConnection()
 {
     m_connection = webrtc::scoped_refptr<de::stream_webrtc::CUserMedia>(new webrtc::RefCountedObject<de::stream_webrtc::CUserMedia>());

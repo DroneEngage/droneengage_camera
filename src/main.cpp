@@ -90,13 +90,6 @@ void _usage(void)
               << _INFO_CONSOLE_TEXT "\t--version:     -v" << _NORMAL_CONSOLE_TEXT_ << std::endl;
 }
 
-void createJSONID(const bool resend)
-{
-    const Json_de cameraList = cWEBRTC_Plugin.getDeviceListAsJSON();
-    cModule.appendExtraField("m", cameraList);
-    cModule.createJSONID(resend);
-}
-
 void initArguments(int argc, char *argv[])
 {
     int opt;
@@ -153,7 +146,7 @@ void initUavosModule(int argc, char *argv[])
 
     cModule.setMessageOnReceive(&onReceive);
 
-    createJSONID(false);
+    cWEBRTC_Plugin.createJSONID(false);
 
     int udp_chunk_size = DEFAULT_UDP_DATABUS_PACKET_SIZE;
 
@@ -335,117 +328,9 @@ void onReceive(const char *message, int len, Json_de jMsg)
     std::cout << "messageType: " << messageType << std::endl;
 #endif
 
-    switch (messageType)
-    {
+    
 
-
-    case TYPE_AndruavModule_Location_Info:
-    {
-        cWEBRTC_Plugin.updateLocationInfo(jMsg);
-    }
-    break;
-
-    case TYPE_AndruavMessage_Ctrl_Cameras:
-    {
-        cWEBRTC_Plugin.startImageCapturing(jMsg);
-        createJSONID(false);
-    }
-    break;
-
-    case TYPE_AndruavMessage_RemoteExecute:
-    {
-        const int remoteCommand = cmd["C"].get<int>();
-#ifdef DEBUG
-        std::cout << "cmd: " << remoteCommand << std::endl;
-#endif
-        switch (remoteCommand)
-        {
-        case RemoteCommand_RECORDVIDEO:
-        {
-            std::cout << "Key " << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: RemoteCommand_RECORDVIDEO" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-            std::cout << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: TYPE_AndruavMessage_Signaling" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-            if (!jMsg.contains(ANDRUAV_PROTOCOL_SENDER))
-            {
-                // cannot send this command as broadcast.
-                return;
-            }
-
-            bool startIfTrue = cmd["Act"].get<bool>();
-            std::string channelName = cmd["T"].get<std::string>();
-
-            if (startIfTrue == true)
-            {
-                cWEBRTC_Plugin.startVideoRecording(jMsg);
-            }
-            else
-            {
-                cWEBRTC_Plugin.stopVideoRecording(jMsg);
-            }
-
-            createJSONID(false);
-        }
-        break;
-
-        case RemoteCommand_STREAMVIDEO:
-        {
-            // const bool act = cmd["Act"].asBool();
-            // if (!act)
-            // {
-            //     // act true is not handled here.
-            //     //TODO: replace act false with hangout signalling or replicate it with another signalling message "hangout"
-
-            // }
-            createJSONID(false);
-        }
-        break;
-
-        case RemoteCommand_SWITCHCAM:
-        {
-            //_camera.nextCamera (jmsg.sd);
-            std::cout << "Key " << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: RemoteCommand_SWITCHCAM" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-            createJSONID(false);
-        }
-        break;
-
-        case RemoteCommand_ROTATECAM:
-        {
-            const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-            cWEBRTC_Plugin.rotateCameraFrame(jMsg);
-        }
-        break;
-        }
-    }
-    break;
-
-    case TYPE_AndruavMessage_Signaling:
-    {
-
-        if (!cmd.contains("w"))
-            return;
-
-        const Json_de w = cmd["w"];
-
-        if (!w.contains("packet"))
-            return;
-
-        Json_de const packet = w["packet"];
-
-        std::cout << _LOG_CONSOLE_BOLD_TEXT << "INFO: TYPE_AndruavMessage_Signaling" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-        if (!jMsg.contains(ANDRUAV_PROTOCOL_SENDER))
-        {
-            // cannot send this command as broadcast.
-            return;
-        }
-
-        cWEBRTC_Plugin.ExecuteSignalCommand(jMsg);
-        if ((packet.contains("joinme") == true) || (packet.contains("hangup") == true))
-        {
-            const Json_de cameraList = cWEBRTC_Plugin.getDeviceListAsJSON();
-            createJSONID(false);
-        }
-    }
-    break;
-    }
+    
 }
 
 int main(int argc, char *argv[])

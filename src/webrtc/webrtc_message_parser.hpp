@@ -5,6 +5,7 @@
 using Json_de = nlohmann::json;
 #include "../de_common/de_databus/de_message_parser_base.hpp"
 
+#include "../webrtc_plugin.hpp"
 
 namespace de
 {
@@ -34,6 +35,8 @@ class CWebRTCMessageParser: public de::comm::CAndruavMessageParserBase
 
     private:
         
+        CWEBRTC_Plugin &m_WEBRTC_Plugin = CWEBRTC_Plugin::getInstance();
+
     };
 }
 }
