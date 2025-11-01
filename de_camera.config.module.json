@@ -1,18 +1,15 @@
 {
-    "module_id"                 : "HorusEye",
+    "module_id": "HorusEye",
     /* DroneEngage Communication Server */
-    "s2s_udp_target_ip"           : "127.0.0.1", //"192.168.1.144",
-    "s2s_udp_target_port"         : "60000", 
-    "s2s_udp_listening_ip"        : "0.0.0.0", 
-    "s2s_udp_listening_port"      : "60029", 
-    "s2s_udp_packet_size"         : "8192",
-
-
-    "camera":
-    {
-    // Camera Devices Configuration
-     "camera_start_index"        :0, 
-     "camera_end_index"          :11
+    "s2s_udp_target_ip": "127.0.0.1", //"192.168.1.144",
+    "s2s_udp_target_port": "60000",
+    "s2s_udp_listening_ip": "0.0.0.0",
+    "s2s_udp_listening_port": "60029",
+    "s2s_udp_packet_size": "8192",
+    "camera": {
+        // Camera Devices Configuration
+        "camera_start_index": 0,
+        "camera_end_index": 11
         // "camera_list": [
         //    {"name": "AI1", "device_num": 0} // name should be unique across all cameras.
         //    ,{"name": "AI2", "device_name": "DE-CAM1"}
@@ -24,11 +21,16 @@
     "media_image_png": true,
     // default: true
     "send_image_gcs": true,
-
-    
-    "iceServers": [ 
-        {"urls": "stun:airgap.droneengage.com:3478","username":"airgap","password":"1234"},
-        {"urls": "turn:167.114.113.48:3478","username":"andruav","password":"1234"}
-        ]
-
+    "iceServers": [
+        {
+            "urls": "stun:airgap.droneengage.com:3478",
+            "username": "airgap",
+            "password": "1234"
+        },
+        {
+            "urls": "turn:167.114.113.48:3478",
+            "username": "andruav",
+            "password": "1234"
+        }
+    ]
 }
