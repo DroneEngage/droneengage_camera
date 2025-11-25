@@ -1,6 +1,8 @@
 
 #include "../common.h"
 #include <chrono>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "webrtc_video_recorder.hpp"
 #include <thread>         // std::thread
 
@@ -34,8 +36,21 @@ const std::string de::stream_webrtc::CVideoRecording::getMediaFolderPath() const
         return std::string();
     }
     
-    const std::string file_path = jsonConfig["media_folder"].get<std::string>() + "/";
-   
+    std::string file_path = jsonConfig["media_folder"].get<std::string>();
+
+    if (file_path.empty())
+    {
+        return file_path;
+    }
+
+    if ((file_path.back() != '/') && (file_path.back() != '\\'))
+    {
+        file_path += "/";
+    }
+
+    // create folder if it does not exist (non-recursive)
+    mkdir(file_path.c_str(), 0755);
+
     return file_path;
 }
 
