@@ -333,17 +333,17 @@ int de::stream_webrtc::CVideoRecording::saveFrameAsPNG(webrtc::VideoFrame& frame
         return 0;
     }
 
-    std::thread t = std::thread{ [&, output_file_name]() {
-        std::string file_name = output_file_name;
-        if (m_recorder_events != nullptr)
+    // Capture recorder_events by value to avoid race condition with detached thread
+    de::stream_webrtc::CRecorderEvents* recorder_events = m_recorder_events;
+    
+    std::thread([output_file_name, recorder_events]() {
+        if (recorder_events != nullptr)
         {
-            m_recorder_events->onImageRecorded(file_name, sendImageToGCS());
-            return 0;
+            // sendImageToGCS() accesses singleton CConfigFile, safe to call here
+            bool send_to_gcs = CConfigFile::getInstance().GetConfigJSON().value("send_image_gcs", true);
+            recorder_events->onImageRecorded(output_file_name, send_to_gcs);
         }
-        return 0;
-    }};
-
-    t.detach();
+    }).detach();
     #ifdef DEBUG
     std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "PNG3" << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
@@ -536,16 +536,17 @@ int  de::stream_webrtc::CVideoRecording::saveFrameAsRGB( webrtc::VideoFrame& fra
 
     fclose(image_handler);
 
-    std::thread t =std::thread {[&, output_file_name](){ 
-        std::string file_name = output_file_name;
-        if (m_recorder_events!= nullptr)
+    // Capture recorder_events by value to avoid race condition with detached thread
+    de::stream_webrtc::CRecorderEvents* recorder_events = m_recorder_events;
+    
+    std::thread([output_file_name, recorder_events]() {
+        if (recorder_events != nullptr)
         {
-            m_recorder_events->onImageRecorded(file_name, sendImageToGCS());
-            return 0;
+            // sendImageToGCS() accesses singleton CConfigFile, safe to call here
+            bool send_to_gcs = CConfigFile::getInstance().GetConfigJSON().value("send_image_gcs", true);
+            recorder_events->onImageRecorded(output_file_name, send_to_gcs);
         }
-        return 0;
-    }};
+    }).detach();
 
-    t.detach();
     return 0;
 }

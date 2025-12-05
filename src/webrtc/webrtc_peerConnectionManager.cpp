@@ -125,7 +125,7 @@ bool de::stream_webrtc::CPeerConnectionManager::CreatePeerConnection(const std::
     
     m_sessionID = sessionID;
     m_peerID = peerID;
-    m_channelNumber = channelName;
+    m_channelNumber = channelNumber;
     m_channelName = channelName;
 
     #ifdef DDEBUG
@@ -248,11 +248,32 @@ void de::stream_webrtc::CPeerConnectionManager::SetRemoteDescription(const std::
     std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
 
-    std::unique_ptr<webrtc::SessionDescriptionInterface> session_description = webrtc::CreateSessionDescription(webrtc::SdpType::kAnswer, sdp);
-            
-    auto  observer = CSetSessionDescriptionObserver::Create(this);
+    // Map string type to webrtc::SdpType
+    webrtc::SdpType sdp_type = webrtc::SdpType::kAnswer; // default
+
+    if (type == "offer")
+    {
+        sdp_type = webrtc::SdpType::kOffer;
+    }
+    else if (type == "answer")
+    {
+        sdp_type = webrtc::SdpType::kAnswer;
+    }
+    else if (type == "pranswer")
+    {
+        sdp_type = webrtc::SdpType::kPrAnswer;
+    }
+    else if (type == "rollback")
+    {
+        sdp_type = webrtc::SdpType::kRollback;
+    }
+
+    std::unique_ptr<webrtc::SessionDescriptionInterface> session_description =
+        webrtc::CreateSessionDescription(sdp_type, sdp);
+
+    auto observer = CSetSessionDescriptionObserver::Create(this);
     observer->no = true;
-    m_peerConnection.get()->SetRemoteDescription(observer,session_description.release());
+    m_peerConnection.get()->SetRemoteDescription(observer, session_description.release());
 
     #ifdef DDEBUG
     std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -268,9 +289,9 @@ bool de::stream_webrtc::CPeerConnectionManager::AddIceCandidate (const Json_de& 
 
 	webrtc::SdpParseError error;
     
-    std::string SdpName = "";
+        std::string SdpName = "";
     std::string SdpMidName = "";
-    std::string SdpMlineIndexName = "";
+    int SdpMlineIndex = 0;
     
     if (packet.contains(de::stream_webrtc::kCandidateSdpName))
     {
@@ -284,13 +305,14 @@ bool de::stream_webrtc::CPeerConnectionManager::AddIceCandidate (const Json_de& 
     
     if (packet.contains(de::stream_webrtc::kCandidateSdpMlineIndexName))
     {
-        SdpMlineIndexName = packet[de::stream_webrtc::kCandidateSdpMlineIndexName].get<int>();
+        SdpMlineIndex = packet[de::stream_webrtc::kCandidateSdpMlineIndexName].get<int>();
     }
 
     std::unique_ptr<webrtc::IceCandidateInterface> candidate(
-            webrtc::CreateIceCandidate(SdpMidName, std::atoi(SdpMlineIndexName.c_str()), SdpName,  &error));
+            webrtc::CreateIceCandidate(SdpMidName, SdpMlineIndex, SdpName, &error));
     
     if (!candidate.get()) {
+
         RTC_LOG(LS_WARNING) << "Can't parse received candidate message. "
                        << "SdpParseError was: " << error.description;
         return false;
