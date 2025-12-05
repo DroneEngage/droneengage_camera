@@ -3,6 +3,7 @@ build/
 lib/
 WEBRTC_EXAMPLES
 compiled_bin/
+compiled_bin_arm/
 *.local
 TODOHEFNY.txt
 *.png
