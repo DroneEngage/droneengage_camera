@@ -242,8 +242,14 @@ void de::CWEBRTC_Plugin::OnIceConnectionDisconnected (const std::string& session
     #ifdef DDEBUG
     std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
-    deleteMe.push_back(sessionID);
-    eraseSessionInfoBySessionID(sessionID.c_str());
+    
+    // Only mark for deletion if session still exists and connection is actually disconnected
+    const STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
+    if (sessionInfo != NULL && sessionInfo->peerConnectionManager != nullptr) {
+        // Check if the peer connection is actually in a disconnected state
+        // This prevents premature cleanup during reconnection attempts
+        deleteMe.push_back(sessionID);
+    }
 }
 
 bool de::CWEBRTC_Plugin::IsCorrectCameraIndex (const int cameraIndex)
@@ -275,7 +281,10 @@ void de::CWEBRTC_Plugin::cleaning()
             return ;
         }
 
-        sessionInfo->peerConnectionManager->Close();
+        // Additional safety check before closing
+        if (sessionInfo->peerConnectionManager != nullptr) {
+            sessionInfo->peerConnectionManager->Close();
+        }
         eraseSessionInfoBySessionID(sessionID.c_str());
     }
 }
@@ -294,14 +303,19 @@ void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std:
     }
 
 
-        const STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
+        STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
         if ( sessionInfo != NULL)
         {
             std::cout << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << sessionID << _NORMAL_CONSOLE_TEXT_ << " found" << std::endl;
-        }
-        else
-        {
-            /* code */
+            // Session already exists with an active peer connection.
+            // Re-create the offer on the existing peer connection to re-send connection info.
+            if (sessionInfo->peerConnectionManager != nullptr) {
+                std::cout << _LOG_CONSOLE_TEXT << "Re-sending offer for existing session: " << channelName << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                sessionInfo->peerConnectionManager->CreateOffer();
+                return ;
+            }
+            // peerConnectionManager is null, erase stale session and create a new one below.
+            eraseSessionInfoBySessionID(sessionID.c_str());
         }
         
 
