@@ -285,6 +285,21 @@ void de::CWEBRTC_Plugin::cleaning()
         if (sessionInfo->peerConnectionManager != nullptr) {
             sessionInfo->peerConnectionManager->Close();
         }
+        
+        // Decrement active count for the camera and stop capture if no more active sessions
+        de::stream_webrtc::STRUCT_DEVICE_INFO deviceInfo = findDeviceInfoByLocalName(sessionInfo->channelName.c_str());
+        if (deviceInfo.device_num != -1) {
+            deviceInfo.active -= 1;
+            if (deviceInfo.active <= 0) {
+                deviceInfo.active = 0;
+                if (deviceInfo.capturer->isCapturing()) {
+                    std::cout << _LOG_CONSOLE_TEXT << "Stopping capture for camera: " << deviceInfo.device_name << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                    deviceInfo.capturer->StopCapture();
+                }
+            }
+            updateDeviceInfoByLocalName(sessionInfo->channelName.c_str(), deviceInfo);
+        }
+        
         eraseSessionInfoBySessionID(sessionID.c_str());
     }
 }
@@ -319,12 +334,6 @@ void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std:
         }
         
 
-        de::STRUCT_SESSION_INFO sessionInfoNew;
-        sessionInfoNew.senderPartyID = senderPartyID;
-        sessionInfoNew.sessionID = sessionID;
-        sessionInfoNew.channelNumber = channelNumber;
-        sessionInfoNew.channelName = channelName;
-        
         de::stream_webrtc::STRUCT_DEVICE_INFO device_info = findDeviceInfoByLocalName(channelName.c_str());
         if (device_info.device_num == -1)
         {
@@ -332,6 +341,12 @@ void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std:
 
             return ;
         }
+
+        de::STRUCT_SESSION_INFO sessionInfoNew;
+        sessionInfoNew.senderPartyID = senderPartyID;
+        sessionInfoNew.sessionID = sessionID;
+        sessionInfoNew.channelNumber = channelNumber;
+        sessionInfoNew.channelName = device_info.unique_name;  // Use unique_name for proper tracking
 
         
         if ((!device_info.capturer->isCapturing()))
@@ -350,10 +365,11 @@ void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std:
             else
             {
                 std::cout <<  _SUCCESS_CONSOLE_TEXT_ << " Capturer " << _SUCCESS_CONSOLE_BOLD_TEXT_ << "DEBUG: Capturer started successfully" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-                device_info.active += 1;    
-                updateDeviceInfoByLocalName(channelName.c_str(), device_info);
             }
         }
+
+        device_info.active += 1;
+        updateDeviceInfoByLocalName(device_info.unique_name.c_str(), device_info);
 
         if (sessionInfoNew.peerConnectionManager == nullptr)
         {
@@ -508,6 +524,21 @@ void de::CWEBRTC_Plugin::Hangup (const std::string& senderPartyID, const std::st
     
    
     sessionInfo->peerConnectionManager->Close();
+    
+    // Decrement active count for the camera and stop capture if no more active sessions
+    de::stream_webrtc::STRUCT_DEVICE_INFO deviceInfo = findDeviceInfoByLocalName(sessionInfo->channelName.c_str());
+    if (deviceInfo.device_num != -1) {
+        if (deviceInfo.active > 0) deviceInfo.active -= 1;
+        if (deviceInfo.active <= 0) {
+            deviceInfo.active = 0;
+            if (deviceInfo.capturer->isCapturing()) {
+                std::cout << _LOG_CONSOLE_TEXT << "Stopping capture for camera: " << deviceInfo.device_name << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                deviceInfo.capturer->StopCapture();
+            }
+        }
+        updateDeviceInfoByLocalName(sessionInfo->channelName.c_str(), deviceInfo);
+    }
+    
     eraseSessionInfoBySessionID(sessionID.c_str());
     
     
