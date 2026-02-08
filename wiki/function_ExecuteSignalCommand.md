@@ -7,46 +7,58 @@ It acts as a central dispatcher for WebRTC session control commands (like offer,
 ### Definition
 
 ```cpp
-500:553:/home/mhefny/TDisk/public_versions/drone_engage/drone_engage_camera_2025/src/webrtc_plugin.cpp
+593:646:./src/webrtc_plugin.cpp
 void de::CWEBRTC_Plugin::ExecuteSignalCommand(const Json_de &jMsg)
 {
-    // Extract command fields
+    // extract command
     const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
     const Json_de w = cmd["w"];
     std::string number = w["number"].get<std::string>();
     std::string channel = w["channel"].get<std::string>();
-    std::string sender = jMsg[ANDRUAV_PROTOCOL_SENDER].get<std::string>();
-    std::string sessionID = number + channel;
-
-    // Look up session info
+    std::string sender  = jMsg[ANDRUAV_PROTOCOL_SENDER].get<std::string>();
+    std::string sessionID = (number + channel);
+    
     const de::STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
-    if (sessionInfo == NULL) {
-        std::cout << "Key " << sessionID << " not found" << std::endl;
-    } else {
-        std::cout << "Key " << sessionID << " found" << std::endl;
+    if ( sessionInfo == NULL)
+    {
+        std::cout << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << sessionID << _NORMAL_CONSOLE_TEXT_ << " not found" << std::endl;
     }
+    else
+    {
+        std::cout << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << sessionID << _NORMAL_CONSOLE_TEXT_ << " found" << std::endl;
+    }
+    
 
+    //std::cout << "Key " << cmd.dump() << std::endl;
     Json_de const packet = w["packet"];
 
-    // Dispatch based on packet content
-    if ((packet.contains("joinme")) && (packet["joinme"].get<bool>() == true)) {
-        SendOffer(sender, sessionID, number, channel);
-        return;
+        
+    if ((packet.contains("joinme")==true) && (packet["joinme"].get<bool>()==true))
+    {   
+        SendOffer (sender, sessionID, number, channel);
+        return ;
     }
 
-    if ((packet.contains("type")) && (packet["type"].get<std::string>() == "answer")) {
-        ProcessAnswer(sender, sessionID, number, channel, packet);
-        return;
+    if ((packet.contains("type")==true) && (packet["type"].get<std::string>() == "answer"))
+    {
+        std::cout << "answer" << std::endl;
+    
+        ProcessAnswer (sender, sessionID, number, channel, packet);
+        return ;
     }
 
-    if (packet.contains("candidate")) {
-        ProcessCandidate(sender, sessionID, number, channel, packet);
-        return;
+    if (packet.contains("candidate")==true)
+    {
+        std::cout << "candidate" << std::endl;
+        ProcessCandidate (sender, sessionID, number, channel, packet);
+        return ;
     }
 
-    if ((packet.contains("hangup")) && (packet["hangup"].get<bool>() == true)) {
-        Hangup(sender, sessionID, number, channel);
-        return;
+    if ((packet.contains("hangup")==true) && (packet["hangup"].get<bool>()==true))
+    {
+        std::cout << "hangup" << std::endl;
+        Hangup (sender, sessionID, number, channel);
+        return ;
     }
 }
 ```
@@ -70,7 +82,7 @@ The method extracts a session identifier by concatenating `number` and `channel`
 The primary usage of `ExecuteSignalCommand` occurs in `main.cpp`, where it is called to handle incoming signaling messages from a network or messaging layer.
 
 ```cpp
-487:498:/home/mhefny/TDisk/public_versions/drone_engage/drone_engage_camera_2025/src/main.cpp
+487:498:./src/main.cpp
 // Handle signaling message
 std::cout << "INFO: TYPE_AndruavMessage_Signaling" << std::endl;
 
@@ -92,6 +104,7 @@ Overall, this function is **centrally used** in the system's WebRTC signaling fl
 - The `sessionID` is constructed by simple string concatenation (`number + channel`), which assumes no delimiter collision — this could be fragile if either field contains overlapping characters.
 - The function does **not handle unknown or malformed packets** — it silently ignores any `packet` that doesn’t match the expected keys (`joinme`, `type`, `candidate`, `hangup`), which may make debugging difficult.
 - Session lookup uses a linear search through `m_SessionMap` via `findSessionInfoBySessionID`, which is less efficient than direct map lookup — though acceptable for small session counts.
+- **Updated in v3.12.0**: Function now includes debug output statements showing the type of signaling message being processed ("answer", "candidate", "hangup").
 
 ---
 

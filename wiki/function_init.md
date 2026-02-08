@@ -8,26 +8,24 @@ It orchestrates the setup of serial communication, command-line argument parsing
 The `init` function is the primary entry point for initializing the DroneEngage camera module. It is called once during program startup and performs a sequence of critical setup steps before the system begins normal operation.
 
 ```cpp
-178:278:/home/mhefny/TDisk/public_versions/drone_engage/drone_engage_camera_2025/src/main.cpp
+172:278:./src/main.cpp
 void init(int argc, char *argv[])
 {
     instance_time_stamp = std::time(nullptr);
 
-    // Initialize serial communication interface
+    // initialize serial
     initSerial();
 
-    // Parse command-line arguments (e.g. --config, --version)
     initArguments(argc, argv);
 
-    // Log startup banner
-    std::cout << "=================== STARTING PLUGIN ===================" << std::endl;
+    // Reading Configuration
+    std::cout << std::endl
+              << "=================== " << "STARTING PLUGIN ===================" << std::endl;
     _version();
 
-    // Load and initialize configuration files
     cConfigFile.initConfigFile(configName.c_str());
     cLocalConfigFile.InitConfigFile(localConfigName.c_str());
 
-    // Ensure a unique module key exists
     ModuleKey = cLocalConfigFile.getStringField("module_key");
     if (ModuleKey == "")
     {
@@ -36,34 +34,69 @@ void init(int argc, char *argv[])
         cLocalConfigFile.apply();
     }
 
-    // Read JSON config and log module info
     Json_de jsonConfig = cConfigFile.GetConfigJSON();
+
     const std::string ModuleID = jsonConfig["module_id"].get<std::string>();
-    std::cout << "DroneEngage Plugin Module: " << ModuleID << std::endl;
 
-    // Initialize WebRTC camera subsystem
+    std::cout << _LOG_CONSOLE_BOLD_TEXT << "DroneEngage Plugin Module: " << _SUCCESS_CONSOLE_BOLD_TEXT << ModuleID << _NORMAL_CONSOLE_TEXT_ << std::endl;
+    std::cout << _LOG_CONSOLE_BOLD_TEXT << "Class Type: " << _SUCCESS_CONSOLE_BOLD_TEXT << "camera" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+
+    std::cout << std::asctime(std::localtime(&instance_time_stamp)) << instance_time_stamp << " seconds since the Epoch" << std::endl;
+
+    // INIT WEBRTC
+
     cWEBRTC_Plugin.initCameras();
-
-    // Configure cameras: either by list or index range from config
     if (!jsonConfig.contains("camera"))
     {
-        const int minCameraIndex = jsonConfig.contains("camera_start_index") ? jsonConfig["camera_start_index"].get<int>() : 0;
-        const int maxCameraIndex = jsonConfig.contains("camera_end_index") ? jsonConfig["camera_end_index"].get<int>() : 999;
-        cWEBRTC_Plugin.addCameraByRange(minCameraIndex, maxCameraIndex);
+        // if no camera record or old style data then assume from (0 to 999)
+        if (!jsonConfig.contains("camera"))
+        {
+            // TODO: REMOVE THIS IN LATER VERSIONS.
+            //  backward compatibility - will be removed soon.
+            const int minCameraIndex = jsonConfig.contains("camera_start_index") ? jsonConfig["camera_start_index"].get<int>() : 0;
+            const int maxCameraIndex = jsonConfig.contains("camera_end_index") ? jsonConfig["camera_end_index"].get<int>() : 999;
+
+            // Keep this from 0 to 999
+            cWEBRTC_Plugin.addCameraByRange(minCameraIndex, maxCameraIndex);
+        }
     }
     else
     {
         Json_de camera = jsonConfig["camera"];
+        
         if (camera.contains("camera_list"))
         {
-            for (auto cameraItem : camera["camera_list"])
+            Json_de jsonCameraList = camera["camera_list"];
+
+            size_t numItems = jsonCameraList.size();
+
+            if (numItems == 0)
             {
+                std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "ERROR in Config File" << _INFO_BOLD_CONSOLE_TEXT << " camera_list" << _ERROR_CONSOLE_BOLD_TEXT_ << " field contains no entries." << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                std::cout << _NORMAL_CONSOLE_TEXT_ << "Suggest:" << _TEXT_BOLD_HIGHTLITED_ << "Please define at least one camera." << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            }
+
+            for (auto cameraItem : jsonCameraList)
+            {
+                if (cameraItem["name"].get<std::string>().empty())
+                    continue; // most propably it is an extra comma after last field.
+
                 if (cameraItem.contains("device_num"))
                 {
-                    cWEBRTC_Plugin.addCameraByID(cameraItem["name"].get<std::string>(), cameraItem["device_num"].get<int>());
+                    std::cout << _LOG_CONSOLE_BOLD_TEXT << "Trying to init: " << _INFO_CONSOLE_TEXT << cameraItem["name"].get<std::string>() << _LOG_CONSOLE_BOLD_TEXT << " \\dev\\video " << _INFO_CONSOLE_TEXT << cameraItem["device_num"].get<int>() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+
+                    if (!cWEBRTC_Plugin.addCameraByID(cameraItem["name"].get<std::string>(), cameraItem["device_num"].get<int>()))
+                    {
+                        std::cout << _ERROR_CONSOLE_TEXT_ << "failed" << _NORMAL_CONSOLE_TEXT_ << std::endl;
+                    }
+
+                    continue;
                 }
-                else if (cameraItem.contains("device_name"))
+
+                if (cameraItem.contains("device_name"))
                 {
+                    std::cout << _LOG_CONSOLE_BOLD_TEXT << "Trying to init: " << _INFO_CONSOLE_TEXT << cameraItem["name"].get<std::string>() << _LOG_CONSOLE_BOLD_TEXT << "  " << _INFO_CONSOLE_TEXT << cameraItem["device_name"].get<std::string>() << _NORMAL_CONSOLE_TEXT_ << std::endl;
+
                     cWEBRTC_Plugin.addCameraByDeviceName(cameraItem["name"].get<std::string>(), cameraItem["device_name"].get<std::string>());
                 }
             }
@@ -80,6 +113,7 @@ void init(int argc, char *argv[])
   - Generates and persists a unique `module_key` if not present.
   - Initializes WebRTC camera interfaces.
   - Starts UDP communication via `cModule.init()` (indirectly through `initUavosModule`, though not shown in direct call tree).
+  - **Updated in v3.12.0**: Enhanced camera initialization with better error handling and detailed logging for camera setup failures.
 - **Returns**: `void` — this is a setup routine with no return value.
 
 Note: While `initUavosModule()` is logically part of initialization and calls `cModule.init(...)`, it is not directly invoked inside `init()` in the provided context — this may indicate a missing call or deferred execution.
@@ -116,6 +150,7 @@ It interacts heavily with:
 - `init` does **not** directly call `initUavosModule`, which contains the actual `cModule.init(...)` call for UDP communication. This suggests either a later manual call or a potential gap in the initialization flow.
 - The function generates a persistent `module_key` in the local config if none exists, using a timestamp from `get_time_usec()` — this ensures module identity consistency across restarts.
 - Backward compatibility logic exists for older config formats (e.g. `camera_start_index`), marked with a `TODO: REMOVE THIS IN LATER VERSIONS` comment, indicating planned refactoring.
+- **Updated in v3.12.0**: Improved camera configuration validation with better error messages when `camera_list` is empty, and enhanced logging with colored console output for better visibility during initialization.
 
 ---
 
