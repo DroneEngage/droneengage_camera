@@ -57,7 +57,7 @@ class VideoDevCapturerComposite : public webrtc::VideoSourceInterface<webrtc::Vi
             // #endif
             // return m_Capturer->CaptureStarted();
 
-            return m_active;
+            return m_Capturer->CaptureStarted();
         }
     
     public:
@@ -126,7 +126,7 @@ class VideoDevCapturerComposite : public webrtc::VideoSourceInterface<webrtc::Vi
         webrtc::VideoRotation m_rotation;
         
 
-        bool m_active = false;
+        bool m_callback_registered = false;
 
     private:
         std::chrono::high_resolution_clock::time_point m_last_frame_rate_check_time;

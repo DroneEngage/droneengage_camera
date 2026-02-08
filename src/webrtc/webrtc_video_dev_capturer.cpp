@@ -29,11 +29,7 @@ bool de::stream_webrtc::VideoDevCapturerComposite::Init(size_t width,
     return false;
   }
 
-  // link capturer to sink to receive onFrame
-  // notice that this OnFrame has nothing to do with Stream->getTrack->AddorUpdateSinlk()
-  // this is a local onFrame where you can change frame contents from the very first beginning.
-  // actually THIS "RegisterCaptureDataCallback" is a mandatory step for frame and delevering it to TrackSource.
-  m_Capturer->RegisterCaptureDataCallback(this);
+  m_callback_registered = false;
 
   // start capturing with given parameters.
   //video_info->GetCapability(m_Capturer->CurrentDeviceName(), 0, m_cabability);
@@ -79,6 +75,12 @@ bool de::stream_webrtc::VideoDevCapturerComposite::StartCapture()
     return false;
   }
 
+  if (!m_callback_registered)
+  {
+    m_Capturer->RegisterCaptureDataCallback(this);
+    m_callback_registered = true;
+  }
+
   if (m_Capturer->StartCapture(m_cabability) != 0) {
     #ifdef DDEBUG
     std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << __FILE__ << ".2." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -95,8 +97,7 @@ bool de::stream_webrtc::VideoDevCapturerComposite::StartCapture()
 
   if (m_Capturer->CaptureStarted())
   {
-    m_active = true;
-    
+    // Capture is now active - state is tracked by m_Capturer->CaptureStarted()
   }
     #ifdef DDEBUG
     std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -115,7 +116,6 @@ bool de::stream_webrtc::VideoDevCapturerComposite::StopCapture()
   
 
   if (!m_Capturer) {
-    m_active = false;
     return false;
   }
 
@@ -124,7 +124,11 @@ bool de::stream_webrtc::VideoDevCapturerComposite::StopCapture()
     return false;
   }
 
-  m_active = false;
+  if (m_callback_registered)
+  {
+    m_Capturer->DeRegisterCaptureDataCallback();
+    m_callback_registered = false;
+  }
   
     #ifdef DDEBUG
     std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ <<  __FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -181,10 +185,7 @@ void de::stream_webrtc::VideoDevCapturerComposite::Destroy() {
     return;
   }
 
-  m_Capturer->StopCapture();
-
-  
-  m_Capturer->DeRegisterCaptureDataCallback();
+  StopCapture();
   
   
 // Release reference to VCM.

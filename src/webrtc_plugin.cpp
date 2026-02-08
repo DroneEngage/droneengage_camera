@@ -42,6 +42,15 @@ void de::CWEBRTC_Plugin::initCameras()
     // get all devices available.
     de::stream_webrtc::CSource::GetDevices(m_videoDeviceInfoList,m_actualVideoSourcesCount);
 
+    for (uint i=0; i<m_actualVideoSourcesCount; ++i)
+    {
+        m_videoDeviceInfoList[i].active = 0;
+        if (m_videoDeviceInfoList[i].capturer != nullptr)
+        {
+            m_videoDeviceInfoList[i].capturer->StopCapture();
+        }
+    }
+
     // Write Available Camera(s) in Console.
     for (uint i=0; i<m_actualVideoSourcesCount; ++i)
     {
@@ -100,8 +109,7 @@ bool de::CWEBRTC_Plugin::addCameraByID (std::string cameraVideoName, int cameraV
             filled = true;
 
             // Start Capture ... Should be solved Later and Start Capture only when Start Streaming/
-            m_videoDeviceInfoList[i].capturer->StartCapture();
-            m_videoDeviceInfoList[i].active += 1;
+            m_videoDeviceInfoList[i].capturer->StopCapture();
                 
             return true;
         }
@@ -129,8 +137,7 @@ bool de::CWEBRTC_Plugin::addCameraByDeviceName (std::string cameraVideoName, std
             filled = true;
 
             // Start Capture ... Should be solved Later and Start Capture only when Start Streaming/
-            m_videoDeviceInfoList[i].capturer->StartCapture();
-            m_videoDeviceInfoList[i].active += 1;
+            m_videoDeviceInfoList[i].capturer->StopCapture();
                 
             return true;
         }
@@ -171,8 +178,7 @@ void de::CWEBRTC_Plugin::addCameraByRange(int startVideoIndex, int endVideoIndex
             {
                 std::cout << _SUCCESS_CONSOLE_BOLD_TEXT_ << " Selected" << _NORMAL_CONSOLE_TEXT_;
                 // Start Capture ... Should be solved Later and Start Capture only when Start Streaming/
-                m_videoDeviceInfoList[i].capturer->StartCapture();
-                m_videoDeviceInfoList[i].active += 1;
+                m_videoDeviceInfoList[i].capturer->StopCapture();
                 
             }
             else
@@ -270,7 +276,7 @@ void de::CWEBRTC_Plugin::cleaning()
         #endif
 
         std::string sessionID =  deleteMe[0];
-        deleteMe.pop_back();
+        deleteMe.erase(deleteMe.begin());
         const STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
         if ( sessionInfo == NULL)
         {
@@ -289,7 +295,7 @@ void de::CWEBRTC_Plugin::cleaning()
         // Decrement active count for the camera and stop capture if no more active sessions
         de::stream_webrtc::STRUCT_DEVICE_INFO deviceInfo = findDeviceInfoByLocalName(sessionInfo->channelName.c_str());
         if (deviceInfo.device_num != -1) {
-            deviceInfo.active -= 1;
+            if (deviceInfo.active > 0) deviceInfo.active -= 1;
             if (deviceInfo.active <= 0) {
                 deviceInfo.active = 0;
                 if (deviceInfo.capturer->isCapturing()) {
@@ -348,8 +354,24 @@ void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std:
         sessionInfoNew.channelNumber = channelNumber;
         sessionInfoNew.channelName = device_info.unique_name;  // Use unique_name for proper tracking
 
+        bool startedCaptureHere = false;
+
+        if (sessionInfoNew.peerConnectionManager == nullptr)
+        {
+            #ifdef DDEBUG
+            std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            #endif
+
+            sessionInfoNew.peerConnectionManager = new webrtc::RefCountedObject<de::stream_webrtc::CPeerConnectionManager>(this);
+            if (!sessionInfoNew.peerConnectionManager->CreatePeerConnection(sessionID, senderPartyID, channelName, channelNumber))
+            {
+                return ;
+            }
+        }
         
-        if ((!device_info.capturer->isCapturing()))
+        // Start capture only when we're actually creating a session
+        bool wasAlreadyCapturing = device_info.capturer->isCapturing();
+        if (!wasAlreadyCapturing)
         {
             std::cout << _LOG_CONSOLE_TEXT << "Start Capturing " << _INFO_BOLD_CONSOLE_TEXT << device_info.device_name.c_str() <<  _NORMAL_CONSOLE_TEXT_ << std::endl;
             if (!device_info.capturer->StartCapture())
@@ -366,33 +388,48 @@ void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std:
             {
                 std::cout <<  _SUCCESS_CONSOLE_TEXT_ << " Capturer " << _SUCCESS_CONSOLE_BOLD_TEXT_ << "DEBUG: Capturer started successfully" << _NORMAL_CONSOLE_TEXT_ << std::endl;
             }
-        }
-
-        device_info.active += 1;
-        updateDeviceInfoByLocalName(device_info.unique_name.c_str(), device_info);
-
-        if (sessionInfoNew.peerConnectionManager == nullptr)
-        {
-            #ifdef DDEBUG
-            std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
-            #endif
-
-            sessionInfoNew.peerConnectionManager = new webrtc::RefCountedObject<de::stream_webrtc::CPeerConnectionManager>(this);
-            sessionInfoNew.peerConnectionManager->CreatePeerConnection(sessionID, senderPartyID, channelName, channelNumber);
+            startedCaptureHere = true;
         }
         
         webrtc::scoped_refptr<de::stream_webrtc::CapturerTrackSource> capturerTrackSource = webrtc::make_ref_counted<de::stream_webrtc::CapturerTrackSource>(device_info.capturer);
         webrtc::scoped_refptr<webrtc::VideoTrackInterface> videoTrackInterface = m_connection->CreateVideoTrackInterface(device_info.unique_name, capturerTrackSource.get());
+        if ((videoTrackInterface == nullptr) || (!videoTrackInterface.get()))
+        {
+            if (startedCaptureHere)
+            {
+                device_info.capturer->StopCapture();
+            }
+            return ;
+        }
         
         // IMPORTANT
         // This function creates a stream for this SINGLE TRACK. SO name the stream with the same of the track.
         // FIRE FOX has a bug that it overwrites track ids and label so naming stream like track helps.
         sessionInfoNew.peerConnectionManager->AddTrack(videoTrackInterface,{device_info.unique_name});
         
-        sessionInfoNew.peerConnectionManager->CreateOffer();
+        if (!sessionInfoNew.peerConnectionManager->CreateOffer())
+        {
+            if (startedCaptureHere)
+            {
+                device_info.capturer->StopCapture();
+            }
+            return ;
+        }
         
         // make it last after setting all structure items as they will be copied.
-        m_SessionMap.insert(std::make_pair(sessionID.c_str(),sessionInfoNew));
+        std::pair<std::map<std::string, STRUCT_SESSION_INFO>::iterator, bool> r = m_SessionMap.insert(std::make_pair(sessionID.c_str(),sessionInfoNew));
+        if (!r.second)
+        {
+            if (startedCaptureHere)
+            {
+                device_info.capturer->StopCapture();
+            }
+            return ;
+        }
+
+        // Only increment active count after everything is successfully created
+        device_info.active += 1;
+        updateDeviceInfoByLocalName(device_info.unique_name.c_str(), device_info);
        
 
         
@@ -523,7 +560,10 @@ void de::CWEBRTC_Plugin::Hangup (const std::string& senderPartyID, const std::st
     }
     
    
-    sessionInfo->peerConnectionManager->Close();
+    // Additional safety check before closing
+    if (sessionInfo->peerConnectionManager != nullptr) {
+        sessionInfo->peerConnectionManager->Close();
+    }
     
     // Decrement active count for the camera and stop capture if no more active sessions
     de::stream_webrtc::STRUCT_DEVICE_INFO deviceInfo = findDeviceInfoByLocalName(sessionInfo->channelName.c_str());
