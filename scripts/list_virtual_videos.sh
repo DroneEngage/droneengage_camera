@@ -1,15 +1,5 @@
 #!/bin/bash
 
-# 1. Clear and Reload
-sudo modprobe -r v4l2loopback
-sudo modprobe v4l2loopback devices=5 video_nr=1,2,3,4,5,6 \
-     card_label="DE-CAM1,SIM-CAM1,DE-TRK,DE-RPI,DE-THERMAL,DE-AI" \
-     exclusive_caps=1,1,1,1,1,1
-
-echo "Listing v4l2loopback devices from sysfs:"
-echo "---------------------------------------"
-
-# 2. Iterate through virtual video devices in sysfs
 for syspath in /sys/devices/virtual/video4linux/video*; do
     if [ -d "$syspath" ]; then
         # Get the device node name (e.g., video1)
