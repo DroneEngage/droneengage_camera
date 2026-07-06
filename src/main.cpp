@@ -159,11 +159,18 @@ void initUavosModule(int argc, char *argv[])
         std::cout << _LOG_CONSOLE_BOLD_TEXT << "WARNING:" << _INFO_CONSOLE_TEXT << " MISSING FIELD " << _ERROR_CONSOLE_BOLD_TEXT_ << "s2s_udp_packet_size " << _INFO_CONSOLE_TEXT << "is missing in config file. default value " << _ERROR_CONSOLE_BOLD_TEXT_ << std::to_string(DEFAULT_UDP_DATABUS_PACKET_SIZE) << _INFO_CONSOLE_TEXT << " is used." << _NORMAL_CONSOLE_TEXT_ << std::endl;
     }
 
+    bool use_unix_socket = false;
+    if (validateField(jsonConfig, "use_unix_socket", Json_de::value_t::boolean))
+    {
+        use_unix_socket = jsonConfig["use_unix_socket"].get<bool>();
+    }
+
     cModule.init(jsonConfig["s2s_udp_target_ip"].get<std::string>(),
                  std::stoi(jsonConfig["s2s_udp_target_port"].get<std::string>()),
                  jsonConfig["s2s_udp_listening_ip"].get<std::string>(),
                  std::stoi(jsonConfig["s2s_udp_listening_port"].get<std::string>()),
-                 udp_chunk_size);
+                 udp_chunk_size,
+                 use_unix_socket);
 }
 
 /**
