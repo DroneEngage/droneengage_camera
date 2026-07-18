@@ -23,8 +23,6 @@ void CWebRTCMessageParser::parseRemoteExecute(Json_de &andruav_message)
     {
     case RemoteCommand_RECORDVIDEO:
     {
-        std::cout << "Key " << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: RemoteCommand_RECORDVIDEO" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-        std::cout << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: TYPE_AndruavMessage_Signaling" << _NORMAL_CONSOLE_TEXT_ << std::endl;
         if (!andruav_message.contains(ANDRUAV_PROTOCOL_SENDER))
         {
             // cannot send this command as broadcast.
@@ -33,6 +31,7 @@ void CWebRTCMessageParser::parseRemoteExecute(Json_de &andruav_message)
 
         bool startIfTrue = cmd["Act"].get<bool>();
         std::string channelName = cmd["T"].get<std::string>();
+        std::string senderPartyID = andruav_message[ANDRUAV_PROTOCOL_SENDER].get<std::string>();
 
         if (startIfTrue == true)
         {
@@ -43,28 +42,27 @@ void CWebRTCMessageParser::parseRemoteExecute(Json_de &andruav_message)
             m_WEBRTC_Plugin.stopVideoRecording(andruav_message);
         }
 
-        m_WEBRTC_Plugin.createJSONID(false);
+        m_WEBRTC_Plugin.sendCameraList(senderPartyID);
     }
     break;
 
     case RemoteCommand_STREAMVIDEO:
     {
-        // const bool act = cmd["Act"].asBool();
-        // if (!act)
-        // {
-        //     // act true is not handled here.
-        //     //TODO: replace act false with hangout signalling or replicate it with another signalling message "hangout"
-
-        // }
-        m_WEBRTC_Plugin.createJSONID(false);
+        if (andruav_message.contains(ANDRUAV_PROTOCOL_SENDER))
+        {
+            std::string senderPartyID = andruav_message[ANDRUAV_PROTOCOL_SENDER].get<std::string>();
+            m_WEBRTC_Plugin.sendCameraList(senderPartyID);
+        }
     }
     break;
 
     case RemoteCommand_SWITCHCAM:
     {
-        //_camera.nextCamera (jmsg.sd);
-        std::cout << "Key " << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: RemoteCommand_SWITCHCAM" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-        m_WEBRTC_Plugin.createJSONID(false);
+        if (andruav_message.contains(ANDRUAV_PROTOCOL_SENDER))
+        {
+            std::string senderPartyID = andruav_message[ANDRUAV_PROTOCOL_SENDER].get<std::string>();
+            m_WEBRTC_Plugin.sendCameraList(senderPartyID);
+        }
     }
     break;
 
@@ -92,7 +90,11 @@ void CWebRTCMessageParser::parseCommand(Json_de &andruav_message, const char *fu
     case TYPE_AndruavMessage_Ctrl_Cameras:
     {
         m_WEBRTC_Plugin.startImageCapturing(andruav_message);
-        m_WEBRTC_Plugin.createJSONID(false);
+        if (andruav_message.contains(ANDRUAV_PROTOCOL_SENDER))
+        {
+            std::string senderPartyID = andruav_message[ANDRUAV_PROTOCOL_SENDER].get<std::string>();
+            m_WEBRTC_Plugin.sendCameraList(senderPartyID);
+        }
     }
     break;
 
@@ -109,7 +111,6 @@ void CWebRTCMessageParser::parseCommand(Json_de &andruav_message, const char *fu
 
         Json_de const packet = w["packet"];
 
-        std::cout << _LOG_CONSOLE_BOLD_TEXT << "INFO: TYPE_AndruavMessage_Signaling" << _NORMAL_CONSOLE_TEXT_ << std::endl;
         if (!andruav_message.contains(ANDRUAV_PROTOCOL_SENDER))
         {
             // cannot send this command as broadcast.
@@ -119,8 +120,8 @@ void CWebRTCMessageParser::parseCommand(Json_de &andruav_message, const char *fu
         m_WEBRTC_Plugin.ExecuteSignalCommand(andruav_message);
         if ((packet.contains("joinme") == true) || (packet.contains("hangup") == true))
         {
-            const Json_de cameraList = m_WEBRTC_Plugin.getDeviceListAsJSON();
-            m_WEBRTC_Plugin.createJSONID(false);
+            std::string senderPartyID = andruav_message[ANDRUAV_PROTOCOL_SENDER].get<std::string>();
+            m_WEBRTC_Plugin.sendCameraList(senderPartyID);
         }
     }
     break;

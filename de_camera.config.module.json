@@ -6,6 +6,9 @@
     "s2s_udp_listening_ip": "0.0.0.0",
     "s2s_udp_listening_port": "60029",
     "s2s_udp_packet_size": "8192",
+    "use_unix_socket"           : true,
+    
+
     "camera": {
         // Camera Devices Configuration
         "camera_start_index": 0,
@@ -23,13 +26,8 @@
     "send_image_gcs": true,
     "iceServers": [
         {
-            "urls": "stun:airgap.droneengage.com:3478",
+            "urls": "stun:airgap:3478",
             "username": "airgap",
-            "password": "1234"
-        },
-        {
-            "urls": "turn:167.114.113.48:3478",
-            "username": "andruav",
             "password": "1234"
         }
     ]

@@ -93,7 +93,7 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
 
     public:
         void createJSONID(const bool resend);
-
+        void sendCameraList(const std::string& targetPartyID);
 
     public:
         de::stream_webrtc::STRUCT_DEVICE_INFO findDeviceInfoByLocalName (const std::string& localName);
