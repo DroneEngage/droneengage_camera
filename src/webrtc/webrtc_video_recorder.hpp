@@ -60,11 +60,15 @@ class  CVideoRecording
         const std::string getMediaFolderPath() const;
         bool saveImageinPNG() const;
         bool sendImageToGCS() const;
+        int getVideoRecordingBitrateKbps() const;
+        bool useHardwareVideoEncoder() const;
+        std::string buildFfmpegRecordCommand(const int& width, const int& height) const;
 
     private:
         uint m_frame_duration = 100;
-        uint m_fps = 10; 
-        bool m_video_file_header_written = false;
+        uint m_fps = 10;
+        // true once the ffmpeg encoder process has been spawned for the current recording
+        bool m_video_pipe_started = false;
         webrtc::Mutex m_lock_video;
         webrtc::Mutex m_lock_image;
         de::util::CTimer m_timer_video;

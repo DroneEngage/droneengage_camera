@@ -83,7 +83,7 @@ int de::stream_webrtc::CSource::GetDeviceNumber (std::string device_name)
 
         close(fd);
 
-        char camera_name[64];
+        char camera_name[64] = {0};
         memcpy(camera_name, cap.card, sizeof(cap.card));
         device_name_instance = std::string(camera_name);
         

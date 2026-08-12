@@ -223,18 +223,21 @@ void de::CWEBRTC_Plugin::OnLocalSdpReadytoSend (const char* sessionID, const cha
     #endif
     
     std::cout << _LOG_CONSOLE_TEXT << "OFFER:" << std::endl <<  _NORMAL_CONSOLE_TEXT_ << std::string(sdp) << std::endl;
-    
+
+    std::lock_guard<std::recursive_mutex> lock(m_session_mutex);
+    const STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID);
+    if (sessionInfo == nullptr) return;
+
     Json_de packet;
-    de::STRUCT_SESSION_INFO sessionInfo = m_SessionMap[sessionID];
     packet["packet"]  = Json_de();
     packet["packet"]["sdp"] = sdp;
     packet["packet"]["type"] = type;
-    packet["number"]  = PartyID; // sessionInfo.channelNumber;
-    packet["channel"] = sessionInfo.channelName;
-    
+    packet["number"]  = PartyID; // sessionInfo->channelNumber;
+    packet["channel"] = sessionInfo->channelName;
+
     Json_de w;
     w["w"] = packet;
-    m_module.sendJMSG (sessionInfo.senderPartyID, w, TYPE_AndruavMessage_Signaling, false);
+    m_module.sendJMSG (sessionInfo->senderPartyID, w, TYPE_AndruavMessage_Signaling, false);
 }
 
 
@@ -243,11 +246,13 @@ void de::CWEBRTC_Plugin::OnIceCandidate (const std::string& sessionID, const web
     #ifdef DEBUG
     std::cout << __FUNCTION__ << __LINE__ << _LOG_CONSOLE_BOLD_TEXT << " DEBUG: OnIceCandidate:" <<_NORMAL_CONSOLE_TEXT_ << std::endl;
     #endif
-    
-    de::STRUCT_SESSION_INFO sessionInfo = m_SessionMap[sessionID];
 
-    de::fcb::CFCBFacade::getInstance().OnIceCandidate(sessionInfo, PartyID, candidate);
-    
+    std::lock_guard<std::recursive_mutex> lock(m_session_mutex);
+    const STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
+    if (sessionInfo == nullptr) return;
+
+    de::fcb::CFCBFacade::getInstance().OnIceCandidate(*sessionInfo, PartyID, candidate);
+
 }
 
 
@@ -259,6 +264,7 @@ void de::CWEBRTC_Plugin::OnIceConnectionDisconnected (const std::string& session
     #endif
     
     // Only mark for deletion if session still exists and connection is actually disconnected
+    std::lock_guard<std::recursive_mutex> lock(m_session_mutex);
     const STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
     if (sessionInfo != NULL && sessionInfo->peerConnectionManager != nullptr) {
         // Check if the peer connection is actually in a disconnected state
@@ -278,6 +284,7 @@ bool de::CWEBRTC_Plugin::IsCorrectCameraIndex (const int cameraIndex)
  * */
 void de::CWEBRTC_Plugin::cleaning()
 {
+    std::lock_guard<std::recursive_mutex> lock(m_session_mutex);
     if (deleteMe.size () > 0)
     {
         #ifdef DEBUG
@@ -328,10 +335,11 @@ void de::CWEBRTC_Plugin::SendOffer (const std::string& senderPartyID, const std:
     if (sessionID.empty())
     {
         std::cout << "Key " << _LOG_CONSOLE_BOLD_TEXT << "DEBUG: null sessionID" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-        
+
         return ;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(m_session_mutex);
 
         STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
         if ( sessionInfo != NULL)
@@ -467,11 +475,12 @@ void de::CWEBRTC_Plugin::ProcessAnswer (
         return ;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(m_session_mutex);
     const STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
     if ( sessionInfo == NULL)
     {
         std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: Session not Found" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-        
+
         return ;
     }
 
@@ -482,8 +491,8 @@ void de::CWEBRTC_Plugin::ProcessAnswer (
         return ;
     }
 
-    de::stream_webrtc::CPeerConnectionManager  * const cPeerConnectionManager = (de::stream_webrtc::CPeerConnectionManager  *) m_SessionMap[sessionID].peerConnectionManager.get();
-    
+    de::stream_webrtc::CPeerConnectionManager  * const cPeerConnectionManager = (de::stream_webrtc::CPeerConnectionManager  *) sessionInfo->peerConnectionManager.get();
+
     cPeerConnectionManager->SetRemoteDescription(packet["type"].get<std::string>(), packet["sdp"].get<std::string>());
     
     #ifdef DDEBUG
@@ -516,6 +525,7 @@ void de::CWEBRTC_Plugin::ProcessCandidate (
         return ;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(m_session_mutex);
     const STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
     if ( sessionInfo == NULL)
     {
@@ -529,8 +539,8 @@ void de::CWEBRTC_Plugin::ProcessCandidate (
     }
     
 
-    de::stream_webrtc::CPeerConnectionManager  * const cPeerConnectionManager = (de::stream_webrtc::CPeerConnectionManager  *) m_SessionMap[sessionID].peerConnectionManager.get();
-    
+    de::stream_webrtc::CPeerConnectionManager  * const cPeerConnectionManager = (de::stream_webrtc::CPeerConnectionManager  *) sessionInfo->peerConnectionManager.get();
+
     std::cout << __FUNCTION__ << __LINE__ << "Key " << _LOG_CONSOLE_TEXT << "DEBUG: ProcessCandidate" << _NORMAL_CONSOLE_TEXT_ << std::endl << packet.dump() << std::endl;
         
     cPeerConnectionManager->AddIceCandidate(packet);
@@ -558,17 +568,18 @@ void de::CWEBRTC_Plugin::Hangup (const std::string& senderPartyID, const std::st
         return ;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(m_session_mutex);
     const STRUCT_SESSION_INFO * sessionInfo = findSessionInfoBySessionID(sessionID.c_str());
     if ( sessionInfo == NULL)
     {
         #ifdef DDEBUG
         std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << __FILE__ << ".1." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
         #endif
-  
+
         return ;
     }
-    
-   
+
+
     // Additional safety check before closing
     if (sessionInfo->peerConnectionManager != nullptr) {
         sessionInfo->peerConnectionManager->Close();
@@ -601,9 +612,23 @@ void de::CWEBRTC_Plugin::Hangup (const std::string& senderPartyID, const std::st
 
 void de::CWEBRTC_Plugin::ExecuteSignalCommand(const Json_de &jMsg)
 {
+    if (!validateField(jMsg, ANDRUAV_PROTOCOL_MESSAGE_CMD, Json_de::value_t::object))
+        return;
+
     // extract command
     const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
+
+    if (!validateField(cmd, "w", Json_de::value_t::object))
+        return;
+
     const Json_de w = cmd["w"];
+
+    if (!validateField(w, "number", Json_de::value_t::string) ||
+        !validateField(w, "channel", Json_de::value_t::string) ||
+        !validateField(w, "packet", Json_de::value_t::object) ||
+        !validateField(jMsg, ANDRUAV_PROTOCOL_SENDER, Json_de::value_t::string))
+        return;
+
     std::string number = w["number"].get<std::string>();
     std::string channel = w["channel"].get<std::string>();
     std::string sender  = jMsg[ANDRUAV_PROTOCOL_SENDER].get<std::string>();
@@ -657,6 +682,7 @@ void de::CWEBRTC_Plugin::ExecuteSignalCommand(const Json_de &jMsg)
 
 de::STRUCT_SESSION_INFO* de::CWEBRTC_Plugin::findSessionInfoBySessionID (const char* sessionID)
 {
+    std::lock_guard<std::recursive_mutex> lock(m_session_mutex);
     std::map<std::string, STRUCT_SESSION_INFO>::iterator it = m_SessionMap.begin();
  
 	// Iterate over the map using Iterator till end.
@@ -677,6 +703,7 @@ de::STRUCT_SESSION_INFO* de::CWEBRTC_Plugin::findSessionInfoBySessionID (const c
 
 bool de::CWEBRTC_Plugin::eraseSessionInfoBySessionID (const char* sessionID)
 {
+    std::lock_guard<std::recursive_mutex> lock(m_session_mutex);
     std::map<std::string, STRUCT_SESSION_INFO>::iterator it = m_SessionMap.begin();
  
 	// Iterate over the map using Iterator till end.
@@ -752,8 +779,15 @@ void de::CWEBRTC_Plugin::rotateCameraFrame (const Json_de &jMsg)
     CWEBRTC_Plugin * cWEBRTC_Plugin;
     cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
 
+    if (!validateField(jMsg, ANDRUAV_PROTOCOL_MESSAGE_CMD, Json_de::value_t::object))
+        return;
+
     const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-    std::string channelName = cmd["a"].get<std::string>(); // empty ""  means first available camera 
+
+    if (!validateField(cmd, "a", Json_de::value_t::string) || !cmd.contains("r") || !cmd["r"].is_number())
+        return;
+
+    std::string channelName = cmd["a"].get<std::string>(); // empty ""  means first available camera
     const int rotaion_angle = cmd["r"].get<int>();
     
     de::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
@@ -779,16 +813,22 @@ void de::CWEBRTC_Plugin::stopVideoRecording (const Json_de &jMsg)
     CWEBRTC_Plugin * cWEBRTC_Plugin;
     cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
 
+    if (!validateField(jMsg, ANDRUAV_PROTOCOL_MESSAGE_CMD, Json_de::value_t::object))
+        return;
+
     const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-    
+
+    if (!validateField(cmd, "T", Json_de::value_t::string))
+        return;
+
     std::string channelName = cmd["T"].get<std::string>();
-    
+
     de::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
     if (device_info.device_num == -1)
     {
-        
+
         std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera " << channelName.c_str() << " Not Found" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-  
+
         return;
     }
 
@@ -824,17 +864,23 @@ void de::CWEBRTC_Plugin::startVideoRecording (const Json_de &jMsg)
     CWEBRTC_Plugin * cWEBRTC_Plugin;
     cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
 
+    if (!validateField(jMsg, ANDRUAV_PROTOCOL_MESSAGE_CMD, Json_de::value_t::object))
+        return;
+
     const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-    
+
+    if (!validateField(cmd, "T", Json_de::value_t::string))
+        return;
+
     const std::string channelName = cmd["T"].get<std::string>();
-    
+
 
     de::stream_webrtc::STRUCT_DEVICE_INFO device_info = cWEBRTC_Plugin->findDeviceInfoByLocalName(channelName.c_str());
     if (device_info.device_num == -1)
     {
-        
+
         std::cout << _ERROR_CONSOLE_BOLD_TEXT_ << "DEBUG: Camera " << channelName.c_str() << " Not Found" << _NORMAL_CONSOLE_TEXT_ << std::endl;
-  
+
         #ifdef DDEBUG
         std::cout <<__FILE__ << "." << __FUNCTION__ << " line:" << __LINE__ << " " << _NORMAL_CONSOLE_TEXT_ << std::endl;
         #endif
@@ -873,8 +919,15 @@ void de::CWEBRTC_Plugin::startImageCapturing (const Json_de &jMsg)
     CWEBRTC_Plugin * cWEBRTC_Plugin;
     cWEBRTC_Plugin = &CWEBRTC_Plugin::getInstance(); 
 
+    if (!validateField(jMsg, ANDRUAV_PROTOCOL_MESSAGE_CMD, Json_de::value_t::object))
+        return;
+
     const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-    std::string channelName = cmd["a"].get<std::string>(); // empty ""  means first available camera 
+
+    if (!validateField(cmd, "a", Json_de::value_t::string) || !cmd.contains("b") || !cmd["b"].is_number() || !cmd.contains("c") || !cmd["c"].is_number())
+        return;
+
+    std::string channelName = cmd["a"].get<std::string>(); // empty ""  means first available camera
     const int numberOfImages = cmd["b"].get<int>();
     const int timeBetweenShots = cmd["c"].get<int>();
     
@@ -913,8 +966,17 @@ void de::CWEBRTC_Plugin::startImageCapturing (const Json_de &jMsg)
 
 void de::CWEBRTC_Plugin::updateLocationInfo(const Json_de &jMsg)
 {
+    if (!validateField(jMsg, ANDRUAV_PROTOCOL_MESSAGE_CMD, Json_de::value_t::object))
+        return;
+
     const Json_de cmd = jMsg[ANDRUAV_PROTOCOL_MESSAGE_CMD];
-    
+
+    for (const char* field : {"la", "ln", "a", "r", "ha", "y"})
+    {
+        if (!cmd.contains(field) || !cmd[field].is_number())
+            return;
+    }
+
     m_location_info.latitude                      = cmd["la"].get<int>();
     m_location_info.longitude                     = cmd["ln"].get<int>();
     m_location_info.altitude                      = cmd["a"].get<int>();
@@ -1003,7 +1065,7 @@ void de::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name, bool send
 
     if (send_image_gcs)
     {
-        std::ifstream rf(output_file_name, std::ios::out | std::ios::binary);
+        std::ifstream rf(output_file_name, std::ios::in | std::ios::binary);
         rf.seekg(0, std::ios::end);
         size_t size = rf.tellg();
         //char * buffer_ptr = new char[size];
@@ -1016,8 +1078,6 @@ void de::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name, bool send
         std::cout << _LOG_CONSOLE_TEXT << "DEBUG: onImageRecorded: " << output_file_name << ":" << std::to_string(size) << _NORMAL_CONSOLE_TEXT_ << std::endl;
         
         m_module.sendBMSG ("", buffer.get(), size, TYPE_AndruavMessage_IMG, true, msg_cmd);
-        
-        buffer.release();
     }
     else
     {

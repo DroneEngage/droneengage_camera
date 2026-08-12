@@ -13,7 +13,14 @@ using namespace de::stream_webrtc;
 
 void CWebRTCMessageParser::parseRemoteExecute(Json_de &andruav_message)
 {
+    if (!validateField(andruav_message, ANDRUAV_PROTOCOL_MESSAGE_CMD, Json_de::value_t::object))
+        return;
+
     const Json_de cmd = andruav_message[ANDRUAV_PROTOCOL_MESSAGE_CMD];
+
+    if (!cmd.contains("C") || !cmd["C"].is_number())
+        return;
+
     const int remoteCommand = cmd["C"].get<int>();
 
 #ifdef DEBUG
@@ -28,6 +35,9 @@ void CWebRTCMessageParser::parseRemoteExecute(Json_de &andruav_message)
             // cannot send this command as broadcast.
             return;
         }
+
+        if (!validateField(cmd, "Act", Json_de::value_t::boolean) || !validateField(cmd, "T", Json_de::value_t::string))
+            return;
 
         bool startIfTrue = cmd["Act"].get<bool>();
         std::string channelName = cmd["T"].get<std::string>();
@@ -77,6 +87,9 @@ void CWebRTCMessageParser::parseRemoteExecute(Json_de &andruav_message)
 
 void CWebRTCMessageParser::parseCommand(Json_de &andruav_message, const char *full_message, const int &full_message_length, int messageType, uint32_t permission)
 {
+    if (!validateField(andruav_message, ANDRUAV_PROTOCOL_MESSAGE_CMD, Json_de::value_t::object))
+        return;
+
     const Json_de cmd = andruav_message[ANDRUAV_PROTOCOL_MESSAGE_CMD];
 
     switch (messageType)

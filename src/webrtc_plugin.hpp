@@ -5,6 +5,8 @@
 #define MIN_CAMERA_INDEX 0
 #define MAX_CAMERA_INDEX 999
 
+#include <mutex>
+
 #include "common.h"
 
 #include "./de_common/helpers/json_nlohmann.hpp"
@@ -152,6 +154,9 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
         
         std::map<std::string, STRUCT_SESSION_INFO> m_SessionMap;
         std::map<std::string, STRUCT_SESSION_INFO> m_localTracksMap;
+        // Guards m_SessionMap and deleteMe, which are written from WebRTC signaling
+        // callbacks (peer connection thread) and read/erased from cleaning() (main thread).
+        std::recursive_mutex m_session_mutex;
 
         std::atomic<bool> filled = false;
         std::vector<de::stream_webrtc::STRUCT_DEVICE_INFO> m_videoDeviceInfoList;

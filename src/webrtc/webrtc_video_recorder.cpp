@@ -8,6 +8,7 @@
 
 #include "../webrtc_plugin.hpp"
 #include "../de_common/helpers/json_nlohmann.hpp"
+#include "../de_common/helpers/util_rpi.hpp"
 using Json_de = nlohmann::json;
 
 extern "C" {
@@ -77,41 +78,129 @@ bool de::stream_webrtc::CVideoRecording::saveImageinPNG() const
 /**
  * @brief reads "send_image_gcs" in config file.
  * default: true
- * @return true 
- * @return false 
+ * @return true
+ * @return false
  */
 bool de::stream_webrtc::CVideoRecording::sendImageToGCS() const
 {
     Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
-    if (jsonConfig.contains("send_image_gcs") == false) 
+    if (jsonConfig.contains("send_image_gcs") == false)
     {
         return true;
     }
-    
+
     const bool use_jpeg = jsonConfig["send_image_gcs"].get<bool>();
-   
+
     return use_jpeg;
 }
 
+
+/**
+ * @brief reads "video_recording_bitrate_kbps" from config file.
+ * default: 2000 kbps, which is a reasonable quality/size trade-off for
+ * drone downlink footage recorded at modest (720p or below) resolutions.
+ *
+ * @return int
+ */
+int de::stream_webrtc::CVideoRecording::getVideoRecordingBitrateKbps() const
+{
+    Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
+    return jsonConfig.value("video_recording_bitrate_kbps", 2000);
+}
+
+
+/**
+ * @brief Whether to use the Raspberry Pi V4L2 M2M hardware H.264 encoder
+ * instead of software libx264. Auto-detected via device-tree model, can be
+ * forced off with "video_recording_hw_encoder": false in config file (e.g.
+ * if the RPi kernel/ffmpeg build does not expose h264_v4l2m2m).
+ *
+ * @return true
+ * @return false
+ */
+bool de::stream_webrtc::CVideoRecording::useHardwareVideoEncoder() const
+{
+    Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
+    if (jsonConfig.value("video_recording_hw_encoder", true) == false)
+    {
+        return false;
+    }
+
+    return helpers::CUtil_Rpi::getInstance().get_rpi_model() >= 0;
+}
+
+
+/**
+ * @brief Builds the ffmpeg command line that turns a raw I420 stream fed on
+ * stdin into a compressed H.264/MP4 file. This replaces the previous
+ * approach of dumping uncompressed YUV4MPEG2 (.y4m) frames directly to disk,
+ * which produced huge files and heavy I/O - impractical on a Raspberry Pi.
+ *
+ * @param width
+ * @param height
+ * @return std::string
+ */
+std::string de::stream_webrtc::CVideoRecording::buildFfmpegRecordCommand(const int& width, const int& height) const
+{
+    // single-quote the output path and escape any embedded single quotes,
+    // since media_folder is user-configurable and passed through the shell.
+    std::string quoted_path;
+    quoted_path.reserve(m_video_file_name.size() + 2);
+    quoted_path += '\'';
+    for (char c : m_video_file_name)
+    {
+        if (c == '\'')
+        {
+            quoted_path += "'\\''";
+        }
+        else
+        {
+            quoted_path += c;
+        }
+    }
+    quoted_path += '\'';
+
+    const int bitrate_kbps = getVideoRecordingBitrateKbps();
+
+    std::string codec_args;
+    if (useHardwareVideoEncoder())
+    {
+        // Hardware-accelerated encode on RPi: near-zero CPU overhead.
+        codec_args = "-c:v h264_v4l2m2m -b:v " + std::to_string(bitrate_kbps) + "k";
+    }
+    else
+    {
+        codec_args = "-c:v libx264 -preset ultrafast -tune zerolatency -b:v " + std::to_string(bitrate_kbps) + "k";
+    }
+
+    std::string cmd = "ffmpeg -hide_banner -loglevel error -y "
+                       "-f rawvideo -pixel_format yuv420p -video_size " + std::to_string(width) + "x" + std::to_string(height) +
+                       " -framerate " + std::to_string(m_fps) +
+                       " -i - -an " + codec_args +
+                       " -pix_fmt yuv420p -movflags +faststart " + quoted_path;
+
+    return cmd;
+}
 
 
 bool de::stream_webrtc::CVideoRecording::startRecording()
 {
     m_timer_video.reset();
     stopRecording();
-    
+
 
     webrtc::MutexLock lock(&m_lock_video); // should be after stop recording as stoprecording uses same lock.
 
-    m_video_file_name = getMediaFolderPath() + "v_" + de::util::CHelper::getFileTimeStamp() + ".y4m";
-    m_video_handler = fopen(m_video_file_name.c_str(), "wb");
-    
-    m_video_file_header_written = false;
+    m_video_file_name = getMediaFolderPath() + "v_" + de::util::CHelper::getFileTimeStamp() + ".mp4";
+    // ffmpeg is spawned lazily on the first frame, once we know width/height (see printVideoFrame).
+    m_video_handler = nullptr;
+
+    m_video_pipe_started = false;
     m_is_video_recording = true;
 
     return true;
 }
-    
+
 
 bool de::stream_webrtc::CVideoRecording::stopRecording()
 {
@@ -119,13 +208,15 @@ bool de::stream_webrtc::CVideoRecording::stopRecording()
 
     if (m_video_handler != nullptr)
     {
-        fclose(m_video_handler);
+        // closing the pipe sends EOF to ffmpeg, which flushes the encoder and
+        // finalizes the MP4 (moov atom) before exiting.
+        pclose(m_video_handler);
         m_video_handler= nullptr;
     }
 
     m_is_video_recording = false;
-    m_video_file_header_written = false;
-    
+    m_video_pipe_started = false;
+
     return true;
 }
 
@@ -170,30 +261,30 @@ int de::stream_webrtc::CVideoRecording::printVideoFrame(const webrtc::VideoFrame
     webrtc::MutexLock lock(&m_lock_video);
     if (!m_is_video_recording) return 0;
 
-    if (m_video_handler == nullptr) return -1;
-    
+    // note: m_video_handler is nullptr until the first frame arrives and the
+    // ffmpeg pipe is lazily spawned below (width/height are needed for that).
+
     webrtc::I420BufferInterface &frame_I420 = *frame.video_frame_buffer()->ToI420();
     const int width = frame_I420.width();
     const int height = frame_I420.height();
     const int chroma_width = frame_I420.ChromaWidth();
     const int chroma_height = frame_I420.ChromaHeight();
 
-    if (!m_video_file_header_written)
-    {   
-        
-        std::string helper_file = m_video_file_name + ".hlp";
-        FILE *fp = fopen(helper_file.c_str(), "wb");
-        fprintf(fp,"vlc --demux rawvideo --rawvid-fps %d  --rawvid-width %d --rawvid-height %d --rawvid-chroma  I420 %s \n",m_fps, width, height, m_video_file_name.c_str());
-        fclose(fp);
+    if (!m_video_pipe_started)
+    {
+        const std::string cmd = buildFfmpegRecordCommand(width, height);
+        m_video_handler = popen(cmd.c_str(), "w");
+        if (m_video_handler == nullptr)
+        {
+            std::cout << __FUNCTION__ << __LINE__ << "Key " << _ERROR_CONSOLE_BOLD_TEXT_ << "Failed to start ffmpeg recorder: " << cmd << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            m_is_video_recording = false;
+            return -1;
+        }
 
-        fprintf(m_video_handler, "YUV4MPEG2 W%d H%d F%d:1 C420\n", width, height,
-          m_fps);
-        
-
-        m_video_file_header_written = true;
+        m_video_pipe_started = true;
     }
 
-    fprintf(m_video_handler, "FRAME\n");
+    // raw I420 planes are fed to ffmpeg's rawvideo demuxer back-to-back, with no framing markers.
     if (printPlane(frame_I420.DataY(), width, height, frame_I420.StrideY()) < 0) {
         return -1;
     }
@@ -203,7 +294,6 @@ int de::stream_webrtc::CVideoRecording::printVideoFrame(const webrtc::VideoFrame
     if (printPlane(frame_I420.DataV(), chroma_width, chroma_height, frame_I420.StrideV()) < 0) {
         return -1;
     }
-    fflush(m_video_handler);
     return 0;
 }
 
