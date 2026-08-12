@@ -66,25 +66,21 @@ Tested on **Ubuntu 22.04**.
 
 ## 5. Drop de_camera's sources into the WebRTC tree
 
-    cp -R /path/to/drone_engage_camera_2025/src/* webrtc/src/examples/de_camera/
-    cp /path/to/drone_engage_camera_2025/BUILD.gn webrtc/src/examples/BUILD.gn
+    cp -R src/* <webrtc-checkout>/src/examples/de_camera/
+    cp BUILD.gn <webrtc-checkout>/src/examples/BUILD.gn
 
 You only need to redo this step after changing `de_camera` source files — you do **not** need to re-run `gclient sync` or the sysroot installs again.
 
-### Using the `local/` automation scripts
+### Automating the workflow
 
-The [`local/`](../local/) folder has a set of scripts that wrap the steps above for a specific dev machine. **Before using them, edit the hard-coded paths at the top of each script** (`WEBRTC_SRC_DIR`, `DE_CAMERA_SOURCE_DIR`, `PROJECT_DIR_BASE`, depot_tools path, etc.) to match your own checkout locations.
+If you build often, it's worth wrapping the steps above in your own scripts:
 
-| Script | What it does |
-|---|---|
-| `sh_update_code.sh` | `cp -R src/* webrtc/src/examples/de_camera/` — syncs local source into the WebRTC tree. |
-| `sh_buildme.sh [amd\|arm]` | Installs the relevant sysroot(s) and runs `ninja` against `out/m137_x86_r` and/or `out/rpi-5_r`. No argument builds both. |
-| `sh_copy_binaries.sh` | Copies the built `de_camera` binaries out of `webrtc/src/out/.../de_camera` into this repo's `compiled_bin/` (x86) and `compiled_rpi_bin/` (RPi) folders. |
-| `sh_do_all.sh` | Runs `sh_update_code.sh`, `sh_buildme.sh`, and `sh_copy_binaries.sh` in sequence — the "just build everything" entry point. |
-| `sh_ssh_copy_code.sh` | Copies `de_camera.config.module.json` and `template.json` into `compiled_rpi_bin/`, then `scp`s the whole folder to a Raspberry Pi (`dronecode.local` by default) using `sshpass`. Edit `REMOTE_HOST`/`REMOTE_USER`/`RPI_PASSWORD` at the top first — prefer switching this to SSH keys for anything beyond a personal dev Pi. |
-| `sh_git_push.sh [-f]` | Not build-related — pushes `release` and `master` branches of this repo to the `backupDT`, `origin_local`, and `upstream` remotes. |
+- a **sync** step that copies this repo's `src/` (and `BUILD.gn`) into the WebRTC checkout's `examples/de_camera` (and `examples/BUILD.gn`),
+- a **build** step that runs `ninja -C out/<target>` for whichever target(s) you need (optionally installing the matching sysroot first),
+- a **collect** step that copies the resulting `de_camera` binary out of `out/<target>/de_camera` into a local binaries folder of your choice, and
+- a **deploy** step that copies the collected binary plus `de_camera.config.module.json` / `template.json` to the target device, e.g. via `scp`/`rsync` over SSH keys.
 
-`sh_buildme.sh` assumes `sh_update_code.sh` already ran (i.e. the WebRTC tree already has current sources) — it only runs `ninja`, it does not copy source files itself.
+These are plain wrappers around the commands in this document — none of the underlying `gn`/`ninja` steps change.
 
 ## 6. gn gen targets and ninja build
 
@@ -124,12 +120,12 @@ The compiled binary lands at `webrtc/src/out/<target>/de_camera`.
 
 ## 7. Deploying to a Raspberry Pi
 
-After building the ARM release binary:
+After building the ARM release binary, copy it plus its config files to the device, e.g.:
 
-    ./local/sh_copy_binaries.sh    # -> compiled_rpi_bin/de_camera
-    ./local/sh_ssh_copy_code.sh    # copies config files + scp's compiled_rpi_bin/* to the Pi
+    scp out/rpi-5_r/de_camera de_camera.config.module.json template.json \
+        pi@<device-host>:/home/pi/drone_engage_binary/de_camera/
 
-`sh_ssh_copy_code.sh` uploads to `pi@dronecode.local:/home/pi/drone_engage_binary/de_camera/` by default — update the `REMOTE_USER`/`REMOTE_HOST`/`REMOTE_PATH` variables at the top of the script for your own device, and prefer SSH keys over the hard-coded password for anything beyond a local test Pi.
+Prefer SSH keys over password auth for anything beyond a local test Pi.
 
 ## Legacy standalone build (deprecated)
 
@@ -145,4 +141,3 @@ This path is **no longer maintained** — the headers/libs under `lib/webrtc-loc
 
 - [README.md](../README.md) — quick-reference version of this guide.
 - [`scripts/README`](../scripts/README) and [`scripts/compile_webrtc/`](../scripts/compile_webrtc) — the raw `gn gen` command reference these instructions are based on.
-- [`local/`](../local/) — the build/deploy automation scripts described in section 5.

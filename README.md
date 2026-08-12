@@ -9,7 +9,7 @@ This module uses native webrtc to stream videos from multiple camera to [WebClie
 
 # Compile The Code
 
-`de_camera` is built **as part of the WebRTC source tree** using `gn`/`ninja` — for both X86 and ARM (RPi) targets. The project is dropped into `webrtc/src/examples/de_camera`, and the `BUILD.gn` in this repo overwrites `webrtc/src/examples/BUILD.gn` to add `de_camera` as an extra example target. See [wiki/webrtc_build_setup.md](wiki/webrtc_build_setup.md) for the full, detailed walkthrough (including what each script in `local/` does); this section is the quick reference.
+`de_camera` is built **as part of the WebRTC source tree** using `gn`/`ninja` — for both X86 and ARM (RPi) targets. The project is dropped into `webrtc/src/examples/de_camera`, and the `BUILD.gn` in this repo overwrites `webrtc/src/examples/BUILD.gn` to add `de_camera` as an extra example target. See [wiki/webrtc_build_setup.md](wiki/webrtc_build_setup.md) for the full, detailed walkthrough; this section is the quick reference.
 
 ## Current WebRTC version
 
@@ -69,13 +69,7 @@ On Ubuntu 22.04:
 
 Copy this project's `src/` into `webrtc/src/examples/de_camera`, and overwrite `webrtc/src/examples/BUILD.gn` with the `BUILD.gn` from this repo.
 
-If you build regularly, use the automation scripts in [`local/`](local/) instead of doing this by hand (edit the paths at the top of each script to match your own WebRTC checkout first):
-
-    local/sh_update_code.sh    # copies src/ -> webrtc/src/examples/de_camera
-    local/sh_buildme.sh        # builds amd64 + arm64 (pass `amd` or `arm` to build just one)
-    local/sh_copy_binaries.sh  # copies built binaries into compiled_bin/ and compiled_rpi_bin/
-    local/sh_do_all.sh         # runs all three of the above in sequence
-    local/sh_ssh_copy_code.sh  # uploads the RPi binary + config to a device over scp
+If you build regularly, it's worth scripting this: a "sync" step that copies `src/` into the WebRTC tree, a "build" step that runs `ninja` against the target output directories, and a "collect" step that copies the resulting `de_camera` binaries back out into your own binaries folder. Deployment to a device (e.g. a Raspberry Pi) is then a plain `scp`/`rsync` of the binary plus its config files.
 
 ## 4. Generate build directories and build
 
