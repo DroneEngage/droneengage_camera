@@ -9,59 +9,33 @@ This module uses native webrtc to stream videos from multiple camera to [WebClie
 
 # Compile The Code
 
+`de_camera` is built **as part of the WebRTC source tree** using `gn`/`ninja` — for both X86 and ARM (RPi) targets. The project is dropped into `webrtc/src/examples/de_camera`, and the `BUILD.gn` in this repo overwrites `webrtc/src/examples/BUILD.gn` to add `de_camera` as an extra example target. See [wiki/webrtc_build_setup.md](wiki/webrtc_build_setup.md) for the full, detailed walkthrough (including what each script in `local/` does); this section is the quick reference.
 
-## for X86
+## Current WebRTC version
 
-first you need webrtc compiled code to get libwebrtc.a 
-you need to use branch 
+We currently build against **WebRTC/Chromium M137**, branch `branch-heads/7151`:
 
-`git ls-remote https://chromium.googlesource.com/external/webrtc --heads refs/remotes/branch-heads/7103`
+    git ls-remote https://chromium.googlesource.com/external/webrtc --heads refs/remotes/branch-heads/7151
 
-this is an old branch and you need **Ubuntu 18.04** to build it.
+(older builds used `branch-heads/7103` on Ubuntu 18.04 — that path is deprecated, see "Legacy build" below.)
 
-Once you have **libwebrtc.a ** just put it in  **/lib/webrtc94-local/lib/x64/Debug** and run 
-
-you can download a compiled version from [here](https://drive.google.com/file/d/10KvinexvvDRUgd6afGLAbMCgCr_h8yM6/view?usp=sharing "here")
-`make debug`
-
-## for Arm
-
-We compile de_camera as part of the WEBRTC project itself. We compiled it as an example next to the examples that already exist.
-
-use BUILD.gn file in this project to overwrite the example BUILD.gn in webrtc source, and add the current project file inside **src** in a folder called de_camera similar to:
-
-/home/webrtc/webrtc/webrtc-checkout/src/examples/de_camera
-
-
-[![de_camera](https://github.com/DroneEngage/droneengage_camera/blob/master/res/virtual_machine_de_camera.png?raw=true)](https://github.com/DroneEngage/droneengage_camera/blob/master/res/virtual_machine_de_camera.png?raw=true)
-
-then compile webrtc and it will compile project de_camera as part of the project.
-then you can use it in RPI or JetsonNano
-
-## To Install Scripts for Camera
-
-Please check [Script Section](https://github.com/DroneEngage/droneengage_camera/blob/master/scripts/README.md "Script Section")
-
-
-
+## 1. Install de_camera build dependencies
 
     sudo apt-get install nlohmann-json3-dev
-    sudo apt-get install libjsoncpp-dev # Install the development package
-    sudo apt-get install libjpeg-dev  # Install the development package
-    sudo apt-get install libx11-dev libexpat1-dev 
+    sudo apt-get install libjsoncpp-dev  # Install the development package
+    sudo apt-get install libjpeg-dev     # Install the development package
+    sudo apt-get install libx11-dev libexpat1-dev
 
-    sudo apt-get install clang 
+    sudo apt-get install clang
     sudo apt-get install libc++-dev
 
+## 2. Prepare the WebRTC environment (once)
 
-## How to prepare WEBRTC environment
+On Ubuntu 22.04:
 
-On Ubuntu 22.04
+    conda create -n webrtc_7151 python=3.10
+    conda activate webrtc_7151
 
-    conda create -n webrtc_7103 python=3.10
-    conda env activate webrtc_7103
-    
-    
     sudo apt update
     sudo apt install build-essential
     sudo apt install python-is-python3
@@ -76,35 +50,67 @@ On Ubuntu 22.04
     sudo apt install libxtst-dev
     sudo apt install libgtk-3-dev
 
-
     git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
     export PATH="$PATH:/path/to/depot_tools"
     mkdir webrtc
     cd webrtc
     fetch --nohooks webrtc
     cd src
-    git ls-remote https://chromium.googlesource.com/external/webrtc --heads branch-heads/7103
-    git checkout -b refs/branch-heads/7103
+    git checkout -b local_7151 refs/remotes/branch-heads/7151
     gclient sync
 
+    # Install sysroots for the architectures you plan to build
     build/linux/sysroot_scripts/install-sysroot.py --arch=amd64
+    build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
 
     gn gen out/Default
 
+## 3. Add de_camera to the WebRTC tree
 
-### To Compile for X86
+Copy this project's `src/` into `webrtc/src/examples/de_camera`, and overwrite `webrtc/src/examples/BUILD.gn` with the `BUILD.gn` from this repo.
 
-    python build/linux/sysroot_scripts/install-sysroot.py --arch=amd64
+If you build regularly, use the automation scripts in [`local/`](local/) instead of doing this by hand (edit the paths at the top of each script to match your own WebRTC checkout first):
 
-    gn gen out/m137_x86 --args='is_debug=true use_system_libjpeg=false treat_warnings_as_errors=false  rtc_include_tests=false rtc_use_h264=true  rtc_build_examples=true rtc_build_tools=true rtc_exclude_audio_processing_module=true rtc_use_dummy_audio_file_devices=true target_cpu="x64" is_clang=true  '
+    local/sh_update_code.sh    # copies src/ -> webrtc/src/examples/de_camera
+    local/sh_buildme.sh        # builds amd64 + arm64 (pass `amd` or `arm` to build just one)
+    local/sh_copy_binaries.sh  # copies built binaries into compiled_bin/ and compiled_rpi_bin/
+    local/sh_do_all.sh         # runs all three of the above in sequence
+    local/sh_ssh_copy_code.sh  # uploads the RPi binary + config to a device over scp
 
+## 4. Generate build directories and build
 
+Run from `webrtc/src`. Generate each target/configuration once, then build it with `ninja`.
 
-### To compile for RPI-5 / RPI-4 / RPI-Z2 W
+### X86
 
-    python build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
+    build/linux/sysroot_scripts/install-sysroot.py --arch=amd64
 
-    gn gen out/rpi-5_d --args='is_debug=true use_system_libjpeg=true treat_warnings_as_errors=false  rtc_include_tests=false rtc_use_h264=true  rtc_build_examples=true rtc_build_tools=true rtc_exclude_audio_processing_module=true rtc_use_dummy_audio_file_devices=true target_cpu="arm64" is_clang=true  '
+    # debug
+    gn gen out/m137_x86_d --args='is_debug=true use_system_libjpeg=false treat_warnings_as_errors=false rtc_include_tests=false rtc_use_h264=true rtc_build_examples=true rtc_build_tools=true rtc_exclude_audio_processing_module=true rtc_use_dummy_audio_file_devices=true target_cpu="x64" is_clang=true'
 
+    # release
+    gn gen out/m137_x86_r --args='is_debug=false use_system_libjpeg=false treat_warnings_as_errors=false rtc_include_tests=false rtc_use_h264=true rtc_build_examples=true rtc_build_tools=true rtc_exclude_audio_processing_module=true rtc_use_dummy_audio_file_devices=true target_cpu="x64" is_clang=true'
 
+    ninja -C out/m137_x86_r
 
+### ARM64 (RPi-5 / RPi-4 / RPi-Z2 W)
+
+    build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
+
+    # debug
+    gn gen out/rpi-5 --args='is_debug=true use_system_libjpeg=true treat_warnings_as_errors=false rtc_include_tests=false rtc_use_h264=true rtc_build_examples=true rtc_build_tools=true rtc_exclude_audio_processing_module=true rtc_use_dummy_audio_file_devices=true target_cpu="arm64" is_clang=true'
+
+    # release
+    gn gen out/rpi-5_r --args='is_debug=false use_system_libjpeg=true treat_warnings_as_errors=false rtc_include_tests=false rtc_use_h264=true rtc_build_examples=true rtc_build_tools=true rtc_exclude_audio_processing_module=true rtc_use_dummy_audio_file_devices=true target_cpu="arm64" is_clang=true'
+
+    ninja -C out/rpi-5_r
+
+The compiled binary is `out/<target>/de_camera`. The same code/config also works on RPi-4 and RPi-Zero 2 W.
+
+## Legacy build (deprecated)
+
+Older versions of this project could also be compiled standalone against a prebuilt `libwebrtc.a` (see `lib/webrtc-local/` and the root `Makefile`, using `branch-heads/7103` on Ubuntu 18.04). This path is no longer maintained — use the gn/ninja workflow above instead.
+
+## To Install Scripts for Camera
+
+See [scripts/README](https://github.com/DroneEngage/droneengage_camera/blob/master/scripts/README "Script Section") and [`scripts/compile_webrtc/`](scripts/compile_webrtc) for the raw compile scripts referenced above.
