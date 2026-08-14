@@ -930,6 +930,9 @@ void de::CWEBRTC_Plugin::startImageCapturing (const Json_de &jMsg)
     std::string channelName = cmd["a"].get<std::string>(); // empty ""  means first available camera
     const int numberOfImages = cmd["b"].get<int>();
     const int timeBetweenShots = cmd["c"].get<int>();
+    // Optional field "e": when 1, a low-res PNG is sent to GCS (saved file stays full-res).
+    // Absent or 0 means send the full-res image to GCS (legacy behavior).
+    const bool gcs_small = (cmd.contains("e") && cmd["e"].is_number() && cmd["e"].get<int>() == 1);
     
     std::cout << __FULL_DEBUG__  << "Channel:" << channelName << std::endl;
     
@@ -952,7 +955,7 @@ void de::CWEBRTC_Plugin::startImageCapturing (const Json_de &jMsg)
     {
         device_info.capturer->StartCapture();
     }
-    device_info.capturer.get()->takeImage(numberOfImages,timeBetweenShots, this);
+    device_info.capturer.get()->takeImage(numberOfImages,timeBetweenShots, gcs_small, this);
     device_info.recordFileTimeStamp = de::util::CHelper::getFileTimeStamp();
     updateDeviceInfoByLocalName(channelName.c_str(), device_info);
     
@@ -1038,7 +1041,7 @@ Json_de de::CWEBRTC_Plugin::getDeviceListAsJSON ()
 }
 
 
-void de::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name, bool send_image_gcs)
+void de::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name, bool send_image_gcs, std::vector<unsigned char> gcs_image)
 {
     #ifdef DDEBUG
     std::cout << _LOG_CONSOLE_TEXT << "DEBUG: onImageRecorded: " << output_file_name << _NORMAL_CONSOLE_TEXT_ << std::endl;
@@ -1065,25 +1068,36 @@ void de::CWEBRTC_Plugin::onImageRecorded(std::string output_file_name, bool send
 
     if (send_image_gcs)
     {
-        std::ifstream rf(output_file_name, std::ios::in | std::ios::binary);
-        rf.seekg(0, std::ios::end);
-        size_t size = rf.tellg();
-        //char * buffer_ptr = new char[size];
-        //std::unique_ptr buffer= std::unique_ptr<char[]> (buffer_ptr);
-        std::unique_ptr<char[]> buffer(new char[size]);
-        rf.seekg(0);
-        if(rf.read(buffer.get(), size))
-            std::cout << "success"<< '\n';
+        // Prefer the in-memory low-res PNG when provided (small GCS downlink);
+        // otherwise fall back to reading the full-res saved file from disk.
+        if (!gcs_image.empty())
+        {
+            const size_t size = gcs_image.size();
+            std::cout << _LOG_CONSOLE_TEXT << "DEBUG: onImageRecorded (small GCS): " << size << _NORMAL_CONSOLE_TEXT_ << std::endl;
+            m_module.sendBMSG ("", reinterpret_cast<const char*>(gcs_image.data()), size, TYPE_AndruavMessage_IMG, true, msg_cmd);
+        }
+        else
+        {
+            std::ifstream rf(output_file_name, std::ios::in | std::ios::binary);
+            rf.seekg(0, std::ios::end);
+            size_t size = rf.tellg();
+            //char * buffer_ptr = new char[size];
+            //std::unique_ptr buffer= std::unique_ptr<char[]> (buffer_ptr);
+            std::unique_ptr<char[]> buffer(new char[size]);
+            rf.seekg(0);
+            if(rf.read(buffer.get(), size))
+                std::cout << "success"<< '\n';
 
-        std::cout << _LOG_CONSOLE_TEXT << "DEBUG: onImageRecorded: " << output_file_name << ":" << std::to_string(size) << _NORMAL_CONSOLE_TEXT_ << std::endl;
-        
-        m_module.sendBMSG ("", buffer.get(), size, TYPE_AndruavMessage_IMG, true, msg_cmd);
+            std::cout << _LOG_CONSOLE_TEXT << "DEBUG: onImageRecorded: " << output_file_name << ":" << std::to_string(size) << _NORMAL_CONSOLE_TEXT_ << std::endl;
+
+            m_module.sendBMSG ("", buffer.get(), size, TYPE_AndruavMessage_IMG, true, msg_cmd);
+        }
     }
     else
     {
         m_module.sendBMSG ("", nullptr, 0, TYPE_AndruavMessage_IMG, true, msg_cmd);
     }
-    
+
 }
 void de::CWEBRTC_Plugin::onVideoStarted()
 {

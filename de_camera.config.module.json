@@ -12,7 +12,23 @@
     "camera": {
         // Camera Devices Configuration
         "camera_start_index": 0,
-        "camera_end_index": 11
+        "camera_end_index": 11,
+        // Capture resolution requested from the V4L2 device.
+        // The driver picks the closest supported mode (GetBestMatchedCapability).
+        "capture_width": 1024,
+        "capture_height": 720,
+        "capture_fps": 30,
+        // Video recording framerate (fps) passed to ffmpeg. 0 = use capture_fps.
+        "video_recording_fps": 10,
+        // Stream downscale cap (WebRTC broadcaster). 0 or -1 = unlimited (no downscale).
+        // Protects RPi CPU/bandwidth by capping the streamed resolution.
+        "stream_max_width": 1280,
+        "stream_max_height": 720,
+        // Target resolution for the "small" GCS still image (downlinked to GCS).
+        // The locally saved still always keeps the full capture resolution.
+        // 0 or -1 = unlimited (send full resolution to GCS as well).
+        "gcs_image_small_width": 320,
+        "gcs_image_small_height": 200
         // "camera_list": [
         //    {"name": "AI1", "device_num": 0} // name should be unique across all cameras.
         //    ,{"name": "AI2", "device_name": "DE-CAM1"}

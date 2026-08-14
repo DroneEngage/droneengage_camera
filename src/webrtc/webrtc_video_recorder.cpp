@@ -110,6 +110,27 @@ int de::stream_webrtc::CVideoRecording::getVideoRecordingBitrateKbps() const
 
 
 /**
+ * @brief reads "video_recording_fps" from config file.
+ * default: 10. 0 means use the capture fps (camera.capture_fps, default 30).
+ *
+ * @return int
+ */
+int de::stream_webrtc::CVideoRecording::getVideoRecordingFps() const
+{
+    Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
+    if (!jsonConfig.contains("camera") || !jsonConfig["camera"].is_object())
+    {
+        return 10;
+    }
+    const auto &cam = jsonConfig["camera"];
+    const int fps = cam.value("video_recording_fps", 10);
+    if (fps > 0) return fps;
+    // 0 or negative: fall back to capture fps.
+    return cam.value("capture_fps", 30);
+}
+
+
+/**
  * @brief Whether to use the Raspberry Pi V4L2 M2M hardware H.264 encoder
  * instead of software libx264. Auto-detected via device-tree model, can be
  * forced off with "video_recording_hw_encoder": false in config file (e.g.
@@ -175,11 +196,83 @@ std::string de::stream_webrtc::CVideoRecording::buildFfmpegRecordCommand(const i
 
     std::string cmd = "ffmpeg -hide_banner -loglevel error -y "
                        "-f rawvideo -pixel_format yuv420p -video_size " + std::to_string(width) + "x" + std::to_string(height) +
-                       " -framerate " + std::to_string(m_fps) +
+                       " -framerate " + std::to_string(getVideoRecordingFps()) +
                        " -i - -an " + codec_args +
                        " -pix_fmt yuv420p -movflags +faststart " + quoted_path;
 
     return cmd;
+}
+
+
+/**
+ * @brief Builds a downscaled in-memory PNG for the GCS downlink.
+ * @details Reads "gcs_image_small_width"/"gcs_image_small_height" from config.
+ * 0 or -1 means unlimited -> returns empty (caller falls back to the saved file).
+ * The locally saved still always keeps the full capture resolution; this only
+ * affects what is sent over the downlink to save bandwidth on the RPi.
+ *
+ * @param frame Full-resolution captured frame.
+ * @return std::vector<unsigned char> PNG bytes, or empty on unlimited/error.
+ */
+std::vector<unsigned char> de::stream_webrtc::CVideoRecording::buildSmallGCSPng(const webrtc::VideoFrame& frame)
+{
+    Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
+    int target_w = 640, target_h = 480;
+    if (jsonConfig.contains("camera") && jsonConfig["camera"].is_object())
+    {
+        const auto &cam = jsonConfig["camera"];
+        target_w = cam.value("gcs_image_small_width", 640);
+        target_h = cam.value("gcs_image_small_height", 480);
+    }
+    if (target_w <= 0 || target_h <= 0)
+    {
+        return std::vector<unsigned char>();
+    }
+
+    webrtc::I420BufferInterface &src_I420 = *frame.video_frame_buffer()->ToI420();
+    const int src_w = src_I420.width();
+    const int src_h = src_I420.height();
+
+    // No downscale needed if already at/below target.
+    if (src_w <= target_w && src_h <= target_h)
+    {
+        return std::vector<unsigned char>();
+    }
+
+    // Scale the I420 frame down to the target resolution.
+    webrtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer =
+        webrtc::I420Buffer::Create(target_w, target_h);
+    scaled_buffer->ScaleFrom(src_I420);
+
+    // Build a VideoFrame around the scaled buffer so we can reuse ConvertFromI420.
+    webrtc::VideoFrame scaled_frame = webrtc::VideoFrame::Builder()
+        .set_video_frame_buffer(scaled_buffer)
+        .set_rotation(webrtc::kVideoRotation_0)
+        .set_timestamp_us(frame.timestamp_us())
+        .set_id(frame.id())
+        .build();
+
+    // Convert scaled I420 -> RGB24.
+    const size_t file_size = target_w * target_h * BYTES_PER_PIXEL_RGB24;
+    std::unique_ptr<uint8_t[]> res_rgb_buffer(new uint8_t[file_size]);
+    webrtc::ConvertFromI420(scaled_frame, webrtc::VideoType::kRGB24, 0, res_rgb_buffer.get());
+
+    // lodepng interprets RGB24 as BGR, so swap red/blue (same fix as saveFrameAsPNG).
+    for (size_t i = 0; i < file_size; i += 3) {
+        uint8_t temp = res_rgb_buffer[i];
+        res_rgb_buffer[i] = res_rgb_buffer[i + 2];
+        res_rgb_buffer[i + 2] = temp;
+    }
+
+    std::vector<unsigned char> png_image;
+    const unsigned error = lodepng::encode(png_image, res_rgb_buffer.get(), target_w, target_h, LCT_RGB);
+    if (error)
+    {
+        std::cout << "Error encoding small GCS PNG: " << lodepng_error_text(error) << std::endl;
+        return std::vector<unsigned char>();
+    }
+
+    return png_image;
 }
 
 
@@ -222,12 +315,13 @@ bool de::stream_webrtc::CVideoRecording::stopRecording()
 
 
 
-bool de::stream_webrtc::CVideoRecording::takeImage(const uint &image_count, const uint &image_duration, de::stream_webrtc::CRecorderEvents * recorder_events)
+bool de::stream_webrtc::CVideoRecording::takeImage(const uint &image_count, const uint &image_duration, bool gcs_small, de::stream_webrtc::CRecorderEvents * recorder_events)
 {
     webrtc::MutexLock lock(&m_lock_image);
     m_recorder_events = recorder_events;
     m_image_count     = image_count;
     m_image_duration  = image_duration * 1000; // convert to ms
+    m_gcs_small       = gcs_small;
     m_timer_image.reset();
     return true;
 }
@@ -425,13 +519,24 @@ int de::stream_webrtc::CVideoRecording::saveFrameAsPNG(webrtc::VideoFrame& frame
 
     // Capture recorder_events by value to avoid race condition with detached thread
     de::stream_webrtc::CRecorderEvents* recorder_events = m_recorder_events;
-    
-    std::thread([output_file_name, recorder_events]() {
+
+    // Build the low-res GCS PNG inside the detached thread so the scale+encode
+    // does not block the capture/stream pipeline. buildSmallGCSPng is static and
+    // only touches the singleton config + the refcounted frame buffer, so it is
+    // safe to run without `this`. The frame is captured by value to keep its
+    // buffer alive for the duration of the encode.
+    const bool gcs_small = m_gcs_small;
+    std::thread([output_file_name, recorder_events, frame, gcs_small]() {
+        std::vector<unsigned char> gcs_image;
+        if (gcs_small)
+        {
+            gcs_image = buildSmallGCSPng(frame);
+        }
         if (recorder_events != nullptr)
         {
             // sendImageToGCS() accesses singleton CConfigFile, safe to call here
             bool send_to_gcs = CConfigFile::getInstance().GetConfigJSON().value("send_image_gcs", true);
-            recorder_events->onImageRecorded(output_file_name, send_to_gcs);
+            recorder_events->onImageRecorded(output_file_name, send_to_gcs, std::move(gcs_image));
         }
     }).detach();
     #ifdef DEBUG
@@ -628,13 +733,24 @@ int  de::stream_webrtc::CVideoRecording::saveFrameAsRGB( webrtc::VideoFrame& fra
 
     // Capture recorder_events by value to avoid race condition with detached thread
     de::stream_webrtc::CRecorderEvents* recorder_events = m_recorder_events;
-    
-    std::thread([output_file_name, recorder_events]() {
+
+    // Build the low-res GCS PNG inside the detached thread so the scale+encode
+    // does not block the capture/stream pipeline. buildSmallGCSPng is static and
+    // only touches the singleton config + the refcounted frame buffer, so it is
+    // safe to run without `this`. The frame is captured by value to keep its
+    // buffer alive for the duration of the encode.
+    const bool gcs_small = m_gcs_small;
+    std::thread([output_file_name, recorder_events, frame, gcs_small]() {
+        std::vector<unsigned char> gcs_image;
+        if (gcs_small)
+        {
+            gcs_image = buildSmallGCSPng(frame);
+        }
         if (recorder_events != nullptr)
         {
             // sendImageToGCS() accesses singleton CConfigFile, safe to call here
             bool send_to_gcs = CConfigFile::getInstance().GetConfigJSON().value("send_image_gcs", true);
-            recorder_events->onImageRecorded(output_file_name, send_to_gcs);
+            recorder_events->onImageRecorded(output_file_name, send_to_gcs, std::move(gcs_image));
         }
     }).detach();
 

@@ -128,8 +128,18 @@ int de::stream_webrtc::CSource::GetDevices (std::vector<STRUCT_DEVICE_INFO> &dev
             deviceInfo.local_name   = std::string( name ) + "#" + std::to_string(i); // id is added as similar cameras have similar names.
             deviceInfo.unique_name  = de::util::CHelper::getShortSemiGUID();
             deviceInfo.dev_linux_number = GetDeviceNumber (deviceInfo.device_name); // before create source to avoid permission problems.
-            //TODO: Check RESOLUTION HERE
-            deviceInfo.capturer     = std::shared_ptr<VideoDevCapturerComposite>(VideoDevCapturerComposite::Create(1024,720,30,deviceInfo.device_id.c_str()));
+            // Read capture resolution/fps from config (camera.capture_width/height/fps).
+            // Defaults match the previous hardcoded values (1024x720@30).
+            Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
+            int cap_w = 1024, cap_h = 720, cap_fps = 30;
+            if (jsonConfig.contains("camera") && jsonConfig["camera"].is_object())
+            {
+                const auto &cam = jsonConfig["camera"];
+                cap_w   = cam.value("capture_width", 1024);
+                cap_h   = cam.value("capture_height", 720);
+                cap_fps = cam.value("capture_fps", 30);
+            }
+            deviceInfo.capturer     = std::shared_ptr<VideoDevCapturerComposite>(VideoDevCapturerComposite::Create(cap_w, cap_h, cap_fps, deviceInfo.device_id.c_str()));
             deviceInfo.active       = 0;
             deviceInfo.selected     = false;
             deviceInfo.recording    = false;

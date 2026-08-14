@@ -264,10 +264,27 @@ void de::stream_webrtc::VideoDevCapturerComposite::OnFrame(const webrtc::VideoFr
         m_once = true;
     }
 
-    // Define target dimensions for scaling.
-    // It's generally better to make these configurable or derived from system capabilities.
-    int target_out_width = 1280;
-    int target_out_height = 780;
+    // Stream downscale cap, read from config ("camera.stream_max_width"/"stream_max_height").
+    // 0 or -1 means unlimited: broadcast the full capture frame with no downscale.
+    // This protects RPi CPU/bandwidth by capping the streamed resolution.
+    Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
+    int cfg_max_w = 1280, cfg_max_h = 720;
+    if (jsonConfig.contains("camera") && jsonConfig["camera"].is_object())
+    {
+        const auto &cam = jsonConfig["camera"];
+        cfg_max_w = cam.value("stream_max_width", 1280);
+        cfg_max_h = cam.value("stream_max_height", 720);
+    }
+    const bool unlimited = (cfg_max_w <= 0 || cfg_max_h <= 0);
+
+    if (unlimited) {
+        // No cap configured: broadcast the full frame directly.
+        m_broadCaster.OnFrame(processed_frame);
+        return;
+    }
+
+    int target_out_width = cfg_max_w;
+    int target_out_height = cfg_max_h;
 
     // Check if scaling is necessary based on target dimensions.
     // If the frame is already smaller than or equal to the target, broadcast directly.
@@ -378,12 +395,10 @@ void de::stream_webrtc::VideoDevCapturerComposite::RemoveSink(webrtc::VideoSinkI
 }
 
 void de::stream_webrtc::VideoDevCapturerComposite::UpdateVideoAdapter() {
-  // webrtc::VideoSinkWants wants = m_broadCaster.wants();
-  
-  // m_videoAdapter.OnResolutionFramerateRequest(
-  //                   wants.target_pixel_count, 
-  //                   wants.max_pixel_count, 
-  //                   wants.max_framerate_fps);
+  // Feed the combined sink wants (from the broadcaster) into the video adapter so
+  // the stream can dynamically adapt resolution/fps to network and encoder demand.
+  // The config-driven cap in OnFrame still acts as a hard ceiling, keeping the RPi safe.
+  m_videoAdapter.OnSinkWants(m_broadCaster.wants());
 }
 
 webrtc::VideoFrame de::stream_webrtc::VideoDevCapturerComposite::MaybePreprocess(const webrtc::VideoFrame& frame) {

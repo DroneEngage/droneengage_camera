@@ -123,8 +123,8 @@ class CWEBRTC_Plugin : public CCallbacks , stream_webrtc::CRecorderEvents
             return location_text;
         }
 
-    public: 
-        void onImageRecorded(std::string output_file_name, bool send_image_gcs) override ;
+    public:
+        void onImageRecorded(std::string output_file_name, bool send_image_gcs, std::vector<unsigned char> gcs_image) override ;
         void onVideoStarted() override ;
         void onVideoStopped() override ;
 

@@ -15,6 +15,54 @@
                         "order":2,
                         "type": "number",
                         "defaultvalue": "60"
+                    },
+                    "capture_width": {
+                        "order":3,
+                        "type": "number",
+                        "defaultvalue": "1024",
+                        "desc": "Capture width requested from V4L2 device (closest mode is picked)"
+                    },
+                    "capture_height": {
+                        "order":4,
+                        "type": "number",
+                        "defaultvalue": "720",
+                        "desc": "Capture height requested from V4L2 device (closest mode is picked)"
+                    },
+                    "capture_fps": {
+                        "order":5,
+                        "type": "number",
+                        "defaultvalue": "30",
+                        "desc": "Capture framerate requested from V4L2 device"
+                    },
+                    "video_recording_fps": {
+                        "order":6,
+                        "type": "number",
+                        "defaultvalue": "10",
+                        "desc": "Video recording framerate passed to ffmpeg. 0 = use capture_fps"
+                    },
+                    "stream_max_width": {
+                        "order":7,
+                        "type": "number",
+                        "defaultvalue": "1280",
+                        "desc": "Stream downscale cap (WebRTC). 0 or -1 = unlimited"
+                    },
+                    "stream_max_height": {
+                        "order":8,
+                        "type": "number",
+                        "defaultvalue": "720",
+                        "desc": "Stream downscale cap (WebRTC). 0 or -1 = unlimited"
+                    },
+                    "gcs_image_small_width": {
+                        "order":9,
+                        "type": "number",
+                        "defaultvalue": "320",
+                        "desc": "Small GCS still image width. 0 or -1 = unlimited (full-res to GCS)"
+                    },
+                    "gcs_image_small_height": {
+                        "order":10,
+                        "type": "number",
+                        "defaultvalue": "200",
+                        "desc": "Small GCS still image height. 0 or -1 = unlimited (full-res to GCS)"
                     }
                 },
                 "optional": false,
@@ -58,6 +106,32 @@
                         "desc": "define specific camera devices and assign custom names - advanced"
                     }
                 }
+            }
+        }
+    },
+    {
+        "name": "Media Settings",
+        "template": {
+            "media folder": {
+                "fieldName": "media_folder",
+                "type": "text",
+                "defaultvalue": "./img",
+                "optional": true,
+                "desc": "folder used to store video and images"
+            },
+            "media image png": {
+                "fieldName": "media_image_png",
+                "type": "boolean",
+                "defaultvalue": "true",
+                "optional": true,
+                "desc": "save still images as PNG (true) or BMP (false)"
+            },
+            "send image gcs": {
+                "fieldName": "send_image_gcs",
+                "type": "boolean",
+                "defaultvalue": "true",
+                "optional": true,
+                "desc": "send captured still images to GCS"
             }
         }
     }
