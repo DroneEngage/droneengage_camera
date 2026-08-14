@@ -105,6 +105,36 @@ The compiled binary is `out/<target>/de_camera`. The same code/config also works
 
 Older versions of this project could also be compiled standalone against a prebuilt `libwebrtc.a` (see `lib/webrtc-local/` and the root `Makefile`, using `branch-heads/7103` on Ubuntu 18.04). This path is no longer maintained — use the gn/ninja workflow above instead.
 
+# Configuration
+
+Camera and media behavior are configured in `de_camera.config.module.json` (see [`template.json`](template.json) for the full schema with defaults and descriptions). The camera block supports two styles:
+
+- **Scan range** — `camera_start_index` / `camera_end_index` scan `/dev/video<start..end>` and open every device that exists.
+- **Camera list** — an explicit `camera_list` array of `{ name, device_num | device_name }` entries, giving each camera a name that shows up in the WebClient.
+
+### Resolution & framerate knobs (MAX, not exact)
+
+The resolution/fps fields are **maximum/target** values, not exact requirements. The V4L2 driver picks the closest supported mode via `GetBestMatchedCapability`, so a camera with a lower native resolution simply uses its own max — you do not have to match the config to each camera.
+
+| Field | Meaning |
+| --- | --- |
+| `capture_width` / `capture_height` / `capture_fps` | Resolution/fps requested from the V4L2 device (closest supported mode is picked). |
+| `video_recording_fps` | Recording framerate passed to ffmpeg. `0` = use `capture_fps`. Acts as a max/target: if the camera delivers fewer fps, every frame is written as it arrives and ffmpeg's `-framerate` still matches the delivery rate closely enough for correct playback speed. Do not set this higher than the camera's actual fps. |
+| `stream_max_width` / `stream_max_height` | WebRTC broadcaster downscale cap. Frames already smaller than this are broadcast as-is. `0` or `-1` = unlimited (no downscale). Protects RPi CPU/bandwidth. |
+| `gcs_image_small_width` / `gcs_image_small_height` | Target size for the "small" GCS still image downlinked to GCS. If the camera's native resolution is already at or below this, the full-res image is sent. The locally saved still always keeps the full capture resolution. `0` or `-1` = unlimited (send full resolution to GCS as well). |
+
+> **Recording fps sync (v5.0.0):** the recorder now derives its frame-sampling interval from `video_recording_fps` so it stays in sync with the `-framerate` passed to ffmpeg. Previously the interval came from a separate timer field; this could desync recorded playback speed from real time.
+
+See [wiki/configuration.md](wiki/configuration.md) for the full field reference.
+
+# Test / virtual camera scripts
+
+The helper scripts under `scripts/` feed synthetic test patterns into a virtual V4L2 device so you can exercise `de_camera` without a real camera:
+
+- `video_clock.sh [device_num]` — `testsrc2` clock pattern (default `/dev/video6`). Pass a device number, e.g. `./video_clock.sh 2` → `/dev/video2`.
+- `video_colors.sh [device_num]` — `rgbtestsrc` color bars (default `/dev/video0`). Same device-number argument.
+- `video_clock_others.sh` — the previous multi-device `ffmpeg` commands (1280x720, 320x200, 640x480), kept as a non-parameterized reference.
+
 ## To Install Scripts for Camera
 
 See [scripts/README](https://github.com/DroneEngage/droneengage_camera/blob/master/scripts/README "Script Section") and [`scripts/compile_webrtc/`](scripts/compile_webrtc) for the raw compile scripts referenced above.
