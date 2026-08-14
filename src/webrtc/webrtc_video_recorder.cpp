@@ -347,8 +347,14 @@ int de::stream_webrtc::CVideoRecording::printPlane(const uint8_t* buf,
  */
 int de::stream_webrtc::CVideoRecording::printVideoFrame(const webrtc::VideoFrame& frame) 
 {
-    
-    if (m_timer_video.elapsed_milli() < m_frame_duration) return 0;
+    // Derive the frame sampling interval from the configured recording fps so it
+    // stays in sync with the -framerate passed to ffmpeg. This is a max/target:
+    // if the camera delivers fewer fps than configured, every frame passes the
+    // check and is written, but ffmpeg's framerate still matches the delivery rate
+    // closely enough for correct playback speed.
+    const int rec_fps = getVideoRecordingFps();
+    const uint frame_duration = (rec_fps > 0) ? (1000 / rec_fps) : 100;
+    if (m_timer_video.elapsed_milli() < frame_duration) return 0;
 
     m_timer_video.reset();
     

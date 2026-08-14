@@ -13,19 +13,24 @@
         // Camera Devices Configuration
         "camera_start_index": 0,
         "camera_end_index": 11,
-        // Capture resolution requested from the V4L2 device.
-        // The driver picks the closest supported mode (GetBestMatchedCapability).
+        // Capture resolution requested from the V4L2 device (MAX, not exact).
+        // The driver picks the closest supported mode via GetBestMatchedCapability,
+        // so cameras with lower native resolution simply use their own max.
         "capture_width": 1024,
         "capture_height": 720,
         "capture_fps": 30,
-        // Video recording framerate (fps) passed to ffmpeg. 0 = use capture_fps.
+        // Video recording framerate (fps) passed to ffmpeg (MAX, not exact).
+        // 0 = use capture_fps. If the camera delivers fewer fps, frames are written
+        // as they arrive; do not set this higher than the camera's actual fps.
         "video_recording_fps": 10,
-        // Stream downscale cap (WebRTC broadcaster). 0 or -1 = unlimited (no downscale).
+        // Stream downscale cap (WebRTC broadcaster). MAX, not exact: frames already
+        // smaller than this are broadcast as-is. 0 or -1 = unlimited (no downscale).
         // Protects RPi CPU/bandwidth by capping the streamed resolution.
         "stream_max_width": 1280,
         "stream_max_height": 720,
-        // Target resolution for the "small" GCS still image (downlinked to GCS).
-        // The locally saved still always keeps the full capture resolution.
+        // Target resolution for the "small" GCS still image (MAX, not exact).
+        // If the camera's native resolution is already at or below this, the full-res
+        // image is sent to GCS. The locally saved still always keeps full capture res.
         // 0 or -1 = unlimited (send full resolution to GCS as well).
         "gcs_image_small_width": 320,
         "gcs_image_small_height": 200
