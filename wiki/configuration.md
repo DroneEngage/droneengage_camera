@@ -3,13 +3,24 @@
 `de_camera` is configured through two JSON files:
 
 - **`de_camera.config.module.json`** — the active module config (this is what `de_camera` reads at startup).
-- **`template.json`** — the schema/template with defaults and field descriptions, used by the GCS config UI.
+- **`template.json`** — the schema/template with defaults and field descriptions, used by the GCS config UI (`jsc_config_generator.jsx`).
 
-This page documents the camera block and the resolution/framerate semantics introduced/stabilized in **v5.0.0**. For the build/deploy workflow see [webrtc_build_setup.md](webrtc_build_setup.md); for the quick reference see the top-level [README.md](../README.md).
+This page documents the camera/streaming config blocks and the resolution/framerate semantics introduced/stabilized in **v5.0.0**. For the build/deploy workflow see [webrtc_build_setup.md](webrtc_build_setup.md); for the quick reference see the top-level [README.md](../README.md).
 
 ---
 
-## Camera selection
+## Structure
+
+Camera selection and streaming/media settings are split into two separate top-level objects so the GCS config UI (which merges one group at a time) can edit either without overwriting the other:
+
+- **`camera`** — which cameras to open (selection only).
+- **`streaming`** — resolution/framerate settings common to all cameras.
+
+> **Backward compatibility:** the code falls back to reading the media fields from `camera` (old flat style) if `streaming` is not present.
+
+---
+
+## Camera selection (`camera`)
 
 The `camera` object supports two mutually exclusive styles:
 
@@ -37,13 +48,13 @@ The `camera` object supports two mutually exclusive styles:
 
 Each entry assigns a custom name (shown in the WebClient) to a specific device. `device_num` maps to `/dev/videoX`; `device_name` matches a virtual video driver name or webcam name.
 
-> Backward compatibility: if no `camera` object is present, the old `camera_start_index` / `camera_end_index` top-level fields are honored. This is deprecated and will be removed in a later version.
+> Backward compatibility: if no `camera` object is present, the old top-level `camera_start_index` / `camera_end_index` fields are honored. This is deprecated and will be removed in a later version.
 
 ---
 
-## Resolution & framerate fields (MAX, not exact)
+## Streaming settings (`streaming`)
 
-All resolution and framerate fields in the camera block are **maximum / target** values, not exact requirements. The V4L2 driver picks the closest supported mode via `GetBestMatchedCapability`, so a camera whose native resolution is lower than the configured value simply uses its own maximum — you do not need to tailor the config to each camera.
+All resolution and framerate fields in the `streaming` object are **maximum / target** values, not exact requirements. The V4L2 driver picks the closest supported mode via `GetBestMatchedCapability`, so a camera whose native resolution is lower than the configured value simply uses its own maximum — you do not need to tailor the config to each camera.
 
 | Field | Default | Description |
 | --- | --- | --- |
@@ -77,13 +88,17 @@ This is the target size for the "small" still image downlinked to the GCS. If th
 
 ---
 
-## Media settings
+## Top-level media settings
+
+These fields live at the top level of the config (outside `camera` and `streaming`):
 
 | Field | Default | Description |
 | --- | --- | --- |
 | `media_folder` | `./img` | Folder used to store recorded video and still images. |
 | `media_image_png` | `true` | Save still images as PNG (`true`) or BMP (`false`). |
 | `send_image_gcs` | `true` | Send captured still images to the GCS. |
+| `video_recording_bitrate_kbps` | `2000` | H.264 target bitrate (kbps) passed to ffmpeg for MP4 recording. Optional — not in the shipped config; code default is 2000. |
+| `video_recording_hw_encoder` | `true` | Use the Raspberry Pi V4L2 M2M hardware H.264 encoder (`h264_v4l2m2m`) instead of software libx264. Auto-detected from device-tree; set to `false` to force software encoding. Optional — not in the shipped config. |
 
 ---
 

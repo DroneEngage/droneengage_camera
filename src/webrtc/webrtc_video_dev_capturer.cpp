@@ -264,17 +264,16 @@ void de::stream_webrtc::VideoDevCapturerComposite::OnFrame(const webrtc::VideoFr
         m_once = true;
     }
 
-    // Stream downscale cap, read from config ("camera.stream_max_width"/"stream_max_height").
+    // Stream downscale cap, read from config ("streaming.stream_max_width"/"stream_max_height").
+    // Falls back to camera.stream_max_* (old flat style) for backward compatibility.
     // 0 or -1 means unlimited: broadcast the full capture frame with no downscale.
     // This protects RPi CPU/bandwidth by capping the streamed resolution.
     Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
     int cfg_max_w = 1280, cfg_max_h = 720;
-    if (jsonConfig.contains("camera") && jsonConfig["camera"].is_object())
-    {
-        const auto &cam = jsonConfig["camera"];
-        cfg_max_w = cam.value("stream_max_width", 1280);
-        cfg_max_h = cam.value("stream_max_height", 720);
-    }
+    const auto &media = jsonConfig.contains("streaming") ? jsonConfig["streaming"]
+                  : (jsonConfig.contains("camera") ? jsonConfig["camera"] : Json_de::object());
+    cfg_max_w = media.value("stream_max_width", 1280);
+    cfg_max_h = media.value("stream_max_height", 720);
     const bool unlimited = (cfg_max_w <= 0 || cfg_max_h <= 0);
 
     if (unlimited) {

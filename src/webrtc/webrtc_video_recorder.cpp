@@ -118,15 +118,13 @@ int de::stream_webrtc::CVideoRecording::getVideoRecordingBitrateKbps() const
 int de::stream_webrtc::CVideoRecording::getVideoRecordingFps() const
 {
     Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
-    if (!jsonConfig.contains("camera") || !jsonConfig["camera"].is_object())
-    {
-        return 10;
-    }
-    const auto &cam = jsonConfig["camera"];
-    const int fps = cam.value("video_recording_fps", 10);
+    // Read from streaming (new style), fall back to camera (old flat style).
+    const auto &media = jsonConfig.contains("streaming") ? jsonConfig["streaming"]
+                  : (jsonConfig.contains("camera") ? jsonConfig["camera"] : Json_de::object());
+    const int fps = media.value("video_recording_fps", 10);
     if (fps > 0) return fps;
     // 0 or negative: fall back to capture fps.
-    return cam.value("capture_fps", 30);
+    return media.value("capture_fps", 30);
 }
 
 
@@ -218,12 +216,11 @@ std::vector<unsigned char> de::stream_webrtc::CVideoRecording::buildSmallGCSPng(
 {
     Json_de jsonConfig = CConfigFile::getInstance().GetConfigJSON();
     int target_w = 640, target_h = 480;
-    if (jsonConfig.contains("camera") && jsonConfig["camera"].is_object())
-    {
-        const auto &cam = jsonConfig["camera"];
-        target_w = cam.value("gcs_image_small_width", 640);
-        target_h = cam.value("gcs_image_small_height", 480);
-    }
+    // Read from streaming (new style), fall back to camera (old flat style).
+    const auto &media = jsonConfig.contains("streaming") ? jsonConfig["streaming"]
+                  : (jsonConfig.contains("camera") ? jsonConfig["camera"] : Json_de::object());
+    target_w = media.value("gcs_image_small_width", 640);
+    target_h = media.value("gcs_image_small_height", 480);
     if (target_w <= 0 || target_h <= 0)
     {
         return std::vector<unsigned char>();

@@ -107,14 +107,16 @@ Older versions of this project could also be compiled standalone against a prebu
 
 # Configuration
 
-Camera and media behavior are configured in `de_camera.config.module.json` (see [`template.json`](template.json) for the full schema with defaults and descriptions). The camera block supports two styles:
+Camera and media behavior are configured in `de_camera.config.module.json` (see [`template.json`](template.json) for the full schema with defaults and descriptions). Selection and streaming settings are split into two top-level objects so the GCS config UI can edit either without overwriting the other:
 
-- **Scan range** — `camera_start_index` / `camera_end_index` scan `/dev/video<start..end>` and open every device that exists.
-- **Camera list** — an explicit `camera_list` array of `{ name, device_num | device_name }` entries, giving each camera a name that shows up in the WebClient.
+- **`camera`** — which cameras to open. Two mutually exclusive styles:
+  - **Scan range** — `camera_start_index` / `camera_end_index` scan `/dev/video<start..end>` and open every device that exists.
+  - **Camera list** — an explicit `camera_list` array of `{ name, device_num | device_name }` entries, giving each camera a name that shows up in the WebClient.
+- **`streaming`** — common resolution/framerate settings that apply to all cameras regardless of selection style.
 
 ### Resolution & framerate knobs (MAX, not exact)
 
-The resolution/fps fields are **maximum/target** values, not exact requirements. The V4L2 driver picks the closest supported mode via `GetBestMatchedCapability`, so a camera with a lower native resolution simply uses its own max — you do not have to match the config to each camera.
+The resolution/fps fields in `streaming` are **maximum/target** values, not exact requirements. The V4L2 driver picks the closest supported mode via `GetBestMatchedCapability`, so a camera with a lower native resolution simply uses its own max — you do not have to match the config to each camera.
 
 | Field | Meaning |
 | --- | --- |
