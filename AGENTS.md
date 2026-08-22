@@ -83,7 +83,7 @@ The groups are: **Communication** (`module_id`, `s2s_udp_*`,
 (WebRTC STUN/TURN). Some fields are optional and not present in the shipped
 `de_camera.config.module.json` — they have code-level defaults (e.g.
 `video_recording_bitrate_kbps` = 2000, `video_recording_hw_encoder` = true,
-`s2s_udp_packet_size` = default databus size, `use_unix_socket` = false).
+`s2s_udp_packet_size` = auto-detect (8192 for localhost, 1472 for remote), `use_unix_socket` = false).
 
 ### Camera vs Streaming split
 
