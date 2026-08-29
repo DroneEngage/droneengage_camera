@@ -303,6 +303,7 @@ void init(int argc, char *argv[])
 void uninit()
 {
     m_exit.store(true);
+    exit_cv.notify_all();
 }
 
 /*
