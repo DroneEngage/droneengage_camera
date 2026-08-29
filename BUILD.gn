@@ -858,6 +858,7 @@ if (is_linux || is_chromeos || is_win) {
            "de_camera/de_common/de_databus/udpClient.cpp",
            "de_camera/de_common/de_databus/de_module.cpp",
            "de_camera/de_common/de_databus/de_facade_base.cpp",
+           "de_camera/de_common/de_databus/de_module_health.cpp",
            "de_camera/de_common/helpers/getopt_cpp.cpp",
            "de_camera/de_common/helpers/util_rpi.cpp",
            "de_camera/de_common/helpers/helpers.cpp",
