@@ -20,3 +20,4 @@ compiled_rpi_bin
 *.bak_*
 local/
 img/
+compiled_rpi_bin_debug/
