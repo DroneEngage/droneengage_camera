@@ -14,8 +14,8 @@
         // Style 1: Scan range (recommended)
         //   Scans /dev/video<camera_start_index> through /dev/video<camera_end_index>
         //   and opens every device that exists.
-        "camera_start_index": 0,
-        "camera_end_index": 11
+        "camera_start_index": 2,
+        "camera_end_index": 10
 
         // Style 2: Camera list (alternative to scan range)
         //   Uncomment to use an explicit list instead of scanning.
