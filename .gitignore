@@ -4,6 +4,9 @@ lib/
 WEBRTC_EXAMPLES
 compiled_bin/
 compiled_bin_arm/
+compiled_bin_debug/
+compiled_bin_rpi_release/
+compiled_bin_x86_release/
 *.local
 TODOHEFNY.txt
 *.png

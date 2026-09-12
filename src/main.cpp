@@ -4,6 +4,7 @@
 #include "common.h"
 #include "webrtc_plugin.hpp"
 #include "./de_common/de_databus/de_module.hpp"
+#include "./de_common/de_databus/de_facade_base.hpp"
 #include "./de_common/helpers/util_rpi.hpp"
 #include "./de_common/de_databus/configFile.hpp"
 #include "./de_common/de_databus/localConfigFile.hpp"
@@ -298,6 +299,11 @@ void init(int argc, char *argv[])
     cWEBRTC_Plugin.InitializePeerConnection();
 
     initUavosModule(argc, argv);
+
+    // de_camera is a WebRTC streamer: capture buffers, encoders, and jitter
+    // buffers legitimately push RSS well above the generic 500MB default.
+    // Raise the ceiling so normal operation does not trip CRITICAL.
+    de::comm::CFacade_Base::getInstance().configureMemoryStatus(1200, 30);
 }
 
 void uninit()
