@@ -986,7 +986,7 @@ void de::CWEBRTC_Plugin::updateLocationInfo(const Json_de &jMsg)
     m_location_info.altitude_relative             = cmd["r"].get<int>();
     m_location_info.h_acc                         = cmd["ha"].get<int>();
     m_location_info.yaw                           = cmd["y"].get<int>();
-    m_location_info.last_access_time              = get_time_usec();
+    m_location_info.last_access_time              = get_time_usec_monotonic();
     m_location_info.is_new                        = true;
     m_location_info.is_valid                      = true;
 
