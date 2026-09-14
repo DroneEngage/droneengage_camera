@@ -25,3 +25,4 @@ local/
 img/
 compiled_rpi_bin_debug/
 compiled_bin_rpi_debug/
+compiled_bin_x86_debug/
